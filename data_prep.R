@@ -1,6 +1,8 @@
 ## Clinical database
 clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
+### Permute treatment allocation until interim analysis is triggered
 clin_data$rangrp = clin_data$rangrp[sample(nrow(clin_data),nrow(clin_data),replace = F)]
+
 log_data = haven::read_dta('../Data/InterimSampleLog.dta')
 log_data = log_data[log_data$sl_barc != "", ]
 
@@ -16,9 +18,12 @@ for(i in 1:length(fnames)){
 }
 Res = Res[!is.na(Res$`Sample ID (Mmoloec)`), ]
 Res$Plate = as.numeric(as.factor(Res$`Lot no.`))
-table(Res$Plate)
 
-table(table(Res$Plate)==96)
+writeLines('\nShowing the number of plates and the number of samples per plate:')
+print(table(Res$Plate))
+
+writeLines('\nAre there 96 samples per plate?')
+print(table(table(Res$Plate)==96))
 
 ## Extract standard curve data by plate
 ind = grep('std', Res$`Sample ID (Mmoloec)`)
@@ -38,7 +43,8 @@ write.csv(x = SC, file = 'interim_control_dat.csv', row.names = F)
 
 ## Extract sample data
 Res = Res[!is.na(Res$BARCODE), ]
-all(table(Res$`SUBJECT ID`)==20)
+writeLines('Do we have 20 samples per patient?')
+print(all(table(Res$`SUBJECT ID`)==20))
 
 Res$`N/S Gene`[Res$`N/S Gene`=='Undetermined'] = 40
 Res$RNaseP[Res$RNaseP=='Undetermined'] = 40
@@ -70,7 +76,9 @@ Res$Symptom_onset = NA
 
 ## Some cleaning
 clin_data$vc_name1 = tolower(clin_data$vc_name1)
-table(clin_data$vc_name1)
+writeLines('\nVaccine names before cleaning:')
+print(table(clin_data$vc_name1))
+
 clin_data$vc_name1[grep(pattern = 'ast',x = clin_data$vc_name1)] = 'AZ'
 clin_data$vc_name1[grep(pattern = 'azt',x = clin_data$vc_name1)] = 'AZ'
 clin_data$vc_name1[grep(pattern = 'sinop',x = clin_data$vc_name1)] = 'SPH'
@@ -78,7 +86,8 @@ clin_data$vc_name1[grep(pattern = 'sinov',x = clin_data$vc_name1)] = 'SV'
 clin_data$vc_name1[grep(pattern = 'sinva',x = clin_data$vc_name1)] = 'SV'
 clin_data$vc_name1[grep(pattern = 'mod',x = clin_data$vc_name1)] = 'MD'
 clin_data$vc_name1[grep(pattern = 'pf',x = clin_data$vc_name1)] = 'PZ'
-table(clin_data$vc_name1)
+writeLines('\nVaccine names after cleaning:')
+print(table(clin_data$vc_name1))
 clin_data$vc_name1[clin_data$vc_name1=='']='None'
 
 for(i in 1:nrow(Res)){
@@ -126,7 +135,8 @@ cols = c('ID','Time','Trt','Site',
          'Vaccinated','Vaccine_type','Antibody_test',
          'Age', 'Sex', 'Symptom_onset','Variant',
          'CT_NS','CT_RNaseP','log10_viral_load')
-
+writeLines('\n column names:')
+print(cols)
 Res = Res[, cols]
 write.csv(x = Res, file = 'interim_dat.csv', row.names = F)
 

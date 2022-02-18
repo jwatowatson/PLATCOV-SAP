@@ -1,7 +1,7 @@
 ---
 title: "PLATCOV Statistical Analysis Plan"
 author: "James Watson"
-date: "17 February, 2022"
+date: "18 February, 2022"
 output: 
   html_document: 
     toc: yes
@@ -88,7 +88,7 @@ The second file interim_dat.csv contains the patient viral load data with the fo
 ## LAPACK: /Library/Frameworks/R.framework/Versions/4.0/Resources/lib/libRlapack.dylib
 ## 
 ## locale:
-## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## [1] en_GB.UTF-8/en_GB.UTF-8/en_GB.UTF-8/C/en_GB.UTF-8/en_GB.UTF-8
 ## 
 ## attached base packages:
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
@@ -99,24 +99,24 @@ The second file interim_dat.csv contains the patient viral load data with the fo
 ## [7] StanHeaders_2.21.0-7
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] bdsmatrix_1.3-4    Rcpp_1.0.7         lattice_0.20-45    prettyunits_1.1.1 
+##  [1] bdsmatrix_1.3-4    Rcpp_1.0.7         lattice_0.20-44    prettyunits_1.1.1 
 ##  [5] ps_1.6.0           zoo_1.8-9          lmtest_0.9-38      assertthat_0.2.1  
-##  [9] glmmML_1.1.1       digest_0.6.28      utf8_1.2.2         V8_3.4.2          
-## [13] R6_2.5.1           stats4_4.0.2       evaluate_0.14      pillar_1.6.4      
-## [17] Rdpack_2.1.2       rlang_0.4.12       curl_4.3.2         rstudioapi_0.13   
-## [21] callr_3.7.0        jquerylib_0.1.4    rmarkdown_2.11     stringr_1.4.0     
-## [25] loo_2.4.1          munsell_0.5.0      compiler_4.0.2     xfun_0.27         
-## [29] pkgconfig_2.0.3    pkgbuild_1.2.0     htmltools_0.5.2    tidyselect_1.1.1  
-## [33] tibble_3.1.5       gridExtra_2.3      codetools_0.2-18   matrixStats_0.61.0
-## [37] fansi_0.5.0        crayon_1.4.2       dplyr_1.0.7        withr_2.4.2       
-## [41] rbibutils_2.2.4    MASS_7.3-54        grid_4.0.2         nlme_3.1-153      
-## [45] jsonlite_1.7.2     gtable_0.3.0       lifecycle_1.0.1    DBI_1.1.1         
-## [49] magrittr_2.0.1     scales_1.1.1       RcppParallel_5.1.4 cli_3.1.0         
-## [53] stringi_1.7.5      plm_2.4-3          bslib_0.3.1        ellipsis_0.3.2    
-## [57] generics_0.1.1     vctrs_0.3.8        sandwich_3.0-1     Formula_1.2-4     
-## [61] tools_4.0.2        glue_1.4.2         purrr_0.3.4        processx_3.5.2    
-## [65] parallel_4.0.2     fastmap_1.1.0      yaml_2.2.1         inline_0.3.19     
-## [69] colorspace_2.0-2   knitr_1.36         sass_0.4.0
+##  [9] glmmML_1.1.1       digest_0.6.27      utf8_1.2.2         V8_3.4.2          
+## [13] R6_2.5.1           stats4_4.0.2       evaluate_0.14      pillar_1.6.2      
+## [17] Rdpack_2.1.3       rlang_0.4.11       curl_4.3.2         rstudioapi_0.13   
+## [21] callr_3.7.0        jquerylib_0.1.4    collapse_1.7.6     rmarkdown_2.11    
+## [25] stringr_1.4.0      loo_2.4.1          munsell_0.5.0      compiler_4.0.2    
+## [29] xfun_0.26          pkgconfig_2.0.3    pkgbuild_1.2.0     htmltools_0.5.2   
+## [33] tidyselect_1.1.1   tibble_3.1.4       gridExtra_2.3      codetools_0.2-18  
+## [37] matrixStats_0.61.0 fansi_0.5.0        crayon_1.4.1       dplyr_1.0.7       
+## [41] withr_2.4.2        rbibutils_2.2.7    MASS_7.3-54        grid_4.0.2        
+## [45] nlme_3.1-153       jsonlite_1.7.2     gtable_0.3.0       lifecycle_1.0.0   
+## [49] DBI_1.1.1          magrittr_2.0.1     scales_1.1.1       RcppParallel_5.1.4
+## [53] cli_3.0.1          stringi_1.7.4      plm_2.6-0          bslib_0.3.0       
+## [57] ellipsis_0.3.2     generics_0.1.0     vctrs_0.3.8        sandwich_3.0-1    
+## [61] Formula_1.2-4      tools_4.0.2        glue_1.4.2         purrr_0.3.4       
+## [65] processx_3.5.2     parallel_4.0.2     fastmap_1.1.0      yaml_2.2.1        
+## [69] inline_0.3.19      colorspace_2.0-2   knitr_1.34         sass_0.4.0
 ```
 
 
@@ -130,11 +130,11 @@ The second file interim_dat.csv contains the patient viral load data with the fo
 ```
 ##                Site
 ## Arm             th001
-##   Favipiravir      12
-##   Ivermectin        4
-##   No study drug     5
-##   Regeneron         6
-##   Remdesivir        9
+##   Favipiravir       8
+##   Ivermectin        7
+##   No study drug     7
+##   Regeneron         8
+##   Remdesivir        6
 ```
 
 ```
@@ -307,56 +307,76 @@ make stan data set
 run models
 
 
+```
+## Warning: There were 2 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See
+## http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+```
+
+```
+## Warning: Examine the pairs() plot to diagnose sampling problems
+```
+
+```
+## Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+## Running the chains for more iterations may help. See
+## http://mc-stan.org/misc/warnings.html#bulk-ess
+```
+
+```
+## Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+## Running the chains for more iterations may help. See
+## http://mc-stan.org/misc/warnings.html#tail-ess
+```
 
 ### Model fits: summaries
 
 
 ```
 ##                      mean     se_mean         sd
-## A0            15.63438524 0.020613968 0.56920427
-## alpha         -1.28797022 0.007900411 0.19835772
-## trt_effect[1]  0.44645636 0.008509104 0.21519457
-## trt_effect[2] -0.03264431 0.008000248 0.20435923
-## trt_effect[3]  0.02468407 0.007787850 0.22156401
-## trt_effect[4] -0.05125470 0.008566895 0.21000430
-## sigmaCT        2.76966659 0.005293131 0.15450745
-## t_dof          4.29459005 0.033197592 0.91955025
-## gamma_rnasep   0.61680376 0.004663758 0.13565463
-## sigma_plate    0.45833052 0.004478127 0.12660382
-## sigmasq_u[1]   3.09531859 0.015487882 0.41972091
-## sigmasq_u[2]   0.41297781 0.002945989 0.08453951
+## A0            15.59702468 0.022097510 0.60486781
+## alpha         -1.55513326 0.008534694 0.23770647
+## trt_effect[1] -0.12349436 0.008216898 0.21680978
+## trt_effect[2] -0.18421896 0.008128133 0.23116343
+## trt_effect[3]  0.03530532 0.008262219 0.22618872
+## trt_effect[4] -0.28992107 0.008306994 0.22280697
+## sigmaCT        2.76514261 0.005257483 0.15625396
+## t_dof          4.24553065 0.030799762 0.88629362
+## gamma_rnasep   0.61207607 0.005090706 0.14137562
+## sigma_plate    0.46948595 0.004398391 0.12834999
+## sigmasq_u[1]   3.10789550 0.014524483 0.41953654
+## sigmasq_u[2]   0.46798625 0.002985289 0.08366125
 ```
 
 ```
 ##                      mean     se_mean         sd
-## A0            15.47638388 0.020348891 0.55382919
-## alpha         -1.21797780 0.007614978 0.20757918
-## trt_effect[1]  0.47262408 0.008280706 0.22752230
-## trt_effect[2] -0.04913559 0.007834435 0.22128899
-## trt_effect[3]  0.01340048 0.008181407 0.23396169
-## trt_effect[4] -0.09058570 0.008127051 0.22944685
-## sigmaCT        2.83371764 0.005582718 0.15851785
-## t_dof          4.32786824 0.031849655 0.88900940
-## gamma_rnasep  -0.06878371 0.038424010 1.05147098
-## sigma_plate    0.46641747 0.005135208 0.13505440
-## sigmasq_u[1]   3.04162723 0.014444483 0.40118814
-## sigmasq_u[2]   0.45323094 0.003312580 0.09061532
+## A0            15.48982757 0.020192251 0.55578496
+## alpha         -1.48491231 0.008606630 0.24665477
+## trt_effect[1] -0.08891000 0.008974062 0.23486123
+## trt_effect[2] -0.27911215 0.008524743 0.24769692
+## trt_effect[3]  0.02702020 0.008458358 0.24551768
+## trt_effect[4] -0.30815815 0.008808810 0.23819128
+## sigmaCT        2.82548131 0.005607236 0.15244860
+## t_dof          4.31963425 0.032490185 0.89971666
+## gamma_rnasep   0.06180949 0.033906488 0.95703557
+## sigma_plate    0.47180664 0.004422641 0.13216581
+## sigmasq_u[1]   3.02138770 0.014120854 0.40460707
+## sigmasq_u[2]   0.51894263 0.003717863 0.09512628
 ```
 
 ```
-##                      mean     se_mean        sd
-## A0            18.28147484 0.039001266 1.1231012
-## alpha         -1.19366169 0.011376378 0.3237261
-## trt_effect[1]  0.44294497 0.008349659 0.2296861
-## trt_effect[2] -0.02270909 0.008472036 0.2231237
-## trt_effect[3]  0.02031691 0.009370106 0.2296575
-## trt_effect[4] -0.09749184 0.008464021 0.2264895
-## sigmaCT        2.77444751 0.005741839 0.1540943
-## t_dof          4.32559872 0.033395478 0.9021738
-## gamma_rnasep   0.60755721 0.005109984 0.1410988
-## sigma_plate    0.46600648 0.004701295 0.1350108
-## sigmasq_u[1]   2.78159356 0.013280412 0.3913554
-## sigmasq_u[2]   0.43552851 0.003326625 0.0840446
+##                      mean     se_mean         sd
+## A0            18.31985034 0.047624662 1.18095757
+## alpha         -1.50830118 0.024970259 0.52053121
+## trt_effect[1] -0.10875017 0.009377879 0.21786808
+## trt_effect[2] -0.16257121 0.009581008 0.23245511
+## trt_effect[3]  0.09959289 0.015913977 0.25984214
+## trt_effect[4] -0.25535884 0.015090239 0.23688704
+## sigmaCT        2.77592102 0.005680938 0.15580236
+## t_dof          4.25974008 0.031165005 0.87990725
+## gamma_rnasep   0.61795092 0.006084076 0.15011465
+## sigma_plate    0.46113897 0.004355924 0.13052445
+## sigmasq_u[1]   2.78633554 0.013974384 0.37964871
+## sigmasq_u[2]   0.49012577 0.003639807 0.09168617
 ```
 
 ![](SAP_files/figure-html/summary-1.png)<!-- -->![](SAP_files/figure-html/summary-2.png)<!-- -->![](SAP_files/figure-html/summary-3.png)<!-- -->
@@ -371,23 +391,23 @@ Posterior distributions over the treatment effects for the interventions. Red: n
 
 ```
 ##   Regeneron  Ivermectin  Remdesivir Favipiravir 
-##   1.5627645   0.9678828   1.0249912   0.9500367
+##   0.8838266   0.8317537   1.0359359   0.7483226
 ```
 
 ```
-## Probability that Regeneron increases the viral clearance slope by more than 5%: 0.97
+## Probability that Regeneron increases the viral clearance slope by more than 5%: 0.21
 ```
 
 ```
-## Probability that Ivermectin increases the viral clearance slope by more than 5%: 0.33
+## Probability that Ivermectin increases the viral clearance slope by more than 5%: 0.15
 ```
 
 ```
-## Probability that Remdesivir increases the viral clearance slope by more than 5%: 0.45
+## Probability that Remdesivir increases the viral clearance slope by more than 5%: 0.48
 ```
 
 ```
-## Probability that Favipiravir increases the viral clearance slope by more than 5%: 0.32
+## Probability that Favipiravir increases the viral clearance slope by more than 5%: 0.06
 ```
 
 ![](SAP_files/figure-html/treatment_effects-1.png)<!-- -->
@@ -401,23 +421,23 @@ Posterior distributions over the treatment effects for the interventions, after 
 
 ```
 ##   Regeneron  Ivermectin  Remdesivir Favipiravir 
-##   1.5572866   0.9775468   1.0205247   0.9071097
+##   0.8969545   0.8499556   1.1047211   0.7746385
 ```
 
 ```
-## Probability that Regeneron increases the viral clearance slope by more than 5%: 0.96
+## Probability that Regeneron increases the viral clearance slope by more than 5%: 0.26
 ```
 
 ```
-## Probability that Ivermectin increases the viral clearance slope by more than 5%: 0.38
+## Probability that Ivermectin increases the viral clearance slope by more than 5%: 0.18
 ```
 
 ```
-## Probability that Remdesivir increases the viral clearance slope by more than 5%: 0.47
+## Probability that Remdesivir increases the viral clearance slope by more than 5%: 0.58
 ```
 
 ```
-## Probability that Favipiravir increases the viral clearance slope by more than 5%: 0.26
+## Probability that Favipiravir increases the viral clearance slope by more than 5%: 0.1
 ```
 
 ![](SAP_files/figure-html/treatment_effects_cov_model-1.png)<!-- -->

@@ -62,6 +62,10 @@ parameters {
 transformed parameters {
   real pred_CT[N];
   vector[K_trt+1] trt_effect_prime;
+  real sigma_tot;
+  
+  // measurement variance (sqrt)
+  sigma_tot = sqrt(sigmaCT^2 + sigma_sc^2);
 
   trt_effect_prime[1]=0; // no study drug arm
   for(i in 1:K_trt){
@@ -84,13 +88,14 @@ model {
   a_plate ~ normal(0, sigma_plate);
   sigma_plate ~ exponential(1);
 
-  // measurement error
+  // biological variance (sqrt)
   sigmaCT ~ normal(3,3) T[0,];
 
   // standard curve
-  sc_intercept ~ normal(-3,1);
-  sc_slope ~ normal(3.3, 1);
-  sigma_sc ~ exponential(1);
+  sc_intercept ~ normal(-3,3);
+  sc_slope ~ normal(log2(10), 1);
+  // assay variance (sqrt)
+  sigma_sc ~ normal(0.5, 1);
 
   // covariance matrix - random effects
   L_Omega ~ lkj_corr_cholesky(2);
@@ -106,9 +111,9 @@ model {
   // Main model specification:
   for(i in 1:N){
     if(delta_CT[i]>0){
-      target += student_t_lpdf(delta_CT[i] | t_dof, pred_CT[i], sigmaCT);
+      target += student_t_lpdf(delta_CT[i] | t_dof, pred_CT[i], sigma_tot);
     } else {
-      target += student_t_lcdf(0 | t_dof, pred_CT[i], sigmaCT);
+      target += student_t_lcdf(0 | t_dof, pred_CT[i], sigma_tot);
     }
   }
 

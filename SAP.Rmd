@@ -74,6 +74,7 @@ The second file interim_dat.csv contains the patient viral load data with the fo
 ```{r}
 ## parameters for the analysis
 Dmax = 8
+RUN_MODELS = T
 
 ## information on software/hardware used
 version
@@ -274,14 +275,6 @@ print(my_priors)
 
 ### Prepare model
 
-compile model in stan
-
-```{r compile_stan_models}
-lin_mod = stan_model(file = 'Linear_model_tdist.stan')
-lin_mod_cov = stan_model(file = 'Linear_model_cov_tdist.stan')
-```
-
-
 make stan data set
 
 ```{r}
@@ -315,25 +308,40 @@ stan_data = list(N = sum(ind_fitting),
 
 
 X_matrix = model.matrix( ~ Antibody_test + Symptom_onset, 
-                        data = platcov_dat[ind_fitting, ])[, -1]
-
+                         data = platcov_dat[ind_fitting, ])[, -1]
 ```
 
 ### Run models
 
-run models
+To make sure there are no bugs in the code (all stan code is written specifically for this trial analysis), I fit a sequence of five models of increasing complexity:
+
+* Model 0: vanilla student-t regression with left censoring at 0 and with individual random effects for slope and intercept;
+* Model 1: vanilla + RNaseP;
+* Model 2: vanilla + RNaseP + batch adjustment (no control samples);
+* Model 3: vanilla + RNaseP + full batch adjustment (decomposition of variance into intrinsic and biological);
+* Model 4: Whole shebang with covariate adjustment
+
+
+```{r compile_stan_models}
+# compile models in stan
+if(RUN_MODELS){
+  t_model_0 = stan_model(file = 'Linear_model_tdist_M0.stan')
+  lin_mod_cov = stan_model(file = 'Linear_model_cov_tdist.stan')
+}
+```
 
 ```{r run_models}
-RUN_MODELS = F
 cov_data = list(K_cov = ncol(X_matrix),
                 x = X_matrix)
 Niter = 4000
 Nthin = 10
 Nchain = 4
 
+writeLines(sprintf('We are running %s chains with %s samples each, discarding half for burn-in and thining every %s',Nchain,Niter,Nthin))
+
 if(RUN_MODELS){
   # no covariate adjustment
-  out = sampling(lin_mod, data=c(stan_data, my_priors), 
+  out_1 = sampling(lin_mod, data=c(stan_data, my_priors), 
                  iter=Niter,chain=Nchain,thin=Nthin)
   
   # no covariate adjustment - no RNaseP adjustment
@@ -466,7 +474,7 @@ Individual plots. Thick line no covariate adjustment; dashed line covariate adju
 
 
 ```{r individ_fits}
-par(las=1, mfrow=c(3,3), mar=c(4,4,1,1),bty='n', cex.lab=1.3, cex.axis=1.3,family='serif')
+par(las=1, mfrow=c(3,3), mar=c(4,3,1,1),bty='n', cex.lab=1.3, cex.axis=1.3,family='serif')
 for(id in unique(stan_data$id)){
   ind = stan_data$id==id
   plot(stan_data$obs_day[ind],
@@ -492,7 +500,7 @@ plot(PCR_dat$CT_NS[ind,'mean'], PCR_dat$CT_NS[ind,'diff'],
      xlab = 'Mean CT', ylab='Difference',
      main='Left vs Right tonsil',panel.first=grid())
 
-par(mfrow=c(4,4), mar=c(2,2,1,1))
+par(mfrow=c(4,4), mar=c(2,3,1,1))
 for(id in IDs){
   ind_right = platcov_dat$Swab_ID=='RTS'&
     platcov_dat$ID==id
@@ -507,8 +515,8 @@ for(id in IDs){
         platcov_dat$CT_NS[ind_left],col='red')
   points(platcov_dat$Time[ind_left], 
          platcov_dat$CT_NS[ind_left],col='red')
-    mtext(text = id, side = 3, line = -1)
-
+  mtext(text = id, side = 3, line = -1)
+  
 }
 ```
 
@@ -517,7 +525,8 @@ for(id in IDs){
 Use left censored linear regression
 
 ```{r}
-Dmax = 8
+par(mfrow=c(1,2), cex.lab=1.3, cex.axis=1.3,family='serif')
+
 platcov_dat$clm_slope = NA
 platcov_dat$clm_pred = NA
 for(id in IDs){
@@ -530,7 +539,6 @@ for(id in IDs){
   platcov_dat$clm_slope[ind] = coef(mod)['Time']
   platcov_dat$clm_pred[ind] = coef(mod)['(Intercept)']+coef(mod)['Time']*platcov_dat$Time[ind]
 }
-par(mfrow=c(1,2), cex.lab=1.3, cex.axis=1.3,family='serif')
 plot(platcov_dat$CT_NS, platcov_dat$Delta_CT-platcov_dat$clm_pred,
      ylab='Residual',xlab='CT')
 abline(h=0)
@@ -538,7 +546,7 @@ plot(platcov_dat$Time, platcov_dat$Delta_CT-platcov_dat$clm_pred,
      xlim=c(0,7.5),ylab='Residual',xlab='Time')
 abline(h=0)
 
-par(mfrow=c(1,1))
+par(mfrow=c(1,1), mar=c(6,4,2,2))
 ind = !duplicated(platcov_dat$ID)
 boxplot(platcov_dat$clm_slope[ind] ~ platcov_dat$Trt[ind],xlab='',ylab='Slope',las=3)
 ```
