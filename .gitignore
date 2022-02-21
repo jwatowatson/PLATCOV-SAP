@@ -36,3 +36,6 @@ vignettes/*.pdf
 rsconnect/
 PLATCOV.docx
 *.csv
+Rout/model_fits.RData
+*.RData
+*.html

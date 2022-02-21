@@ -1,5 +1,6 @@
 # PLATCOV-SAP
- Statistical analysis plan for the PLATCOV trial
+
+Statistical analysis plan for the PLATCOV trial
 
 
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
