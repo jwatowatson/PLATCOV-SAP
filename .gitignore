@@ -25,6 +25,10 @@ vignettes/*.pdf
 .httr-oauth
 
 # knitr and R markdown default cache directories
+/*_files/
+/files/
+
+# analysis output - private until publication of result
 /*_cache/
 /cache/
 
@@ -34,8 +38,14 @@ vignettes/*.pdf
 
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
-PLATCOV.docx
+
+
+## data are .csv - private until publication
 *.csv
+
+## model fits are too large 
 Rout/model_fits.RData
 *.RData
+
+## interim analysis results - private until publication
 *.html
