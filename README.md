@@ -1,10 +1,7 @@
 # PLATCOV-SAP
 
 Statistical analysis plan for the PLATCOV trial.
-The PLATCOV trial is registered at clinicaltrials.gov number NCT05041907
-
-
-Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
+The PLATCOV trial is registered at clinicaltrials.gov number [NCT05041907](https://clinicaltrials.gov/ct2/show/NCT05041907)
 
 This work is licensed under a
 [Creative Commons Attribution 4.0 International License][cc-by].
@@ -32,6 +29,14 @@ Each interim analysis is done by running the full workflow given in *Full_Analys
 
 The underlying data are not made publicly available until publication of results.
 
+The stan models are all left-censored (everything is on the $\Delta$CT scale) regression models with varying degrees of complexity:
+* base model: just individual/site random effects
+* M1: add human RNaseP correction (more human cells taken up by swab = more virus?)
+* M2: add batch effects for PCR
+* M3: add control samples to estimate accurately the batch effects
+* M4: covariate effects (vaccination, serology, time since symtom onset)
+
+*Non_linear_model_tdist_M1.stan* is a non-linear version of M1, whereby the virus can still be in a growth phase at the start of the follow-up and then decreases.
 
 
 ## Software needed
