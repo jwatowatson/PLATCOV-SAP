@@ -21,7 +21,7 @@ This work is licensed under a
 
 This github repo provides the statistical analysis plan (see PLATCOV_SAP.pdf) and the code used for the statistical analysis.
 
-Each interim analysis is done by running the workflow given in *Full_Analysis.Rmd*. This does the following:
+Each interim analysis is done by running the full workflow given in *Full_Analysis.Rmd*. This does the following:
 
 * Loads data and makes some summary data plots
 * Does some QC analysis of the PCR data (compares standard curves and check all plates have approximately similar results for the control samples)
