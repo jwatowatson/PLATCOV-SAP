@@ -66,7 +66,7 @@ transformed parameters {
 
   for(i in 1:N){
     real intercept = alpha_0+theta_rand_id[id[i]][1];
-    real a = beta_0[1]*exp(theta_rand_id[id[i]][2]+trt_effect_prime[trt[i]]);
+    real a = beta_0[1]*exp(theta_rand_id[id[i]][2]);
     real b = beta_0[2]*exp(theta_rand_id[id[i]][3]+trt_effect_prime[trt[i]]);
     real tmax = theta_rand_id[id[i]][4];
     pred_CT[i] = intercept+gamma_rnasep*RNaseP[i]+log(a+b)-
@@ -116,7 +116,7 @@ generated quantities {
 
   for(i in 1:N){
     real intercept = alpha_0+theta_rand_id[id[i]][1];
-    real a = beta_0[1]*exp(theta_rand_id[id[i]][2]+trt_effect_prime[trt[i]]);
+    real a = beta_0[1]*exp(theta_rand_id[id[i]][2]);
     real b = beta_0[2]*exp(theta_rand_id[id[i]][3]+trt_effect_prime[trt[i]]);
     real tmax = theta_rand_id[id[i]][4];
 

@@ -27,7 +27,6 @@ TODO list:
 * Check missing data (vaccine/serology/age)
 * Subgroup analysis model for temporal shift
 * Define Epochs for the trial to get drift effects - not issue for first interim analyses using data from Thailand only
-* Model comparison using loo package
 
 ## Preambule
 
@@ -53,7 +52,7 @@ The second file *interim_dat.csv* contains the patient viral load data with the 
 - Trt: treatment allocation as written in CRF
 - Time: time from randomisation
 - Variant: variant of concern (using standard WHO terminology for the main lineages, reference will be the predominant variant in the dataset at the start of the study)
-- Vaccinated: 0/1 (1: any number of doses and any manufacturer)
+- Vaccinated: integer number of doses received (any manufacturer)
 - Vaccine_type: manufacturer of vaccine dose 1 (AZ: astra zeneca; SPH: sinopharm; SV: sinovac; MD: moderna; PZ: pfizer)
 - Antibody_test: 0/1 (negative/positive for SARS-CoV-2 antibody rapid test)
 - Age: (years - has to be between 18-50)
@@ -336,7 +335,7 @@ Covariates that we use in model 4:
 K_models = 4
 Niter = 10000
 Nthin = 20
-Nchain = 4
+Nchain = 8
 
 writeLines(sprintf('We are running the %s models with %s chains and %s samples for each chain, discarding half for burn-in and thining every %s, thus giving a total of %s posterior samples per model.',K_models+1,Nchain,Niter,Nthin, Nchain*Niter/Nthin/2))
 

@@ -30,10 +30,10 @@ Each interim analysis is done by running the full workflow given in *Full_Analys
 The underlying data are not made publicly available until publication of results.
 
 The stan models are all left-censored (everything is on the $\Delta$CT scale) regression models with varying degrees of complexity:
-* base model: just individual/site random effects
-* M1: add human RNaseP correction (more human cells taken up by swab = more virus?)
-* M2: add batch effects for PCR
-* M3: add control samples to estimate accurately the batch effects
+* Base model M0: individual/site random effects for slope and intercept
+* M1: add human RNaseP correction (more human cells taken up by swab should in theory indicate more virus)
+* M2: add batch random effect terms
+* M3: add control samples from each PCR to estimate accurately the batch effects
 * M4: covariate effects (vaccination, serology, time since symtom onset)
 
 *Non_linear_model_tdist_M1.stan* is a non-linear version of M1, whereby the virus can still be in a growth phase at the start of the follow-up and then decreases.
