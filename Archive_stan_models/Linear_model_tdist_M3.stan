@@ -3,7 +3,7 @@ data {
   int<lower=0> N;                          // Number of PCR data points
   int<lower=0> n_id;                       // Number of individuals
   int<lower=1,upper=n_id> id[N];           // Patient identifier for each PCR sample
-  real<lower=0> obs_day[N];                // Time since randomisation for sample
+  real obs_day[N];                         // Time since randomisation for sample
   real<lower=0,upper=40> delta_CT[N];      // 40-CT value
   real RNaseP[N];                          // Scaled RNaseP CT values (mean 0)
   int<lower=1> K_trt;                      // Number of treatment arms

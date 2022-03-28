@@ -3,7 +3,7 @@ data {
   int<lower=0> N;                          // Number of PCR data points
   int<lower=0> n_id;                       // Number of individuals
   int<lower=1,upper=n_id> id[N];           // Patient identifier for each PCR sample
-  real<lower=0> obs_day[N];                // Time since randomisation for sample
+  real obs_day[N];                         // Time since randomisation for sample
   real<lower=0,upper=40> delta_CT[N];      // 40-CT value
   real RNaseP[N];                          // Scaled RNaseP CT values (mean 0)
   int<lower=1> K_trt;                      // Number of treatment arms
@@ -43,14 +43,9 @@ parameters {
   real<lower=0> sigmaCT;
 
   // Population parameters
-  real<lower=0,upper=40> alpha_0;     // population intercept
-  real beta_0;                        // population slope
+  real<lower=0,upper=40> alpha_0;          // population intercept
+  real beta_0;                         // population slope
   real gamma_rnasep;                  // Adjustment for RNaseP
-  real sc_intercept;                  // standard curve intercept
-  real sc_slope;                      // standard curve slope
-  real<lower=0> sigma_sc;             // PCR machine standard deviation
-  vector[K_cov] slope_coefs;           // Covariate effects on slope
-  vector[K_cov] intercept_coefs;       // Covariate effects on intercept
 
   // Random effects
   vector[2] theta_rand_id[n_id];      // individual random effects vector
@@ -65,16 +60,6 @@ parameters {
 transformed parameters {
   real pred_CT[N];
   vector[K_trt+1] trt_effect_prime;
-  real sigma_tot;
-  vector[N] beta_cov;
-  vector[N] alpha_cov;
-
-  // measurement variance (sqrt)
-  sigma_tot = sqrt(sigmaCT^2 + sigma_sc^2);
-
-  // make individual covariate transform
-  beta_cov = x*slope_coefs;
-  alpha_cov = x*intercept_coefs;
 
   trt_effect_prime[1]=0; // no study drug arm
   for(i in 1:K_trt){
@@ -83,8 +68,7 @@ transformed parameters {
   for(i in 1:N){
     pred_CT[i] =
     alpha_0 + theta_rand_id[id[i]][1] + gamma_rnasep*RNaseP[i] + a_plate[id_plate[i]] +
-    alpha_cov[i] +
-    beta_0*exp(trt_effect_prime[trt[i]]+theta_rand_id[id[i]][2]+beta_cov[i])*obs_day[i];
+    beta_0*exp(trt_effect_prime[trt[i]]+theta_rand_id[id[i]][2])*obs_day[i];
   }
 }
 
@@ -107,11 +91,6 @@ model {
   alpha_0 ~ normal(alpha_0_prior_mean,alpha_0_prior_sd);
   beta_0 ~ normal(beta_0_prior_mean,beta_0_prior_sd);
   gamma_rnasep ~ normal(0,1);
-  sc_intercept ~ normal(-3,3);         // standard curve for control data
-  sc_slope ~ normal(log2(10), 1);      // standard curve for control data
-  sigma_sc ~ normal(0.5, 1);           // assay variance (sqrt) for control data
-  slope_coefs ~ normal(0,1);
-  intercept_coefs ~ normal(0,1);
 
   // Treatment effect
   trt_effect ~ normal(0,sigma_trt_effect);
@@ -120,15 +99,12 @@ model {
   // Main model specification:
   for(i in 1:N){
     if(delta_CT[i]>0){
-      target += student_t_lpdf(delta_CT[i] | t_dof, pred_CT[i], sigma_tot);
+      target += student_t_lpdf(delta_CT[i] | t_dof, pred_CT[i], sigmaCT);
     } else {
-      target += student_t_lcdf(0 | t_dof, pred_CT[i], sigma_tot);
+      target += student_t_lcdf(0 | t_dof, pred_CT[i], sigmaCT);
     }
   }
-  // control data:
-  for(i in 1:N_control){
-    control_delta_CT[i] ~ normal(sc_intercept+a_plate[cont_id_plate[i]] + sc_slope*control_density[i], sigma_sc);
-  }
+
 }
 
 generated quantities {
@@ -137,13 +113,13 @@ generated quantities {
 
   for(i in 1:N){
     pred_CT_mean[i] =
-    alpha_0 + theta_rand_id[id[i]][1] + a_plate[id_plate[i]] + alpha_cov[i] +
-    beta_0*exp(trt_effect_prime[trt[i]]+theta_rand_id[id[i]][2]+beta_cov[i])*obs_day[i];
+    alpha_0 + theta_rand_id[id[i]][1] + a_plate[id_plate[i]] +
+    beta_0*exp(trt_effect_prime[trt[i]]+theta_rand_id[id[i]][2])*obs_day[i];
 
     if(delta_CT[i]>0){
-      log_lik[i] = student_t_lpdf(delta_CT[i] | t_dof, pred_CT[i], sigma_tot);
+      log_lik[i] = student_t_lpdf(delta_CT[i] | t_dof, pred_CT[i], sigmaCT);
     } else {
-      log_lik[i] = student_t_lcdf(0 | t_dof, pred_CT[i], sigma_tot);
+      log_lik[i] = student_t_lcdf(0 | t_dof, pred_CT[i], sigmaCT);
     }
   }
 }
