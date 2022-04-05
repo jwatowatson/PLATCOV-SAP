@@ -26,8 +26,6 @@ data {
   matrix[Ntot,K_trt] trt_mat;                  // Trt matrix
   int<lower=0> K_cov;                          // number of columns in covariate design matrix
   matrix[Ntot,K_cov] x;                        // covariate design matrix
-  int<lower=1> K_epoch;                        // number of trial epochs (time periods for temporal drift)
-  int<lower=1,upper=K_epoch> epoch[Ntot];      // trial epochs
 
   // priors
   real alpha_0_prior_mean; // prior mean intercept
@@ -63,7 +61,6 @@ parameters {
 
   // Random effects
   vector[2] theta_rand_id[n_id];      // individual random effects vector
-  vector[K_epoch-1] theta_epoch[2];   // intercept and slope random effects for the temporal epochs of the trial
 
   // Degrees of freedom for the t-distribution error model
   real<lower=0> t_dof;
@@ -71,16 +68,11 @@ parameters {
 
 transformed parameters {
   real pred_log10_vl[Ntot];
-  vector[K_epoch-1] theta_epoch_prime[2];
   vector[Ntot] beta_cov;
   vector[Ntot] alpha_cov;
   vector[Ntot] trt_slope;
 
   trt_slope = trt_mat * trt_effect;
-
-  for(i in 1:2){
-    theta_epoch_prime[i] = append_row(0, theta_epoch[1]);
-  }
 
   // make individual covariate transform
   beta_cov = x*slope_coefs;
@@ -89,8 +81,8 @@ transformed parameters {
   // calculate predicted log viral load under the model parameters
   for(i in 1:Ntot){
     pred_log10_vl[i] =
-    alpha_0 + theta_rand_id[id[i]][1] + theta_epoch_prime[1][epoch[i]] + gamma_rnasep*RNaseP[i] + alpha_cov[i] +
-    beta_0*exp(trt_slope[i]+theta_rand_id[id[i]][2]+theta_epoch_prime[2][epoch[i]]+beta_cov[i])*obs_day[i];
+    alpha_0 + theta_rand_id[id[i]][1] + gamma_rnasep*RNaseP[i] + alpha_cov[i] +
+    beta_0*exp(trt_slope[i]+theta_rand_id[id[i]][2]+beta_cov[i])*obs_day[i];
   }
 }
 
@@ -108,10 +100,6 @@ model {
   L_Omega ~ lkj_corr_cholesky(2); // covariance matrix - random effects for individs
   // individual random effects
   for(i in 1:n_id) theta_rand_id[i] ~ multi_normal_cholesky(zeros2, diag_pre_multiply(sigmasq_u, L_Omega));
-  // epoch random effects (independent)
-  for(i in 1:2) {
-    theta_epoch[i] ~ normal(0, sigmasq_u2[i]);
-  }
 
   // Population parameters
   alpha_0 ~ normal(alpha_0_prior_mean,alpha_0_prior_sd);
@@ -146,6 +134,6 @@ generated quantities {
   }
   for(i in 1:n_id){
     int j =ind_start[i];
-    slope[i] = beta_0*exp(trt_slope[j]+theta_rand_id[id[j]][2]+theta_epoch_prime[2][epoch[j]]);
+    slope[i] = beta_0*exp(trt_slope[j]+theta_rand_id[id[j]][2]);
   }
 }

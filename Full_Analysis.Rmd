@@ -94,7 +94,6 @@ platcov_dat = read.csv('interim_dat.csv')
 control_dat = read.csv('interim_control_dat.csv')
 
 IDs = unique(platcov_dat$ID)
-platcov_dat$Delta_CT = 40 - platcov_dat$CT_NS
 
 writeLines(sprintf('We have %s PCR datapoints on %s patients from %s sites',
                    length(unique(platcov_dat$BARCODE)),
@@ -270,7 +269,7 @@ if(RUN_MODELS){
 } else {
   load(file = 'Rout/standard_curve_mod.RData')
 }
-summary(conv_mod)
+# summary(conv_mod)
 preds = colMeans(posterior_predict(conv_mod))
 plot(control_dat$CT, control_dat$log10_true_density, xlim=c(20,40))
 for(bb in levels(control_dat$batch)){
@@ -334,14 +333,24 @@ prior_params = list(alpha_0_prior_mean = 6,
                     alpha_0_prior_sd = 2,
                     beta_0_prior_mean = -.5,
                     beta_0_prior_sd = 1,
-                    sigma_trt_effect=.5)
+                    sigma_trt_effect = .5)
 print(prior_params)
 ```
 
 
 ### Prepare model
 
-Make stan data set
+Make stan data set.
+
+Covariates that we use in model 2:
+
+* Vaccination (number of doses)
+* Age (standardised to have mean=0 and sd=1)
+* Time since symptom onset (days, between 0 and 4)
+* Variant (WHO variants of concern) - when available (this is replaced by epoch until we have variant data)
+* Serology rapid test (+/-)
+* Serum antibody: not yet decided which antibody will be measured - expected May/June 2022
+
 
 ```{r}
 # ind_subgroup = platcov_dat$Trt %in% c('No study drug','Regeneron')
@@ -363,8 +372,10 @@ platcov_dat$Age_scaled = (platcov_dat$Age-mean(platcov_dat$Age[ind_dup]))/sd(pla
 platcov_dat_fit = platcov_dat[ind_fitting, ]
 
 # make the covariate matrix
+platcov_dat_fit$Symptom_onset[is.na(platcov_dat_fit$Symptom_onset)]=1
 X_matrix = model.matrix( ~ Epoch + Age_scaled + Antibody_test + Symptom_onset, 
                          data = platcov_dat_fit)[, -1]
+
 
 Trt_matrix = model.matrix( ~ Trt_code, data = platcov_dat_fit)
 Trt_matrix[,1]=0
@@ -377,7 +388,6 @@ ID_map = data.frame(ID_key = platcov_dat_fit$ID,
 
 ind_cens = !platcov_dat_fit$log10_viral_load_pred>platcov_dat_fit$log10_cens_vl
 table(ind_cens)
-platcov_dat_fit$Epoch=1
 analysis_data_stan = list(Ntot = nrow(platcov_dat_fit),
                           N_obs = sum(!ind_cens),
                           n_id = max(ID_map$ID_stan),
@@ -390,9 +400,7 @@ analysis_data_stan = list(Ntot = nrow(platcov_dat_fit),
                           trt_mat = Trt_matrix,
                           RNaseP = platcov_dat_fit$RnaseP_scaled,
                           K_cov = ncol(X_matrix),
-                          x = X_matrix,
-                          K_epoch = max(platcov_dat_fit$Epoch),
-                          epoch = platcov_dat_fit$Epoch)
+                          x = X_matrix)
 
 writeLines('check stan data formatting:')
 all(analysis_data_stan$log_10_vl[1:analysis_data_stan$N_obs]>
@@ -409,25 +417,15 @@ We fit a sequence of Bayesian hierarchical models.
 To make sure there are no bugs in the code (all stan code is written specifically for this trial analysis), I fit the following sequence of five models of increasing complexity:
 
 * Model 0: vanilla student-t regression with left censoring at 0 and with individual random effects for slope and intercept;
-* Model 1: vanilla + RNaseP;
-* Model 2: whole shebang with covariate adjustment
-* Model 3: Non-linear model (up and then down)
-
-Covariates that we use in model 2:
-
-* Vaccination (number of doses)
-* Age (standardised to have mean=0 and sd=1)
-* Time since symptom onset (days)
-* Variant (WHO variants of concern) - when available
-* Serology rapid test (+/-)
-* Serum antibody: not yet decided which antibody will be measured - expected August 2022
-
+* Model 1: add the RNaseP measurements;
+* Model 2: Add covariate adjustment;
+* Model 3: Non-linear model (up and then down) with RNaseP adjustment.
 
 ```{r run_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 print(all_mods)
 K_models = length(all_mods)
-Niter = 6000
+Niter = 4000
 Nwarmup = 2000
 Nthin = 10
 Nchain = 4
@@ -643,68 +641,50 @@ legend('topright', col=mod_cols,lwd = 2,
 ```
 
 ### Estimated covariate effects
-#### Variance of error model
+
+Need to make a nicer plot to show the covariate effects
+
+```{r cov_effects,fig.height=5, fig.width=9}
+par(mfrow=c(1,2),las=1,family='serif',mar=c(5,7,2,2))
+alpha_coefs = apply(thetas[[7]]$intercept_coefs,2,quantile,probs=c(0.025,.1,.5,.9,0.975))
+xlims=range(alpha_coefs)
+
+plot(alpha_coefs['50%', ], 1:ncol(alpha_coefs),
+     xlim=xlims,yaxt='n',ylab='',bty='n',xaxt='n',
+     panel.first=grid(), xlab='Intercept (fold change)')
+abline(v=0,lty=2,lwd=2)
+for(i in 1:ncol(alpha_coefs)){
+  lines(c(alpha_coefs['10%',i], alpha_coefs['90%',i]),
+        c(i,i), lwd=3)
+    lines(c(alpha_coefs['2.5%',i], alpha_coefs['97.5%',i]),
+          c(i,i), lwd=1)
+}
+axis(2, at =1:ncol(alpha_coefs), labels = colnames(X_matrix),tick = F)
+x_points = round(10^seq(xlims[1], xlims[2],length.out = 5),1)
+axis(1, at = log10(x_points), labels = x_points)
+
+beta_coefs = apply(thetas[[7]]$slope_coefs,2,quantile,probs=c(0.025,.1,.5,.9,0.975))
+xlims=range(beta_coefs)
+plot(beta_coefs['50%', ], 1:ncol(beta_coefs),
+     xlim=xlims,yaxt='n',ylab='',bty='n',xaxt='n',
+     panel.first=grid(), xlab='Slope (multiplicative effect)')
+abline(v=0,lty=2,lwd=2)
+for(i in 1:ncol(beta_coefs)){
+  lines(c(beta_coefs['10%',i], beta_coefs['90%',i]),
+        c(i,i), lwd=3)
+    lines(c(beta_coefs['2.5%',i], beta_coefs['97.5%',i]),
+          c(i,i), lwd=1)
+}
+axis(2, at =1:ncol(beta_coefs), labels = colnames(X_matrix), tick = F)
+x_points = round(10^seq(xlims[1], xlims[2],length.out = 5),1)
+axis(1, at = log10(x_points), labels = x_points)
 
 
-```{r variance_estimates}
-# params_var = list()
-# for(mm in 1:length(thetas)){
-#   params_var[[mm]]=
-#     summary(out[[mm]],pars=c('sigma_logvl'))$summary[,c('mean','2.5%','97.5%')]
-# }
-# params_var[[mm+1]]=
-#   summary(out_non_lin,pars=c('sigma_logvl'))$summary[,c('mean','2.5%','97.5%')]
-# 
-# params_var_RE = list()
-# for(mm in 1:length(thetas)){
-#   params_var_RE[[mm]]=
-#     summary(out[[mm]],
-#             pars=c('sigmasq_u'))$summary[,c('mean','2.5%','97.5%')]
-# }
-```
-
-
-```{r variance_plot_all_models}
-# par(bty='n', cex.lab=1.5, cex.axis=1.5,family='serif',
-#     mar=c(5,7,2,2),las=1)
-# plot(NA, NA, xlim = range(sapply(params_var, rbind)), 
-#      ylim = c(0.5,1.5), type='n', 
-#      panel.first=grid(), ylab='', yaxt='n',
-#      xlab = 'Standard deviation (error model)')
-# index_p = rev(seq(-.5,.5, length.out = 6))
-# for(i in 0:(K_models+1)){
-#   points(params_var[[i+1]]['mean'], 1+index_p[i+1],
-#          pch=16, col=mod_cols[i+1])
-#   lines(c(params_var[[i+1]]['2.5%'], params_var[[i+1]]['97.5%']),
-#         rep(1+index_p[i+1],2),col=mod_cols[i+1],lwd=3)
-# }
-# axis(2, at = 1+index_p, labels = paste('Model', 0:(K_models+1), sep=' '),tick = F)
-# abline(v=2.9,lty=2,lwd=2)
-```
-
-
-```{r RNaseP_residuals_model0}
-# par(bty='n', cex.lab=1.5, cex.axis=1.5,family='serif',las=1)
-# plot(stan_data$RNaseP, stan_data$delta_CT-colMeans(thetas[[1]]$pred_CT),
-#      xlab='RNaseP (scaled to zero mean)', ylab = 'Model 0 residuals',
-#      panel.first=grid())
-# abline(h=0, lty=2, lwd=2)
-# mod_rnasep=lm(stan_data$delta_CT-colMeans(thetas[[1]]$pred_CT) ~ stan_data$RNaseP)
-# abline(lm(stan_data$delta_CT-colMeans(thetas[[1]]$pred_CT)~ stan_data$RNaseP),lwd=3)
-# summary(mod_rnasep)
-```
-
-
-
-#### Other covariates
-
-```{r cov_effects}
-plot(out[[3]],pars=c('intercept_coefs','slope_coefs'))
 ```
 
 ### Slopes over time
 
-plot the absolute slope estimate for each individual over time
+Plot the absolute slope estimate for each individual over time
 
 ```{r slopes_over_time}
 names(trt_cols)=c('No study drug', trts)
@@ -712,43 +692,90 @@ par(mfrow=c(5,1), mar = c(3,5,0.5,1),las=1,
     family='serif', cex.lab=1.3, cex.axis=1.3)
 trt_allocations=platcov_dat_fit$Trt_code[analysis_data_stan$ind_start]
 rand_date = platcov_dat_fit$Rand_date[analysis_data_stan$ind_start]
-for(j in 1:length(out)){
-  writeLines(sprintf('Slopes plot for model %s', all_mods[j]))
-  slopes = abs(extract(out[[j]])$slope)
-  ymax = 1.5#max(apply(slopes, 2, quantile, 0.975))
-  # boxplot(colMeans(slopes) ~ trt_allocations,
-  #         xlab='', ylab = 'Slope coefficient')
-  for(tt in c('No study drug', trts)){
-    ind = which(trt_allocations==tt)
-    plot(rand_date[ind], colMeans(slopes[,ind]),
-         col=trt_cols[tt],
-         xlab='', xaxt='n',
-         ylim=c(0,ymax),panel.first=grid(),
-         ylab='slope', xlim=range(rand_date),pch=16)
-    text(x = as.POSIXct('2021-10-20'),y = 1.2,
-         labels = paste0(tt,' (n=',length(ind),')'),cex=1.5)
-    for(i in ind){
-      lines(rep(rand_date[i],2), 
-            quantile(slopes[,i],probs = c(0.025,0.975)),
-            col=trt_cols[tt])
-    }
-    abline(v = as.POSIXct('2022-01-01'),
-           h = quantile(colMeans(slopes)[trt_allocations=='No study drug'],
-                        probs = .9),lty=2)
-    axis(1, at = c(as.POSIXct(c('2021-10-01',
-                                '2021-11-01',
-                                '2021-12-01',
-                                '2022-01-01',
-                                '2022-02-01',
-                                '2022-02-27'))), 
-         labels = c('Oct','Nov','Dec','Jan','Feb','Mar'))
+j=7
+writeLines(sprintf('Slopes plot for model %s', all_mods[j]))
+slopes = abs(extract(out[[j]])$slope)
+ymax = 1.5#max(apply(slopes, 2, quantile, 0.975))
+# boxplot(colMeans(slopes) ~ trt_allocations,
+#         xlab='', ylab = 'Slope coefficient')
+for(tt in c('No study drug', trts)){
+  ind = which(trt_allocations==tt)
+  plot(rand_date[ind], colMeans(slopes[,ind]),
+       col=trt_cols[tt],
+       xlab='', xaxt='n',
+       ylim=c(0,ymax),panel.first=grid(),
+       ylab='slope', xlim=range(rand_date),pch=16)
+  text(x = as.POSIXct('2021-10-20'),y = 1.2,
+       labels = paste0(tt,' (n=',length(ind),')'),cex=1.5)
+  for(i in ind){
+    lines(rep(rand_date[i],2), 
+          quantile(slopes[,i],probs = c(0.025,0.975)),
+          col=trt_cols[tt])
   }
+  abline(v = as.POSIXct('2022-01-01'),
+         h = quantile(colMeans(slopes)[trt_allocations=='No study drug'],
+                      probs = .9),lty=2)
+  axis(1, at = c(as.POSIXct(c('2021-10-01',
+                              '2021-11-01',
+                              '2021-12-01',
+                              '2022-01-01',
+                              '2022-02-01',
+                              '2022-02-27'))), 
+       labels = c('Oct','Nov','Dec','Jan','Feb','Mar'))
 }
 ```
 
+
+Plot the individual slope estimates by group
+
+```{r slopes_by_group}
+slopes = abs(extract(out[[7]])$slope)
+trt_summary_dat = 
+  data.frame(trt = as.character(platcov_dat_fit$Trt_code[analysis_data_stan$ind_start]),
+             epoch = analysis_data_stan$x[analysis_data_stan$ind_start,1],
+             slope_mean = colMeans(slopes),
+             slope_upper = apply(slopes, 2, quantile, probs=0.1),
+             slope_lower = apply(slopes, 2, quantile, probs=0.9),
+             col = trt_cols[as.numeric(platcov_dat_fit$Trt_code[analysis_data_stan$ind_start])])
+trt_summary_dat$trt[trt_summary_dat$trt=='Regeneron' &
+                      trt_summary_dat$epoch==1] = 'Regeneron: Delta'
+trt_summary_dat$trt[trt_summary_dat$trt=='Regeneron' &
+                      trt_summary_dat$epoch==2] = 'Regeneron: Omicron'
+trt_summary_dat$col[trt_summary_dat$trt=='Regeneron: Omicron']=brewer.pal(n = 8,name = 'Dark2')[8]
+
+trt_summary_dat = dplyr::arrange(trt_summary_dat, trt, slope_mean)
+par( mar = c(5,12,2,2),las=1,
+     family='serif', cex.lab=1.3, cex.axis=1.3)
+
+xlims = c(min(trt_summary_dat$slope_upper),
+          max(trt_summary_dat$slope_lower))
+plot(trt_summary_dat$slope_mean, 1:nrow(trt_summary_dat),
+     col=trt_summary_dat$col, yaxt='n', xaxt='n',
+     xlim=xlims, panel.first=grid(),
+     xlab='slope', pch=16, ylab='')
+ps=round(10^seq(xlims[1], xlims[2], length.out = 5),1)
+axis(1, at = log10(ps),labels = ps)
+abline(v = quantile(trt_summary_dat$slope_mean[trt_summary_dat$trt=='No study drug'],probs = c(0.1,0.5,0.9)), lty=c(2,1,2))
+
+for(i in 1:nrow(trt_summary_dat)){
+  lines(c(trt_summary_dat$slope_upper[i], trt_summary_dat$slope_lower[i]),
+        rep(i,2),col=trt_summary_dat$col[i])
+}
+
+mid_points = array(dim = length(unique(trt_summary_dat$trt)))
+kk=1
+for(tt in unique(trt_summary_dat$trt)){
+  mid_points[kk]=median(which(trt_summary_dat$trt==tt))
+  kk=kk+1
+}
+axis(2, at = mid_points, labels = unique(trt_summary_dat$trt),tick = F)
+```
+
+
+
 ### Individual plots
 
-Individual plots colored by model.
+Individual plots colored by model
 
 ```{r individ_fits}
 par(las=1, mfrow=c(4,4), mar=c(4,3,1,1),bty='n', 
@@ -844,47 +871,47 @@ mtext(text = sprintf('Pearson correlation is %s',signif(cor_out$estimate,2)),sid
 Use left censored linear regression
 
 ```{r non_hierarchical model}
-par(cex.lab=1.5, cex.axis=1.5,family='serif')
-
-platcov_dat$clm_slope = NA
-platcov_dat$clm_pred = NA
-for(id in IDs){
-  ind = platcov_dat$ID==id & platcov_dat$Time<Dmax
-  if(any(platcov_dat$CT_NS[ind]==40)){
-    mod = censReg(Delta_CT ~ Time, data=platcov_dat[ind, ], left = 0)
-  } else {
-    mod = lm(Delta_CT ~ Time, data=platcov_dat[ind, ])
-  }
-  platcov_dat$clm_slope[ind] = coef(mod)['Time']
-  platcov_dat$clm_pred[ind] = coef(mod)['(Intercept)']+coef(mod)['Time']*platcov_dat$Time[ind]
-}
-
-plot(platcov_dat$Time, platcov_dat$Delta_CT-platcov_dat$clm_pred,
-     xlim=c(0,7.5),ylab='Residual',xlab='Time')
-abline(h=0)
-
-par(mfrow=c(1,1), mar=c(5,9,2,2),las=1, bty='n')
-ind_dup = !duplicated(platcov_dat$ID)
-bp_out=boxplot(platcov_dat$clm_slope[ind_dup] ~ platcov_dat$Trt[ind_dup],
-               ylab='',xlab='Slope',horizontal = T)
-
-for(TT in trts){
-  writeLines(
-    sprintf(
-      'The p-value for %s is %s',
-      TT,
-      signif(t.test(platcov_dat$clm_slope[ind_dup & 
-                                            platcov_dat$Trt=='No study drug'],
-                    platcov_dat$clm_slope[ind_dup & 
-                                            platcov_dat$Trt==TT])$p.value,1)))
-}
-TT = 'Regeneron'
-writeLines(
-  sprintf(
-    'The p-value for %s versus all others is %s',
-    TT,
-    signif(t.test(platcov_dat$clm_slope[ind_dup & 
-                                          !platcov_dat$Trt==TT],
-                  platcov_dat$clm_slope[ind_dup & 
-                                          platcov_dat$Trt==TT])$p.value,1)))
+# par(cex.lab=1.5, cex.axis=1.5,family='serif')
+# 
+# platcov_dat$clm_slope = NA
+# platcov_dat$clm_pred = NA
+# for(id in IDs){
+#   ind = platcov_dat$ID==id & platcov_dat$Time<Dmax
+#   if(any(platcov_dat$CT_NS[ind]==40)){
+#     mod = censReg(Delta_CT ~ Time, data=platcov_dat[ind, ], left = 0)
+#   } else {
+#     mod = lm(Delta_CT ~ Time, data=platcov_dat[ind, ])
+#   }
+#   platcov_dat$clm_slope[ind] = coef(mod)['Time']
+#   platcov_dat$clm_pred[ind] = coef(mod)['(Intercept)']+coef(mod)['Time']*platcov_dat$Time[ind]
+# }
+# 
+# plot(platcov_dat$Time, platcov_dat$Delta_CT-platcov_dat$clm_pred,
+#      xlim=c(0,7.5),ylab='Residual',xlab='Time')
+# abline(h=0)
+# 
+# par(mfrow=c(1,1), mar=c(5,9,2,2),las=1, bty='n')
+# ind_dup = !duplicated(platcov_dat$ID)
+# bp_out=boxplot(platcov_dat$clm_slope[ind_dup] ~ platcov_dat$Trt[ind_dup],
+#                ylab='',xlab='Slope',horizontal = T)
+# 
+# for(TT in trts){
+#   writeLines(
+#     sprintf(
+#       'The p-value for %s is %s',
+#       TT,
+#       signif(t.test(platcov_dat$clm_slope[ind_dup & 
+#                                             platcov_dat$Trt=='No study drug'],
+#                     platcov_dat$clm_slope[ind_dup & 
+#                                             platcov_dat$Trt==TT])$p.value,1)))
+# }
+# TT = 'Regeneron'
+# writeLines(
+#   sprintf(
+#     'The p-value for %s versus all others is %s',
+#     TT,
+#     signif(t.test(platcov_dat$clm_slope[ind_dup & 
+#                                           !platcov_dat$Trt==TT],
+#                   platcov_dat$clm_slope[ind_dup & 
+#                                           platcov_dat$Trt==TT])$p.value,1)))
 ```
