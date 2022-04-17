@@ -9,9 +9,11 @@ clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
 ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
 if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24
 table(clin_data$cov_sympday, useNA = 'ifany')
+clin_data$cov_sympday[is.na(clin_data$cov_sympday)] = 2
 
 table(clin_data$cov_test, useNA = 'ifany')
 table(is.na(clin_data$age_yr))
+clin_data$age_yr[is.na(clin_data$age_yr)] = 25
 clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
 table(is.na(clin_data$BMI))
 
@@ -38,20 +40,20 @@ vacc_data$vc_name[vacc_data$vc_name==''] = NA
 writeLines('\nVaccine names after cleaning:')
 print(table(vacc_data$vc_name, useNA = 'ifany'))
 
-table(vacc_data$vc_statyn, useNA = 'ifany')
-
-vacc_data$Any_dose = sjlabelled::to_character(vacc_data$vc_statyn)
-table(vacc_data$Any_dose, useNA = 'ifany')
-
-vacc_dat_cols = grep(pattern = 'vc_dos', colnames(vacc_data))
-for(cc in vacc_dat_cols) vacc_data[vacc_data[,cc]=='',cc] = NA
-vacc_data$N_dose = apply(vacc_data[, vacc_dat_cols],1, function(x) sum(!is.na(x)))
-
-table(vacc_data$Any_dose, vacc_data$N_dose)
-vacc_data$Any_dose = as.numeric(vacc_data$Any_dose=='Yes')
-
-vacc_data = vacc_data[!duplicated(vacc_data$Label), ]
-clin_data = merge(clin_data, vacc_data[, -(1:2)], by = 'Label',all=T)
+clin_data$Any_dose = NA
+clin_data$N_dose = NA
+vacc_date_cols = grep('dos', colnames(vacc_data))
+for(i in 1:nrow(clin_data)){
+  id = clin_data$Label[i]
+  ind = which(vacc_data$Label==id)
+  if(length(ind)==0){
+    clin_data$Any_dose[i] = 'No'
+    clin_data$N_dose[i] = 0
+  } else {
+    clin_data$Any_dose[i] = 'Yes'
+    clin_data$N_dose[i] = sum(!vacc_data[ind, vacc_date_cols]=='')
+  }
+}
 
 
 clin_data$sex = as.numeric(sjlabelled::as_character(clin_data$sex)=='Male')
@@ -69,8 +71,6 @@ log_data = haven::read_dta('../Data/InterimSampleLog.dta')
 log_data$sl_barc[log_data$sl_barc=='']=NA
 log_data = log_data[!is.na(log_data$sl_barc), ]
 
-# '20RQ235' %in% log_data$sl_barc
-# '20RQ238' %in% log_data$sl_barc
 
 ##******************** qPCR database **********************
 ##*********************************************************
@@ -88,6 +88,7 @@ for(i in 1:length(fnames)){
 }
 
 Res = Res[!is.na(Res$`Sample ID`), ]
+Res$`Lot no.` = tolower(Res$`Lot no.`)
 Res$Plate = as.numeric(as.factor(Res$`Lot no.`))
 
 
@@ -111,6 +112,30 @@ SC = SC[,cols]
 
 ## Extract sample data
 Res = Res[!is.na(Res$BARCODE), ]
+
+# ids_missing = sort(unique(Res$`SUBJECT ID`[!Res$`SUBJECT ID` %in% clin_data$Label]))
+# clin_data_missing = data.frame(array(dim = c(length(ids_missing), ncol(clin_data))))
+# colnames(clin_data_missing)=colnames(clin_data)
+# clin_data_missing$Label=ids_missing
+# data_TH1 <- readr::read_csv("~/Dropbox/PLATCOV/data-TH1.csv")
+# data_TH1 = data_TH1[paste0('PLT-TH1-',data_TH1$randomizationID)%in%ids_missing,] 
+# clin_data_missing$rangrp = data_TH1$Treatment
+# xx=strsplit(as.character(as.POSIXct(data_TH1$Date,format="%a %b %d %H:%M:%S %Y")+7*60*60),split = ' ')
+# 
+# clin_data_missing$randat = sapply(xx, function(x) x[1])
+# clin_data_missing$rantim = sapply(xx, function(x) x[2])
+# clin_data_missing$Site = 'th001'
+# clin_data_missing$Any_dose = 'Yes'
+# clin_data_missing$N_dose = 2
+# clin_data_missing$cov_test = 1
+# clin_data_missing$age_yr = 20
+# clin_data_missing$BMI = 20
+# clin_data_missing$sex = 1
+# clin_data_missing$cov_sympday = 2
+# 
+# clin_data = rbind(clin_data, clin_data_missing)
+
+
 Res = Res[Res$`SUBJECT ID` %in% clin_data$Label, ]
 
 ## get missing data from log file
@@ -118,8 +143,8 @@ table(Res$BARCODE %in% log_data$sl_barc)
 # xx=Res[!Res$BARCODE %in% log_data$sl_barc, c('BARCODE', 'SUBJECT ID')]
 # write.csv(x = xx, file = '~/Downloads/missing_barcodes.csv')
 
-writeLines('Do we have 20 samples per patient?')
-print(all(table(Res$`SUBJECT ID`)==20))
+writeLines('Number of samples per patient:')
+range(table(Res$`SUBJECT ID`))
 
 Res$`N/S Gene`[Res$`N/S Gene`=='Undetermined'] = 40
 Res$RNaseP[Res$RNaseP=='Undetermined'] = 40
@@ -143,7 +168,10 @@ Res$Timepoint_ID = Res$`TIME-POINT`
 table(Res$Timepoint_ID)
 Res$Timepoint_ID[Res$Timepoint_ID=='D0H0']='0'
 Res$Timepoint_ID[Res$Timepoint_ID=='D0PRE']='0'
-Res$Timepoint_ID = as.numeric(gsub(Res$Timepoint_ID,pattern = 'D',replacement = '',fixed = T))
+Res$Timepoint_ID = gsub(Res$Timepoint_ID,pattern = 'D',replacement = '',fixed = T)
+Res$Timepoint_ID = gsub(Res$Timepoint_ID,pattern = 'Tx',replacement = '',fixed = T)
+Res$Timepoint_ID = as.numeric(Res$Timepoint_ID)
+table(Res$Timepoint_ID, useNA = 'ifany')
 
 Res$Site = NA
 Res$Time = NA
