@@ -8,15 +8,27 @@ clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
 # check data for missing values
 ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
 if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24
-table(clin_data$cov_sympday, useNA = 'ifany')
-clin_data$cov_sympday[is.na(clin_data$cov_sympday)] = 2
 
-table(clin_data$cov_test, useNA = 'ifany')
-table(is.na(clin_data$age_yr))
-clin_data$age_yr[is.na(clin_data$age_yr)] = 25
+ind = is.na(clin_data$cov_sympday)
+if(sum(ind)>0) {
+  writeLines(sprintf('Patient %s has missing time since symptom onset', clin_data$Label[ind]))
+}
+
+ind = is.na(clin_data$cov_test)
+if(sum(ind)>0) {
+  writeLines(sprintf('Patient %s has missing serology test', clin_data$Label[ind]))
+}
+
+ind = is.na(clin_data$age_yr)
+if(sum(ind)>0) {
+  writeLines(sprintf('Patient %s has missing age', clin_data$Label[ind]))
+}
 clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
-table(is.na(clin_data$BMI))
 
+ind = is.na(clin_data$BMI)
+if(sum(ind)>0) {
+  writeLines(sprintf('Patient %s has missing BMI', clin_data$Label[ind]))
+}
 
 ##******************** Vaccine database *******************
 ##*********************************************************
@@ -46,13 +58,8 @@ vacc_date_cols = grep('dos', colnames(vacc_data))
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
-  if(length(ind)==0){
-    clin_data$Any_dose[i] = 'No'
-    clin_data$N_dose[i] = 0
-  } else {
-    clin_data$Any_dose[i] = 'Yes'
-    clin_data$N_dose[i] = sum(!vacc_data[ind, vacc_date_cols]=='')
-  }
+  clin_data$N_dose[i] = sum(!vacc_data[ind, vacc_date_cols]=='')
+  clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
 }
 
 
@@ -188,17 +195,17 @@ Res$Symptom_onset = NA
 for(i in 1:nrow(Res)){
   id = Res$ID[i]
   ind = which(clin_data$Label==id)
-
+  
   ## Calculate time since randomisation for the visit
   rand_time = as.POSIXct(paste(clin_data$randat[ind],
                                clin_data$rantim[ind], sep=' '))
   Res$Rand_date[i] = as.character(rand_time)
-
+  
   sample_time = as.POSIXct(paste(Res$`COLLECTION DATE`[i],
                                  Res$`Time Collected`[i], sep=' '),
                            format = '%d-%b-%y %X')
   Res$Time[i] = difftime(sample_time,rand_time,units = 'days')
-
+  
   ## Fill in clinical data
   if(length(ind)==0) print('error')
   Res$Site[i] = clin_data$Site[ind]
@@ -234,8 +241,15 @@ Res = dplyr::arrange(Res, Site, ID, Time)
 SC = dplyr::arrange(SC, Plate, ID)
 
 ###### Write csv files
-
+# Overall data files
 write.csv(x = SC, file = 'interim_control_dat.csv', row.names = F)
 write.csv(x = Res, file = 'interim_dat.csv', row.names = F)
+
+
+# Specific analysis data files
+IDs_Ivermectin = unique(Res$ID[Res$Trt %in% c('Ivermectin',"No study drug")])
+IDs_pos_control = unique(Res$ID[Res$Rand_date < "2021-12-17 00:00:00" & Res$Trt == 'Regeneron'])
+Res_ivermectin = Res[Res$ID %in% c(IDs_Ivermectin, IDs_pos_control), ]
+write.csv(x = Res_ivermectin, file = 'Ivermectin_analysis.csv', row.names = F)
 
 rm(list=ls())

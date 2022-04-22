@@ -16,7 +16,7 @@ This work is licensed under a
 
 ## Overview
 
-This github repo provides the statistical analysis plan (see PLATCOV_SAP.pdf) and the code used for the statistical analysis.
+This github repo provides the statistical analysis plan (see PLATCOV_SAP_*.pdf) and the code used for the statistical analysis.
 
 Each interim analysis is done by running the full workflow given in *Full_Analysis.Rmd*. This does the following:
 
@@ -25,18 +25,16 @@ Each interim analysis is done by running the full workflow given in *Full_Analys
 * Runs a series of Bayesian hierarchical linear regression models on the available data (these models are coded in *stan* provided in the folder *Stan_models*)
 * Checks for convergence and compares model fits
 * Displays results
-* Some senstivity analysis
+* Some sensitivity analyses
 
 The underlying data are not made publicly available until publication of results.
 
-The stan models are all left-censored (everything is on the $\Delta$CT scale) regression models with varying degrees of complexity:
+The stan models are all left-censored (everything is on the log base 10 viral copies per mL scale) regression models with varying degrees of complexity:
+
 * Base model M0: individual/site random effects for slope and intercept
 * M1: add human RNaseP correction (more human cells taken up by swab should in theory indicate more virus)
-* M2: add batch random effect terms
-* M3: add control samples from each PCR to estimate accurately the batch effects
-* M4: covariate effects (vaccination, serology, time since symtom onset)
-
-*Non_linear_model_tdist_M1.stan* is a non-linear version of M1, whereby the virus can still be in a growth phase at the start of the follow-up and then decreases.
+* M2: covariate effects (age, number of vaccine doses, serology, time since symtom onset)
+* M3: non-linear version of M1, whereby the virus can still be in a growth phase at the start of the follow-up and then decreases.
 
 
 ## Software needed
