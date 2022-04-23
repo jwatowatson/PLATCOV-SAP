@@ -14,7 +14,7 @@ Model 0 with the following characteristics:
 data {
   // Patient data
   int<lower=0> Ntot;                           // Number of PCR data points
-  int<lower=0,upper=Ntot> N_obs;               // Number of PCR data points
+  int<lower=0,upper=Ntot> N_obs;               // Number of PCR data points with viral load less than LOD
   int<lower=0> n_id;                           // Number of individuals
   int<lower=1,upper=n_id> id[Ntot];            // Patient identifier for each PCR sample
   int<lower=1,upper=Ntot> ind_start[n_id];     // Starting index for each patient
@@ -46,7 +46,6 @@ parameters {
   // hyperparameters
   cholesky_factor_corr[2] L_Omega;     // correlation matrix for individ RE
   vector<lower=0>[2] sigmasq_u;        // variance of individual random effects
-  vector<lower=0>[2] sigmasq_u2;       // variance of epoch random effects
 
   // Measurement error
   real<lower=0> sigma_logvl;
@@ -87,7 +86,6 @@ model {
   // random effects
   sigmasq_u[1] ~ exponential(1);
   sigmasq_u[2] ~ exponential(1);
-  sigmasq_u2 ~ normal(0,0.5);
   L_Omega ~ lkj_corr_cholesky(2); // covariance matrix - random effects for individs
   // individual random effects
   for(i in 1:n_id) theta_rand_id[i] ~ multi_normal_cholesky(zeros2, diag_pre_multiply(sigmasq_u, L_Omega));
