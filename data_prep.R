@@ -5,6 +5,17 @@
 
 clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
 
+
+# extract screening failure data
+ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
+screen_failure = clin_data[ind, 
+                           c("Trial","Site","scrid","scrdat",
+                             "scrpassed","reason_failure","scrnote")]
+
+screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
+
+clin_data = clin_data[!ind, ]
+sort(unique(clin_data$Label))
 # check data for missing values
 ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
 if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24
@@ -19,6 +30,7 @@ if(sum(ind)>0) {
   writeLines(sprintf('Patient %s has missing serology test', clin_data$Label[ind]))
 }
 
+clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21
 ind = is.na(clin_data$age_yr)
 if(sum(ind)>0) {
   writeLines(sprintf('Patient %s has missing age', clin_data$Label[ind]))
@@ -30,11 +42,36 @@ if(sum(ind)>0) {
   writeLines(sprintf('Patient %s has missing BMI', clin_data$Label[ind]))
 }
 
+
+trt_distcont_data = haven::read_dta('../Data/InterimChangeTreatment.dta')
+
+
+## AB rapid test data
+ab_rdt = readxl::read_excel('../Data/Rapid Ab tests.xlsx')
+ab_rdt$scrid = apply(ab_rdt, 1, function(x) paste0('PLT-TH1-SCR10',x[1]))
+ab_rdt = ab_rdt[ab_rdt$scrid %in% clin_data$scrid &
+                  !is.na(ab_rdt$C), c(2:4, 8)]
+table(ab_rdt$C)
+table(ab_rdt$`IgM (-, +)`)
+table(ab_rdt$`IgG (-, +, ++, +++)`)
+
+my_from = c('-','+','++','+++')
+my_to = 0:3
+ab_rdt$IgM = plyr::mapvalues(x = ab_rdt$`IgM (-, +)`, 
+                             from=my_from,to=my_to)
+ab_rdt$IgG = plyr::mapvalues(x = ab_rdt$`IgG (-, +, ++, +++)`, 
+                             from=my_from,to=my_to)
+ab_rdt = ab_rdt[, c('scrid','IgG','IgM')]
+clin_data = merge(clin_data, ab_rdt, all = T)
+
 ##******************** Vaccine database *******************
 ##*********************************************************
 ##*********************************************************
 
 vacc_data = haven::read_dta('../Data/InterimVaccine.dta')
+
+writeLines(sprintf('No vaccine data for %s',
+                   clin_data$Label[!clin_data$Label %in% vacc_data$Label]))
 
 ## Some cleaning
 vacc_data$vc_name = tolower(vacc_data$vc_name)
@@ -120,35 +157,14 @@ SC = SC[,cols]
 ## Extract sample data
 Res = Res[!is.na(Res$BARCODE), ]
 
-# ids_missing = sort(unique(Res$`SUBJECT ID`[!Res$`SUBJECT ID` %in% clin_data$Label]))
-# clin_data_missing = data.frame(array(dim = c(length(ids_missing), ncol(clin_data))))
-# colnames(clin_data_missing)=colnames(clin_data)
-# clin_data_missing$Label=ids_missing
-# data_TH1 <- readr::read_csv("~/Dropbox/PLATCOV/data-TH1.csv")
-# data_TH1 = data_TH1[paste0('PLT-TH1-',data_TH1$randomizationID)%in%ids_missing,] 
-# clin_data_missing$rangrp = data_TH1$Treatment
-# xx=strsplit(as.character(as.POSIXct(data_TH1$Date,format="%a %b %d %H:%M:%S %Y")+7*60*60),split = ' ')
-# 
-# clin_data_missing$randat = sapply(xx, function(x) x[1])
-# clin_data_missing$rantim = sapply(xx, function(x) x[2])
-# clin_data_missing$Site = 'th001'
-# clin_data_missing$Any_dose = 'Yes'
-# clin_data_missing$N_dose = 2
-# clin_data_missing$cov_test = 1
-# clin_data_missing$age_yr = 20
-# clin_data_missing$BMI = 20
-# clin_data_missing$sex = 1
-# clin_data_missing$cov_sympday = 2
-# 
-# clin_data = rbind(clin_data, clin_data_missing)
-
-
+writeLines('Clinical data from the following patients not in database:\n')
+print(unique(Res$`SUBJECT ID`[!Res$`SUBJECT ID` %in%  clin_data$Label]))
 Res = Res[Res$`SUBJECT ID` %in% clin_data$Label, ]
 
 ## get missing data from log file
 table(Res$BARCODE %in% log_data$sl_barc)
-# xx=Res[!Res$BARCODE %in% log_data$sl_barc, c('BARCODE', 'SUBJECT ID')]
-# write.csv(x = xx, file = '~/Downloads/missing_barcodes.csv')
+xx=Res[!Res$BARCODE %in% log_data$sl_barc, c('BARCODE', 'SUBJECT ID')]
+write.csv(x = xx, file = '~/Downloads/missing_barcodes.csv')
 
 writeLines('Number of samples per patient:')
 range(table(Res$`SUBJECT ID`))
@@ -190,22 +206,70 @@ Res$Antibody_test = NA
 Res$Age = NA
 Res$Sex = NA
 Res$BMI = NA
+Res$Weight = NA
 Res$Symptom_onset = NA
+Res$Per_protocol_all = NA
+Res$Per_protocol_sample = NA
+Res$IgG = NA
+Res$IgM = NA
 
+sampling_time_conflicts = c()
 for(i in 1:nrow(Res)){
+  
   id = Res$ID[i]
   ind = which(clin_data$Label==id)
-  
   ## Calculate time since randomisation for the visit
   rand_time = as.POSIXct(paste(clin_data$randat[ind],
                                clin_data$rantim[ind], sep=' '))
   Res$Rand_date[i] = as.character(rand_time)
   
-  sample_time = as.POSIXct(paste(Res$`COLLECTION DATE`[i],
-                                 Res$`Time Collected`[i], sep=' '),
-                           format = '%d-%b-%y %X')
-  Res$Time[i] = difftime(sample_time,rand_time,units = 'days')
+  # Mallika's data
+  sample_time = 
+    as.POSIXct(paste(Res$`COLLECTION DATE`[i],
+                     Res$`Time Collected`[i], sep=' '),
+               format = '%d-%b-%y %X')
   
+  # get time of sampling from log file
+  barcode_i = Res$BARCODE[i]
+  ind_log = which(log_data$sl_barc==barcode_i)
+  if(length(ind_log)>1) {
+    writeLines(sprintf('duplicated entries for barcode %s', barcode_i))
+    ind_log = ind_log[1]
+  }
+  # get the sample time from the log file
+  if(length(ind_log)>0){
+    sample_time_log = 
+      as.POSIXct(paste(log_data$sl_sampdat[ind_log],
+                       log_data$sl_samptim[ind_log], sep=' '))
+  } else {
+    sample_time_log = NA # NA if missing
+  }
+  
+  s_times = c(sample_time, sample_time_log)
+  if(all(is.na(s_times))){
+    writeLines(sprintf('No sample time for patient %s at timepoint %s',id, Res$`TIME-POINT`[i]))
+  } else {
+    if(all(!is.na(s_times))){
+      if(sample_time_log != sample_time){
+        writeLines(sprintf('Conflicting sample times for barcode %s',barcode_i))
+        sampling_time_conflicts=c(sampling_time_conflicts,barcode_i)
+        my_sample_time = s_times[2] # trust the log as updated by Padd
+      } else {
+        my_sample_time = s_times[1]
+      }
+    } else {
+      my_sample_time = s_times[which(!is.na(s_times))]
+    }
+  }
+ 
+  Res$Time[i] = difftime(sample_time,rand_time,units = 'days')
+  if(is.na(Res$Time[i])) {
+    writeLines(sprintf('Missing sample time for patient %s',id))
+  } else {
+    if(Res$Time[i] < 0){
+      writeLines(sprintf('Negative sample time for patient %s',id))
+    }
+  }
   ## Fill in clinical data
   if(length(ind)==0) print('error')
   Res$Site[i] = clin_data$Site[ind]
@@ -215,24 +279,43 @@ for(i in 1:nrow(Res)){
   Res$Antibody_test[i] = clin_data$cov_test[ind]
   Res$Age[i] = clin_data$age_yr[ind]
   Res$BMI[i] = clin_data$BMI[ind]
+  Res$Weight[i] = clin_data$weight[ind]
   Res$Sex[i] = clin_data$sex[ind]
   Res$Symptom_onset[i] = clin_data$cov_sympday[ind]
+  Res$IgG[i] = clin_data$IgG[ind]
+  Res$IgM[i] = clin_data$IgM[ind]
+  
+  if(id %in% trt_distcont_data$Label){
+    ind_discont=which(trt_distcont_data$Label==id)
+    if(sample_time > as.POSIXct(trt_distcont_data$cm_stdat[ind_discont],
+                                format = '%d/%m/%Y')){
+      Res$Per_protocol_sample[i]=0
+    } else {
+      Res$Per_protocol_sample[i]=1
+    }
+  } else {
+    Res$Per_protocol_sample[i]=1
+  }
 }
 
-##### Make up data - placeholder for when data are available
+## AD HOC - CHANGE WHEN VARIANT DATA AVAILABLE ##
 Res$Variant=NA
-for(id in unique(Res$ID)){
-  ind = Res$ID==id
-  Res$Variant[ind] = sample(x = c('Alpha','Delta','Omicron'),1)
-}
+ind_Delta = Res$Rand_date < as.POSIXct('2021-12-17')
+ind_BA1 = Res$Rand_date >= as.POSIXct('2021-12-17') &
+  Res$Rand_date < as.POSIXct('2022-02-13')
+ind_BA2 = Res$Rand_date >= as.POSIXct('2022-02-13')
+Res$Variant[ind_Delta] = 'Delta'
+Res$Variant[ind_BA1] = 'BA.1'
+Res$Variant[ind_BA2] = 'BA.2'
 
 
 ##***********************************************
 cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'BARCODE','Swab_ID','Plate','Rand_date',
-         'Any_dose','N_dose','Antibody_test',
+         'Any_dose','N_dose','Antibody_test','Weight','BMI',
          'Age', 'Sex', 'Symptom_onset','Variant',
-         'CT_NS','CT_RNaseP','log10_viral_load')
+         'CT_NS','CT_RNaseP','log10_viral_load',
+         'Per_protocol_sample','IgG','IgM')
 writeLines('\n column names:')
 print(cols)
 Res = Res[, cols]
@@ -244,12 +327,17 @@ SC = dplyr::arrange(SC, Plate, ID)
 # Overall data files
 write.csv(x = SC, file = 'interim_control_dat.csv', row.names = F)
 write.csv(x = Res, file = 'interim_dat.csv', row.names = F)
+write.csv(x = screen_failure, file = 'interim_screening_dat.csv', row.names = F)
 
 
 # Specific analysis data files
 IDs_Ivermectin = unique(Res$ID[Res$Trt %in% c('Ivermectin',"No study drug")])
-IDs_pos_control = unique(Res$ID[Res$Rand_date < "2021-12-17 00:00:00" & Res$Trt == 'Regeneron'])
+IDs_pos_control = unique(Res$ID[Res$Rand_date < "2021-12-17 00:00:00" & 
+                                  Res$Trt == 'Regeneron' & 
+                                  Res$Site == 'th001'])
 Res_ivermectin = Res[Res$ID %in% c(IDs_Ivermectin, IDs_pos_control), ]
 write.csv(x = Res_ivermectin, file = 'Ivermectin_analysis.csv', row.names = F)
 
+writeLines('Barcodes of conflicting sample times:')
+print(sampling_time_conflicts)
 rm(list=ls())
