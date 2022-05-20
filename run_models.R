@@ -24,18 +24,42 @@ stopifnot(model_settings$Nchain[i]>getDoParWorkers()) # check worker number assi
 
 mod = stan_model(file = as.character(model_settings$mod[i])) # compile 
 
-analysis_data_stan$trt_mat = Trt_mats[[model_settings$trt_mat[i]]]
+if(model_settings$subgroup[i]==0){
+  stan_inputs = stan_inputs_overall
+}
+if(model_settings$subgroup[i]==1){
+  stan_inputs = stan_inputs_subgroup
+}
+
+analysis_data_stan = stan_inputs$analysis_data_stan
+analysis_data_stan$trt_mat = stan_inputs$Trt_matrix
 analysis_data_stan$K_trt = ncol(analysis_data_stan$trt_mat)
-out = sampling(mod, # sample posterior 
-               data=c(analysis_data_stan, 
-                      all_priors[[model_settings$prior[i]]]), 
-               iter=model_settings$Niter[i], 
+
+# 0 means no covariates at all
+if(model_settings$cov_matrices[i]==0){
+  analysis_data_stan$K_cov_intercept=0
+  analysis_data_stan$x_intercept = array(dim = c(analysis_data_stan$Ntot,0))
+  analysis_data_stan$K_cov_slope=0
+  analysis_data_stan$x_slope = array(dim = c(analysis_data_stan$Ntot,0))
+} else {
+  analysis_data_stan$x_intercept = stan_inputs$cov_matrices$X_int[[model_settings$cov_matrices[i]]]
+  analysis_data_stan$K_cov_intercept=ncol(analysis_data_stan$x_intercept)
+  analysis_data_stan$x_slope = stan_inputs$cov_matrices$X_slope[[model_settings$cov_matrices[i]]]
+  analysis_data_stan$K_cov_slope=ncol(analysis_data_stan$x_slope)
+}
+
+# sample posterior
+out = sampling(mod, 
+               data=c(analysis_data_stan,
+                      all_priors[[model_settings$prior[i]]]),
+               iter=model_settings$Niter[i],
                chain=model_settings$Nchain[i],
-               thin=model_settings$Nthin[i], 
+               thin=model_settings$Nthin[i],
                warmup=model_settings$Nwarmup[i],
-               save_warmup = FALSE, 
-               pars=c('L_Omega','theta_rand_id'),
+               save_warmup = FALSE,
+               pars=c('L_Omega','theta_rand_id'), # we don't save these as it takes up vast memory!
                include=FALSE)
+
 
 save(out, file = paste0('Rout/model_fits_',i,'.RData'))# save output
 

@@ -23,6 +23,7 @@ library(RColorBrewer)
 library(censReg)
 library(tictoc)
 library(reshape2)
+library(plotrix)
 ```
 
 TODO list:
@@ -34,36 +35,34 @@ TODO list:
 This Statistical Analysis Plan (SAP) is written for the PLATCOV trial (registered at ClinicalTrials.gov: https://clinicaltrials.gov/ct2/show/NCT05041907).
 
 Data preparation is done in a different R script called data_prep.R.
-This Markdown script assumes that the data are saved in two .csv files in long format. 
-
-The first file *interim_control_dat.csv* contains the PCR quality control data: CT values from the control samples from each plate (duplicate control samples of known viral densities over the range 100 to 10^7/mL viral copies per mL). This has the following headers:
-
-- ID: unique control ID
-- Plate: unique PCR Plate ID
-- CT_NS: observed CT value for the N/S gene
-- log10_true_density: number of viral copies in control sample (log10 scale)
-
-The second file *interim_dat.csv* contains the patient viral load data with the following column headers:
+This Markdown script assumes that the data are saved in a .csv file *interim_dat.csv* in long format. 
+The file *interim_dat.csv* contains the patient clinical and viral load data with the following column headers:
 
 - ID: anonymised patient id code
+- Time: time from randomisation
+- Trt: treatment allocation as written in CRF
+- Site: site at enrollment
+- Timepoint_ID: Day of study (integer 0 to 14)
 - BARCODE: unique sample id code (in the following format: PLT-site-number-swab type-timepoint)
-- Timepoint_ID: Day of study (0 to 14)
 - Swab_ID: RTS or TSL (right versus left tonsil)
 - Plate: unique Plate ID for the PCR assay (matching with plate identifiers in interim_control_dat.csv)
-- Site: site at enrollment
-- Trt: treatment allocation as written in CRF
-- Time: time from randomisation
-- Variant: variant of concern (using standard WHO terminology for the main lineages, reference will be the predominant variant in the dataset at the start of the study)
+- Rand_date: date of randomisation
 - Any_dose: (0/1) any doses of any manufacturer received
 - N_dose: integer number of doses received (any manufacturer)
 - Antibody_test: 0/1 (negative/positive for SARS-CoV-2 antibody rapid test)
+- Weight (kg)
+- BMI: kg/weight^2
 - Age: (years - has to be between 18-50)
 - Sex: 0/1 (male: 1; female/other: 0)
-- BMI: kg/weight^2
 - Symptom_onset: time since onset of symptoms (days)
+- Variant: variant of concern (using standard WHO terminology for the main lineages, reference will be the predominant variant in the dataset at the start of the study)
 - CT_NS: observed CT value for the N/S gene
 - CT_RNaseP: observed CT value for the human RNase P gene
-- log10_viral_load: log10 number of viral copies per mL (estimated from plate specific standard curve - 12 controls per plate)
+- Per_protocol_sample: whether at the time of sampling the patient was still in per protocol with respect to drug dosing
+- IgG: + IgG band on the LFT
+- IgM: + IgM band on the LFT
+- log10_viral_load: log10 number of viral copies per mL (estimated from control samples using a mixed effects model)
+- log10_cens_vl: censoring value
 
 
 ## Computational setup
@@ -86,7 +85,6 @@ source('functions.R')
 ## Load data
 
 ```{r}
-# source('data_prep.R')
 screen_dat = read.csv('interim_screening_dat.csv')
 platcov_dat = read.csv('interim_dat.csv')
 ind_na_time = is.na(platcov_dat$Time)
@@ -94,7 +92,11 @@ writeLines(sprintf('Missing time for following samples: %s',
                    unique(platcov_dat$ID[ind_na_time])))
 platcov_dat$Time[ind_na_time]=platcov_dat$Timepoint_ID[ind_na_time]
 
-control_dat = read.csv('interim_control_dat.csv')
+ind_neg_time = platcov_dat$Time < 0
+writeLines(sprintf('Negative time for following samples: %s',
+                   unique(platcov_dat$ID[ind_neg_time])))
+platcov_dat$Time[ind_neg_time]=platcov_dat$Timepoint_ID[ind_neg_time]
+
 
 # make per protocol summary for all patients
 PP=merge(aggregate(Timepoint_ID ~ ID+Trt,
@@ -191,58 +193,7 @@ writeLines(sprintf('In the %s patients, the geometric mean baseline (defined as 
 
 
 
-## Data visualisation
-
-### Quality Control for PCR
-
-```{r PCR_QC}
-par(las=1, mfrow=c(2,2), cex.lab=1.5, cex.axis=1.5,family='serif')
-plot(control_dat$log10_true_density,control_dat$CT_NS, 
-     ylab='CT value', 
-     xlab='Control viral density (log10 copies/mL)',
-     panel.first=grid(),
-     col=as.numeric(as.factor(control_dat$Plate)), ylim=c(40,18))
-my_slope_coefs = array(dim = c(length(unique(control_dat$Plate)),2))
-
-for(ss in unique(control_dat$Plate)){
-  plate_ind = control_dat$Plate==ss
-  mod = lm(CT_NS~log10_true_density, control_dat[plate_ind, ])
-  abline(mod,col = control_dat$Plate[plate_ind])
-  my_slope_coefs[which(ss==unique(control_dat$Plate)),]=coef(mod)
-}
-
-hist(my_slope_coefs[,1], xlab='Intercept', main='')
-writeLines(sprintf('SD of the intercept is %s',round(sd(my_slope_coefs[,1]),2)))
-
-hist(my_slope_coefs[,2], xlab='Slope', main='')
-writeLines(sprintf('Maximum difference in CT values for a tenfold change in viral load is %s',round(diff(range(my_slope_coefs[,2])),2)))
-
-xx = aggregate(CT_NS ~ Plate + log10_true_density, 
-               data = control_dat, 
-               function(x) c(mean(x), diff(x)))
-par(las=1)
-plot(xx$CT[,1], xx$CT[,2], 
-     xlab = 'Mean CT',
-     ylab = 'CT Difference from duplicates',
-     panel.first=grid())
-abline(h = 0)
-
-xx$Mean_CT = cut(xx$CT[,1],breaks = seq(20, 40, by=5),include.lowest = T)
-xx$Diff_CT = xx$CT[,2]
-
-par(mfrow=c(1,1))
-yy = aggregate(Diff_CT ~ Mean_CT, xx, sd)
-plot(yy$Mean_CT, sqrt(2) * yy$Diff_CT, xlab='CT interval',
-     ylab = 'Estimated measurement error (standard deviation)')
-```
-
-
-
-
-
-
-
-### Overall data plot
+## Summary data plot
 
 ```{r trt_data_plot, fig.width=10, fig.height=7}
 par(las=1, cex.lab=1.5, cex.axis=1.5, family='serif', mfrow=c(1,2))
@@ -307,62 +258,30 @@ ind_fitting = platcov_dat$Time < Dmax &
   platcov_dat$Per_protocol_sample==1 &
   platcov_dat$ID %in% PP$ID[PP$Include_mITT]
 
-writeLines(sprintf('Total number of datapoints up until day %s is %s',Dmax, sum(ind_fitting)))
+writeLines(sprintf('Total number of datapoints up until day %s is %s',
+                   Dmax, sum(ind_fitting)))
 
-platcov_dat$RnaseP_scaled = t(scale(40 - platcov_dat$CT_RNaseP, 
-                                    scale = F))[1,] 
-platcov_dat$Age_scaled = (platcov_dat$Age-mean(platcov_dat$Age[ind_dup]))/sd(platcov_dat$Age[ind_dup])
-platcov_dat_fit = platcov_dat[ind_fitting, ]
+covs_base = c('Epoch','Site')
+covs_full=c(covs_base,'Age_scaled',
+            'Antibody_test','Symptom_onset','N_dose')
 
-# make the covariate matrix
-# check no missing data
-all(!apply(platcov_dat_fit[, c('Epoch','Age_scaled','Antibody_test','Symptom_onset','N_dose')], 2, function(x) any(is.na(x))))
+stan_inputs_overall = 
+  make_stan_inputs(platcov_dat_fit = platcov_dat[ind_fitting,],
+                   int_covs_base = covs_base,
+                   int_covs_full = covs_full,
+                   slope_covs_base = covs_base,
+                   slope_covs_full = covs_full,
+                   trt_col = 'Trt_code',
+                   Dmax = Dmax)
 
-# make the covariate matrix
-platcov_dat_fit$Symptom_onset[is.na(platcov_dat_fit$Symptom_onset)]=1
-all(!apply(platcov_dat_fit[, c('Epoch','Age_scaled','Antibody_test','Symptom_onset','N_dose')], 2, function(x) any(is.na(x))))
-
-X_matrix_intercept = model.matrix( ~ Epoch + Symptom_onset, 
-                                   data = platcov_dat_fit)[, -1, drop=F]
-X_matrix_slope = model.matrix( ~ Epoch + Age_scaled, 
-                               data = platcov_dat_fit)[, -1, drop=F]
-
-Trt_matrix = model.matrix( ~ Trt_code, data = platcov_dat_fit)
-Trt_matrix[,1]=0 # first column is dummy
-
-Trt_matrix_subgroup = model.matrix( ~ Trt_code_subgroup, data = platcov_dat_fit)
-Trt_matrix_subgroup[,1]=0 # first column is dummy
-
-Trt_mats = list(Trt_matrix, Trt_matrix_subgroup)
-
-ID_map = data.frame(ID_key = platcov_dat_fit$ID,
-                    ID_stan = as.numeric(as.factor(platcov_dat_fit$ID)))
-
-ind_cens = !platcov_dat_fit$log10_viral_load>platcov_dat_fit$log10_cens_vl
-writeLines(sprintf('%s%% of samples are below LOD',
-                   round(100*mean(ind_cens),digits = 2)))
-
-analysis_data_stan = list(Ntot = nrow(platcov_dat_fit),
-                          N_obs = sum(!ind_cens),
-                          n_id = max(ID_map$ID_stan),
-                          id = ID_map$ID_stan,
-                          ind_start = which(!duplicated(ID_map$ID_stan)),
-                          obs_day = platcov_dat_fit$Time,
-                          log_10_vl = platcov_dat_fit$log10_viral_load,
-                          log10_cens_vl = platcov_dat_fit$log10_cens_vl,
-                          RNaseP = platcov_dat_fit$RnaseP_scaled,
-                          K_cov_intercept = ncol(X_matrix_intercept),
-                          x_intercept = X_matrix_intercept,
-                          K_cov_slope = ncol(X_matrix_slope),
-                          x_slope = X_matrix_slope)
-
-writeLines('check stan data formatting:')
-all(analysis_data_stan$log_10_vl[1:analysis_data_stan$N_obs]>
-      analysis_data_stan$log10_cens_vl[1:analysis_data_stan$N_obs]) &
-  all(analysis_data_stan$log_10_vl[(1+analysis_data_stan$N_obs):analysis_data_stan$Ntot] ==
-        analysis_data_stan$log10_cens_vl[(1+analysis_data_stan$N_obs):analysis_data_stan$Ntot])
-nrow(X_matrix_intercept) == nrow(platcov_dat_fit)
-nrow(X_matrix_slope) == nrow(platcov_dat_fit)
+stan_inputs_subgroup = 
+  make_stan_inputs(platcov_dat_fit = platcov_dat[ind_fitting,],
+                   int_covs_base = covs_base,
+                   int_covs_full = covs_full,
+                   slope_covs_base = covs_base,
+                   slope_covs_full = covs_full,
+                   trt_col = 'Trt_code_subgroup',
+                   Dmax = Dmax)
 ```
 
 
@@ -376,66 +295,68 @@ To make sure there are no bugs in the code (all stan code is written specificall
 * Model 2: Add covariate adjustment;
 * Model 3: Non-linear model (up and then down) with RNaseP adjustment.
 
+
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 print(all_mods)
-K_models = length(all_mods)
+basic_settings = expand.grid(mod = all_mods[1],
+                             prior = 1,
+                             subgroup = 0:1,
+                             cov_matrices = 1)
+model_settings = rbind(basic_settings,
+                       expand.grid(mod = all_mods[2:3],
+                                   prior = 1:length(all_priors),
+                                   subgroup = 0:1,
+                                   cov_matrices = 1:2))
 
-Niter = 4000
-Nwarmup = 2000
-Nthin = 10
-Nchain = 4
+model_settings$Niter = 3000
+model_settings$Nwarmup = 1000
+model_settings$Nthin = 5
+model_settings$Nchain = 4
 
-writeLines(sprintf('We are running the %s models with %s chains and %s samples for each chain, discarding half for burn-in and thining every %s, thus giving a total of %s posterior samples per model.',
-                   K_models,Nchain,Niter,Nthin, 
-                   Nchain*(Niter-Nwarmup)/Nthin))
+writeLines(sprintf('We are running all models with %s chains and %s samples for each chain, discarding half for burn-in and thining every %s, thus giving a total of %s posterior samples per model.',
+                   unique(model_settings$Nchain),
+                   unique(model_settings$Niter),
+                   unique(model_settings$Nthin), 
+                   unique(model_settings$Nchain*(model_settings$Niter-model_settings$Nwarmup)/model_settings$Nthin)))
 
-model_settings = expand.grid(mod = all_mods,
-                             prior = 1:length(all_priors),
-                             trt_mat = 1:length(Trt_mats),
-                             Niter=Niter,
-                             Nwarmup=Nwarmup,
-                             Nthin=Nthin,
-                             Nchain=Nchain)
+
 save(model_settings, 
-     analysis_data_stan,
-     all_priors, 
-     Trt_mats,
+     stan_inputs_overall, 
+     stan_inputs_subgroup, 
+     all_priors,
      file = 'Rout/model_run_setup.RData')
-# we run all the models on the cluster
+# all model fitting is run on a cluster using run_models.R (bmrc.sh provides bash commands)
 ```
 
 
 Load model fits
 
 ```{r}
-ff = list.files('Rout/Rout/')
+ff = list.files('Rout/')
 ff = ff[grep(pattern = 'model_fits_',x = ff)]
 if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all model settings')
 ```
 
 
-
-
 ### Model fits: summaries
 
-
 ```{r summary}
-#
 key_pars_1 = c('trt_effect', 'alpha_0', 'beta_0',
                'sigma_logvl', 'sigmasq_u', 't_dof')
-key_pars_2 = c(key_pars_1, 'gamma_rnasep')
-key_pars_3 = c(key_pars_2, 'slope_coefs', 'intercept_coefs')
-key_pars_4 = c(key_pars_2, 'tmax_pop')
-key_pars = list(key_pars_1, key_pars_2, key_pars_3, key_pars_4)
+key_pars_2 = c(key_pars_1, 'gamma_rnasep','slope_coefs', 'intercept_coefs')
+key_pars_3 = c(key_pars_2, 'tmax_pop')
+key_pars = list(key_pars_1, key_pars_2, key_pars_3)
 
 out_all = list()
+out_all_subgroup = list()
+
 for(i in 1:nrow(model_settings)){
   writeLines(sprintf('\n*********************\nSummary of posterior distribution for model %s using priors %s and treatment matrix %s',
                      model_settings$mod[i], 
                      model_settings$prior[i], 
                      model_settings$trt_mat[i]))
-  load(paste0('Rout/Rout/model_fits_',i,'.RData'))
+  load(paste0('Rout/model_fits_',i,'.RData'))
   out_all[[i]] = out
   kp=key_pars[[which(model_settings$mod[i]==levels(model_settings$mod))]]
   print(summary(out,
@@ -449,8 +370,8 @@ for(i in 1:nrow(model_settings)){
 
 ```{r loo}
 # loo_out = list()
-# for(mm in 1:length(out_all)){
-#   log_lik = extract_log_lik(out_all[[mm]], merge_chains = FALSE)
+# for(mm in 1:length(out)){
+#   log_lik = extract_log_lik(out[[mm]], merge_chains = FALSE)
 #   r_eff = relative_eff(exp(log_lik))
 #   loo_out[[mm]] = loo(log_lik, r_eff = r_eff, cores = 2)
 #   print(loo_out[[mm]])
@@ -478,16 +399,9 @@ for(mm in 1:nrow(model_settings)){
     summary(out_all[[mm]],pars='trt_effect',
             probs = c(0.025, 0.1, 0.9, 0.975))$summary[,c('mean','2.5%','10%','90%','97.5%')]
   
-  if(model_settings$trt_mat[mm]==1){
-    names(trt_estimate[[mm]]) = trts
-    names(prob_superior[[mm]]) = trts
-    rownames(effect_ests[[mm]]) = trts
-  } else {
-    names(trt_estimate[[mm]]) = trts_subgroup
-    names(prob_superior[[mm]]) = trts_subgroup
-    rownames(effect_ests[[mm]]) = trts_subgroup
-  }
-  
+  names(trt_estimate[[mm]]) = trts
+  names(prob_superior[[mm]]) = trts
+  rownames(effect_ests[[mm]]) = trts
 }
 
 
@@ -502,84 +416,79 @@ print(prob_superior)
 Overall effects
 
 ```{r treatment_effect_plot, fig.width=6, fig.height=8}
-main_models = which(model_settings$prior==1 & model_settings$trt_mat==1)
+main_models = which((model_settings$prior==1 & model_settings$cov_matrices==1) |
+                      (model_settings$prior==1 & 
+                         model_settings$cov_matrices==2 &
+                         model_settings$mod==all_mods[2]))
 writeLines('The main 4 models with weakly informative priors:')
 plot_effect_estimates(effect_ests = effect_ests,
                       plot_models = main_models,
-                      names_plot_models = c('1: vanilla',
-                                            '2: linear',
-                                            '3: covariate',
-                                            '4: non-linear'))
-
-main_models2 = which(model_settings$prior==1 & model_settings$trt_mat==2)
-writeLines('The main 4 models with weakly informative priors:')
-plot_effect_estimates(effect_ests = effect_ests,
-                      plot_models = main_models2,
-                      names_plot_models = c('1: vanilla',
-                                            '2: linear',
-                                            '3: covariate',
-                                            '4: non-linear'))
+                      names_plot_models = c('Linear: vanilla',
+                                            'Linear: RNaseP',
+                                            'Non-linear',
+                                            'Linear: covariate'))
 ```
 
-
-### Estimated covariate effects
 
 Covariate effects on the intercept (baseline viral load) and slope (viral clearance):
 
 ```{r cov_effects,fig.height=5, fig.width=9}
-# par(mfrow=c(1,2),las=1,family='serif',mar=c(5,7,2,2))
-# alpha_coefs = apply(thetas[[2]]$intercept_coefs,2,
-#                     quantile,probs=c(0.025,.1,.5,.9,0.975))
-# xlims=range(alpha_coefs)
-# 
-# cov_names_intercept = 
-#   plyr::mapvalues(x = colnames(X_matrix_intercept), 
-#                   from = c('Age_scaled','Antibody_test',
-#                            'Symptom_onset','N_dose','Epoch'),
-#                   to = c('Age','Serology RDT',
-#                          'Days since\nsymptom onset',
-#                          'Number of\nvaccine doses',
-#                          'Study period'))
-# 
-# cov_names_slope = 
-#   plyr::mapvalues(x = colnames(X_matrix_slope), 
-#                   from = c('Age_scaled','Antibody_test',
-#                            'Symptom_onset','N_dose','Epoch'),
-#                   to = c('Age','Serology RDT',
-#                          'Days since\nsymptom onset',
-#                          'Number of\nvaccine doses',
-#                          'Study period'))
-# 
-# plot(alpha_coefs['50%', ], 1:ncol(alpha_coefs),
-#      xlim=xlims,yaxt='n',ylab='',bty='n',xaxt='n',
-#      panel.first=grid(), xlab='Intercept (fold change)')
-# abline(v=0,lty=2,lwd=2)
-# for(i in 1:ncol(alpha_coefs)){
-#   lines(c(alpha_coefs['10%',i], alpha_coefs['90%',i]),
-#         c(i,i), lwd=3)
-#   lines(c(alpha_coefs['2.5%',i], alpha_coefs['97.5%',i]),
-#         c(i,i), lwd=1)
-# }
-# axis(2, at =1:ncol(alpha_coefs), labels = cov_names_intercept,tick = F)
-# x_points = round(10^seq(xlims[1], xlims[2],length.out = 5),1)
-# axis(1, at = log10(x_points), labels = x_points)
-# 
-# beta_coefs = apply(thetas[[3]]$slope_coefs,2,quantile,
-#                    probs=c(0.025,.1,.5,.9,0.975))
-# xlims=range(beta_coefs)
-# plot(beta_coefs['50%', ], 1:ncol(beta_coefs),
-#      xlim=xlims,yaxt='n',ylab='',bty='n',xaxt='n',
-#      panel.first=grid(), xlab='Slope (multiplicative effect)')
-# abline(v=0,lty=2,lwd=2)
-# for(i in 1:ncol(beta_coefs)){
-#   lines(c(beta_coefs['10%',i], beta_coefs['90%',i]),
-#         c(i,i), lwd=3)
-#   lines(c(beta_coefs['2.5%',i], beta_coefs['97.5%',i]),
-#         c(i,i), lwd=1)
-# }
-# axis(2, at =1:ncol(beta_coefs), labels = cov_names_slope, tick = F)
-# x_points = round(10^seq(xlims[1], xlims[2],length.out = 5),1)
-# axis(1, at = log10(x_points), labels = x_points)
+coef_mods = intersect(grep('Linear_model_RNaseP',x = model_settings$mod),
+                      which(model_settings$cov_matrices==2 & model_settings$prior==1))
+par(mfrow=c(1,2),las=1,family='serif',mar=c(5,7,2,2))
+thetas = extract(out_all[[coef_mods]])
+alpha_coefs = apply(thetas$intercept_coefs,2,
+                    quantile,probs=c(0.025,.1,.5,.9,0.975))
+xlims=range(alpha_coefs)
+
+cov_names_intercept =
+  plyr::mapvalues(x = colnames(cov_matrices$X_int[[2]]),
+                  from = c('Age_scaled','Antibody_test',
+                           'Symptom_onset','N_dose','Epoch'),
+                  to = c('Age','Serology RDT',
+                         'Days since\nsymptom onset',
+                         'Number of\nvaccine doses',
+                         'Study period'))
+
+cov_names_slope =
+  plyr::mapvalues(x = colnames(cov_matrices$X_slope[[2]]),
+                  from = c('Age_scaled','Antibody_test',
+                           'Symptom_onset','N_dose','Epoch'),
+                  to = c('Age','Serology RDT',
+                         'Days since\nsymptom onset',
+                         'Number of\nvaccine doses',
+                         'Study period'))
+
+plot(alpha_coefs['50%', ], 1:ncol(alpha_coefs),
+     xlim=xlims,yaxt='n',ylab='',bty='n',xaxt='n',
+     panel.first=grid(), xlab='Intercept (fold change)')
+abline(v=0,lty=2,lwd=2)
+for(i in 1:ncol(alpha_coefs)){
+  lines(c(alpha_coefs['10%',i], alpha_coefs['90%',i]),
+        c(i,i), lwd=3)
+  lines(c(alpha_coefs['2.5%',i], alpha_coefs['97.5%',i]),
+        c(i,i), lwd=1)
+}
+axis(2, at =1:ncol(alpha_coefs), labels = cov_names_intercept,tick = F)
+x_points = round(10^seq(xlims[1], xlims[2],length.out = 5),1)
+axis(1, at = log10(x_points), labels = x_points)
+
+beta_coefs = apply(thetas$slope_coefs,2,quantile,
+                   probs=c(0.025,.1,.5,.9,0.975))
+xlims=range(beta_coefs)
+plot(beta_coefs['50%', ], 1:ncol(beta_coefs),
+     xlim=xlims,yaxt='n',ylab='',bty='n',xaxt='n',
+     panel.first=grid(), xlab='Slope (multiplicative effect)')
+abline(v=0,lty=2,lwd=2)
+for(i in 1:ncol(beta_coefs)){
+  lines(c(beta_coefs['10%',i], beta_coefs['90%',i]),
+        c(i,i), lwd=3)
+  lines(c(beta_coefs['2.5%',i], beta_coefs['97.5%',i]),
+        c(i,i), lwd=1)
+}
+axis(2, at =1:ncol(beta_coefs), labels = cov_names_slope, tick = F)
+x_points = round(10^seq(xlims[1], xlims[2],length.out = 5),1)
+axis(1, at = log10(x_points), labels = x_points)
 ```
 
 ### Slopes over time
@@ -587,28 +496,45 @@ Covariate effects on the intercept (baseline viral load) and slope (viral cleara
 Plot the absolute slope estimate for each individual over time
 
 ```{r slopes_over_time}
+slope_model = which(model_settings$mod==all_mods[2]&
+                      model_settings$prior==1 &
+                      model_settings$cov_matrices==1)
+
 names(trt_cols)=c('No study drug', trts)
-par(mfrow=c(5,1), mar = c(3,5,0.5,1),las=1,
+par(mfrow=c(3,1), mar = c(3,5,0.5,1),las=1,
     family='serif', cex.lab=1.5, cex.axis=1.5)
 trt_allocations=platcov_dat_fit$Trt_code[analysis_data_stan$ind_start]
 rand_date = platcov_dat_fit$Rand_date[analysis_data_stan$ind_start]
-j=1
-writeLines(sprintf('Slopes plot for model %s', all_mods[j]))
-slopes = abs(extract(out[[j]])$slope)
+
+writeLines(sprintf('Slopes plot for model setting %s', slope_model))
+print(model_settings[slope_model, ])
+
+slopes = abs(extract(out_all[[slope_model]])$slope)
 ymax = max(apply(slopes,2,quantile,.975))
-trts_comp = c('Regeneron','Ivermectin','Favipiravir','Remdesivir')
+my_y_vals = seq(0, ymax, length.out = 4)
+my_y_labels = round(10^my_y_vals)
+trts_comp = c('Regeneron','Ivermectin')
+
+iq_slopes = rowMeans(apply(slopes[,trt_allocations=='No study drug'],
+                           1, quantile,
+                           probs = c(.1,.9)))
+
 for(tt in c('No study drug', trts_comp)){
   ind = grep(pattern = tt,x = trt_allocations)
   plot(rand_date[ind], colMeans(slopes[,ind]),
        col=trt_cols[trt_allocations[ind]],
-       xlab='', xaxt='n',
+       xlab='', xaxt='n', yaxt='n',
        ylim=c(0,ymax),panel.first=grid(),
-       ylab='slope', xlim=range(rand_date),pch=16)
+       ylab='Fold change per day', xlim=range(rand_date),pch=16)
+  
+  
+  abline(v = as.POSIXct('2021-12-17'),h=iq_slopes,lty=2)
+  axis(2, at=my_y_vals, labels = my_y_labels)
   if(tt == 'Regeneron'){
-    text(x = as.POSIXct('2022-02-01'),y = 2,
+    text(x = as.POSIXct('2022-02-01'),y = 1.2,
          labels = paste0(tt,' (n=',length(ind),')'),cex=2)
   } else {
-    text(x = as.POSIXct('2021-11-15'),y = 2,
+    text(x = as.POSIXct('2021-11-15'),y = 1.2,
          labels = paste0(tt,' (n=',length(ind),')'),cex=2)
   }
   
@@ -617,16 +543,14 @@ for(tt in c('No study drug', trts_comp)){
           quantile(slopes[,i],probs = c(0.025,0.975)),
           col=trt_cols[trt_allocations[i]])
   }
-  abline(v = as.POSIXct('2021-12-17'),
-         h = quantile(colMeans(slopes)[trt_allocations=='No study drug'],
-                      probs = c(.5,.9)),lty=2)
+  
   axis(1, at = c(as.POSIXct(c('2021-10-01',
-                              '2021-11-01',
+                              # '2021-11-01',
                               '2021-12-01',
-                              '2022-01-01',
+                              # '2022-01-01',
                               '2022-02-01',
-                              '2022-02-27'))), 
-       labels = c('Oct','Nov','Dec','Jan','Feb','Mar'))
+                              '2022-03-27'))), 
+       labels = c('Oct','Dec','Feb','Apr'))
 }
 ```
 
@@ -634,7 +558,7 @@ for(tt in c('No study drug', trts_comp)){
 Plot the individual slope estimates by group
 
 ```{r slopes_by_group}
-slopes = abs(extract(out[[1]])$slope)
+slopes = abs(extract(out_all[[slope_model]])$slope)
 ind_unique = analysis_data_stan$ind_start
 trt_summary_dat = 
   data.frame(trt = as.character(platcov_dat_fit$Trt_code[ind_unique]),
@@ -646,10 +570,7 @@ trt_summary_dat =
              BMI = platcov_dat_fit$BMI[ind_unique],
              sex = platcov_dat_fit$Sex[ind_unique],
              symptom_onset = platcov_dat_fit$Symptom_onset[ind_unique],
-             age = platcov_dat_fit$Age[ind_unique],
-             IgG = platcov_dat_fit$IgG[ind_unique],
-             IgM = platcov_dat_fit$IgM[ind_unique])
-trt_summary_dat$trt = factor(trt_summary_dat$trt, levels=c("No study drug", trts))
+             age = platcov_dat_fit$Age[ind_unique])
 
 trt_summary_dat = dplyr::arrange(trt_summary_dat, trt, slope_mean)
 par( mar = c(5,12,2,2),las=1,
@@ -657,12 +578,13 @@ par( mar = c(5,12,2,2),las=1,
 
 xlims = c(min(trt_summary_dat$slope_upper),
           max(trt_summary_dat$slope_lower))
+my_x_vals = seq(xlims[1], xlims[2], length.out = 4)
+my_x_labels = round(10^my_x_vals)
 plot(trt_summary_dat$slope_mean, 1:nrow(trt_summary_dat),
      col=trt_summary_dat$col, yaxt='n', xaxt='n',
      xlim=xlims, panel.first=grid(),
-     xlab='slope', pch=16, ylab='')
-ps=round(10^seq(xlims[1], xlims[2], length.out = 5),1)
-axis(1, at = log10(ps),labels = ps)
+     xlab='Fold change per day', pch=16, ylab='')
+axis(1, at = my_x_vals,labels = my_x_labels)
 abline(v = quantile(trt_summary_dat$slope_mean[trt_summary_dat$trt=='No study drug'],probs = c(0.1,0.5,0.9)), lty=c(2,1,2))
 
 for(i in 1:nrow(trt_summary_dat)){
@@ -679,7 +601,9 @@ for(tt in unique(trt_summary_dat$trt)){
 Some exploratory covariate analyses
 
 ```{r}
-summary(lm(slope_mean ~ trt + IgG, trt_summary_dat))
+summary(lm(slope_mean ~ trt ,
+           #+ sex + BMI + age + symptom_onset, 
+           trt_summary_dat))
 ```
 
 
@@ -694,18 +618,23 @@ par(las=1, mfrow=c(4,4), mar=c(4,3,1,1),bty='n',
     cex.lab=1.5, cex.axis=1.5,family='serif')
 id = counter = 1
 K_plots = 16
+mod_plot = c(2,3)
+set.seed(46465);mod_cols = sample(brewer.pal(n = 9, name = 'Set1'))
+
+thetas = list()
+for(mm in 1:length(out_all)){
+  thetas[[mm]] = extract(out_all[[mm]])
+}
 while(id <= max(ID_map$ID_stan)){
   
   # every K_plots put a legend in bottom right panel
   if(counter %% K_plots == 0){
     plot(NA,NA,xlab='',ylab='',xaxt='n',
          yaxt='n',xlim=c(0,1),ylim=c(0,1))
-    legend('left', col = c(mod_cols),lwd=1,
+    legend('left', col = mod_cols[mod_plot],lwd=1,
            inset=0.03,bty='n',
-           legend = c('2 (vanilla)',
-                      '3 (RNaseP)',
-                      '3 (covariate)',
-                      '4 (non-linear)'),
+           legend = c('Standard',
+                      'Non-linear'),
            cex=1.1,title = 'Model')
   } else {
     # draw individual model fit with data
@@ -714,18 +643,22 @@ while(id <= max(ID_map$ID_stan)){
          analysis_data_stan$log_10_vl[ind],xlab='',
          ylab='', panel.first=grid(),xlim=c(0,7),
          ylim = range(analysis_data_stan$log_10_vl))
-    for(mm in 1:K_models){
+    for(mm in mod_plot){
       ix = order(analysis_data_stan$obs_day[ind])
       my_xs = analysis_data_stan$obs_day[ind][ix]
-      
       polygon(x = c(my_xs, rev(my_xs)),
-              y = c(apply(thetas[[mm]]$preds[,ind],2,quantile,probs=0.025)[ix],
-                    rev(apply(thetas[[mm]]$preds[,ind],2,quantile,probs=0.975)[ix])),
-              border = NA, col = adjustcolor(mod_cols[mm],alpha.f = .4))
+              y = c(apply(thetas[[mm]]$preds[,ind],2,
+                          quantile,probs=0.025)[ix],
+                    rev(apply(thetas[[mm]]$preds[,ind],2,
+                              quantile,probs=0.975)[ix])),
+              border = NA, 
+              col = adjustcolor(mod_cols[mm],alpha.f = .3))
       lines(my_xs,
             colMeans(thetas[[mm]]$preds[,ind])[ix],
             col = mod_cols[mm],lwd=2)
     }
+    points(analysis_data_stan$obs_day[ind],
+           analysis_data_stan$log_10_vl[ind],pch=16)
     id_real = ID_map$ID_key[ID_map$ID_stan==id][1]
     mtext(text = paste(id_real,
                        unique(platcov_dat_fit$Trt[platcov_dat_fit$ID==id_real]),
@@ -739,6 +672,18 @@ while(id <= max(ID_map$ID_stan)){
 
 
 ## Sensitivity analysis
+
+### Treatment effects
+
+```{r treatment_effect_sensitivity}
+mylty = rep(1,9)
+mylty[model_settings$mod==all_mods[3]]=2
+plot_effect_estimates(effect_ests = effect_ests,
+                      plot_models = 1:9,
+                      names_plot_models = 1:9,mylty = mylty)
+```
+
+
 
 ### Left vs right tonsil
 
@@ -798,3 +743,51 @@ writeLines(sprintf('the standard deviation of the RNaseP CT distribution is %s.'
 writeLines(sprintf('95%% of the distribution is within %s CT values difference',
                    round(diff(mean(platcov_dat$CT_RNaseP) + c(-1.96,1.96)*sd(platcov_dat$CT_RNaseP)),2)))
 ```
+
+
+### Quality Control for PCR
+
+```{r PCR_QC}
+par(las=1, mfrow=c(2,2), cex.lab=1.5, cex.axis=1.5,family='serif')
+plot(control_dat$log10_true_density,control_dat$CT_NS, 
+     ylab='CT value', 
+     xlab='Control viral density (log10 copies/mL)',
+     panel.first=grid(),
+     col=as.numeric(as.factor(control_dat$Plate)), ylim=c(40,18))
+my_slope_coefs = array(dim = c(length(unique(control_dat$Plate)),2))
+
+for(ss in unique(control_dat$Plate)){
+  plate_ind = control_dat$Plate==ss
+  mod = lm(CT_NS~log10_true_density, control_dat[plate_ind, ])
+  abline(mod,col = control_dat$Plate[plate_ind])
+  my_slope_coefs[which(ss==unique(control_dat$Plate)),]=coef(mod)
+}
+
+hist(my_slope_coefs[,1], xlab='Intercept', main='')
+writeLines(sprintf('SD of the intercept is %s',round(sd(my_slope_coefs[,1]),2)))
+
+hist(my_slope_coefs[,2], xlab='Slope', main='')
+writeLines(sprintf('Maximum difference in CT values for a tenfold change in viral load is %s',round(diff(range(my_slope_coefs[,2])),2)))
+
+xx = aggregate(CT_NS ~ Plate + log10_true_density, 
+               data = control_dat, 
+               function(x) c(mean(x), diff(x)))
+par(las=1)
+plot(xx$CT[,1], xx$CT[,2], 
+     xlab = 'Mean CT',
+     ylab = 'CT Difference from duplicates',
+     panel.first=grid())
+abline(h = 0)
+
+xx$Mean_CT = cut(xx$CT[,1],breaks = seq(20, 40, by=5),include.lowest = T)
+xx$Diff_CT = xx$CT[,2]
+
+par(mfrow=c(1,1))
+yy = aggregate(Diff_CT ~ Mean_CT, xx, sd)
+plot(yy$Mean_CT, sqrt(2) * yy$Diff_CT, xlab='CT interval',
+     ylab = 'Estimated measurement error (standard deviation)')
+```
+
+
+
+

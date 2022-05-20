@@ -6,7 +6,7 @@
 #$ -o /well/moru-batty/users/gka292/PLATCOV/o_and_e_files
 #$ -e /well/moru-batty/users/gka292/PLATCOV/o_and_e_files
 #$ -q short.qf
-#$ -t 1-16
+#$ -t 1-18
 #$ -tc 32
 
 echo started=`date`
