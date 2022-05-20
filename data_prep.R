@@ -64,6 +64,16 @@ ab_rdt$IgG = plyr::mapvalues(x = ab_rdt$`IgG (-, +, ++, +++)`,
 ab_rdt = ab_rdt[, c('scrid','IgG','IgM')]
 clin_data = merge(clin_data, ab_rdt, all = T)
 
+
+### Variant data
+var_data = read.csv('../Data/Variant_csv_files/variant genotyping Run 1.csv')
+for(i in 1:nrow(var_data)){ 
+  # extract patient ID
+  var_data$Sample.ID[i]=unlist(strsplit(var_data$Sample.ID[i],split = '_'))[1]
+  # simplify genotyping
+  var_data$Variant.genotyping[i]=unlist(strsplit(var_data$Variant.genotyping[i],split = '_'))[1]
+}
+
 ##******************** Vaccine database *******************
 ##*********************************************************
 ##*********************************************************
@@ -298,8 +308,12 @@ for(i in 1:nrow(Res)){
   }
 }
 
-## AD HOC - CHANGE WHEN VARIANT DATA AVAILABLE ##
+
+## Add genotyping data
 Res$Variant=NA
+Res$Variant_Imputed=1 #1: imputed; 0: genotyped
+
+# Imputation based on date
 ind_Delta = Res$Rand_date < as.POSIXct('2021-12-17')
 ind_BA1 = Res$Rand_date >= as.POSIXct('2021-12-17') &
   Res$Rand_date < as.POSIXct('2022-02-13')
@@ -308,13 +322,23 @@ Res$Variant[ind_Delta] = 'Delta'
 Res$Variant[ind_BA1] = 'BA.1'
 Res$Variant[ind_BA2] = 'BA.2'
 
+for(id in unique(Res$ID)){
+  ind = Res$ID==id
+  if(id %in% var_data$Sample.ID){
+    k = which(var_data$Sample.ID==id)
+    Res$Variant[ind] = var_data$Variant.genotyping[k]
+    Res$Variant_Imputed[ind] = 0
+  } 
+}
+
+
 
 ##***********************************************
 cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'BARCODE','Swab_ID','Plate','Rand_date',
          'Any_dose','N_dose','Antibody_test','Weight','BMI',
-         'Age', 'Sex', 'Symptom_onset','Variant',
-         'CT_NS','CT_RNaseP','log10_viral_load',
+         'Age', 'Sex', 'Symptom_onset','Variant','Variant_Imputed',
+         'CT_NS','CT_RNaseP',
          'Per_protocol_sample','IgG','IgM')
 writeLines('\n column names:')
 print(cols)
@@ -322,6 +346,45 @@ Res = Res[, cols]
 
 Res = dplyr::arrange(Res, Site, ID, Time)
 SC = dplyr::arrange(SC, Plate, ID)
+
+
+###### Transformation to RNA copies per mL
+# We fit a mixed effects model to the control data to estimate standard curves for each qPCR plate. 
+# This includes random slopes and random intercepts for each assay.
+control_dat = dplyr::arrange(SC, CT_NS, Plate)
+control_dat$CT = control_dat$CT_NS
+control_dat$CT[control_dat$CT_NS==40]=NA
+control_dat$batch = as.factor(control_dat$Plate)
+
+library(lme4)
+conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch), 
+                data = control_dat,
+                control = lmerControl(optimizer ="Nelder_Mead"))
+
+preds = predict(conv_mod)
+plot(control_dat$CT, control_dat$log10_true_density, xlim=c(20,40))
+for(bb in levels(control_dat$batch)){
+  ind = control_dat$batch==bb
+  lines(control_dat$CT[ind], preds[ind])
+}
+
+preds_all = 
+  predict(conv_mod,
+          newdata = data.frame(CT=Res$CT_NS,
+                               batch=as.factor(Res$Plate)))
+preds_cens = 
+  predict(conv_mod, 
+          newdata = data.frame(CT=rep(40,nrow(Res)),
+                               batch=as.factor(Res$Plate)))
+Res$log10_viral_load = preds_all
+Res$log10_cens_vl = preds_cens
+
+Res$log10_viral_load[Res$CT_NS==40]=
+  Res$log10_cens_vl[Res$CT_NS==40]
+table(Res$CT_NS==40)
+table(Res$log10_viral_load == Res$log10_cens_vl)
+
+
 
 ###### Write csv files
 # Overall data files

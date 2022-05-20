@@ -189,6 +189,8 @@ writeLines(sprintf('In the %s patients, the geometric mean baseline (defined as 
                    round(max(10^bvl$log10_viral_load))))
 ```
 
+
+
 ## Data visualisation
 
 ### Quality Control for PCR
@@ -237,199 +239,29 @@ plot(yy$Mean_CT, sqrt(2) * yy$Diff_CT, xlab='CT interval',
 
 
 
-### Conversion to copies per mL
 
-We fit a mixed effects model to the control data to estimate standard curves for each qPCR plate. This includes random slopes and random intercepts for each assay.
-
-
-```{r convert_per_ml}
-control_dat = dplyr::arrange(control_dat, CT_NS, Plate)
-control_dat$CT = control_dat$CT_NS
-control_dat$CT[control_dat$CT_NS==40]=NA
-control_dat$batch = as.factor(control_dat$Plate)
-
-conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch), 
-                data = control_dat,
-                control = lmerControl(optimizer ="Nelder_Mead"))
-
-preds = predict(conv_mod)
-plot(control_dat$CT, control_dat$log10_true_density, xlim=c(20,40))
-for(bb in levels(control_dat$batch)){
-  ind = control_dat$batch==bb
-  lines(control_dat$CT[ind], preds[ind])
-}
-
-preds_all = 
-  predict(conv_mod,
-          newdata = data.frame(CT=platcov_dat$CT_NS,
-                               batch=as.factor(platcov_dat$Plate)))
-preds_cens = 
-  predict(conv_mod, 
-          newdata = data.frame(CT=rep(40,nrow(platcov_dat)),
-                               batch=as.factor(platcov_dat$Plate)))
-platcov_dat$log10_viral_load_pred = preds_all
-platcov_dat$log10_cens_vl = preds_cens
-
-platcov_dat$log10_viral_load_pred[platcov_dat$CT_NS==40]=
-  platcov_dat$log10_cens_vl[platcov_dat$CT_NS==40]
-table(platcov_dat$CT_NS==40)
-table(platcov_dat$log10_viral_load_pred == platcov_dat$log10_cens_vl)
-
-plot(platcov_dat$log10_viral_load, 
-     platcov_dat$log10_viral_load_pred,
-     col=platcov_dat$Plate)
-
-## re-arrange so that censored values come last
-platcov_dat = dplyr::arrange(platcov_dat, log10_viral_load_pred==log10_cens_vl)
-ind_dup = !duplicated(platcov_dat$ID)
-```
-
-
-### Human RNaseP
-
-```{r RNaseP}
-par(las=1, cex.lab=1.5, cex.axis=1.5,family='serif')
-hist(platcov_dat$CT_RNaseP, main='',
-     xlab='RNaseP CT',ylab='',yaxt='n', breaks = 30)
-abline(v = mean(platcov_dat$CT_RNaseP) + c(1.96,-1.96)*sd(platcov_dat$CT_RNaseP),
-       lwd=3, lty=2)
-writeLines(sprintf('the standard deviation of the RNaseP CT distribution is %s.', 
-                   round(sd(platcov_dat$CT_RNaseP),2)))
-
-writeLines(sprintf('95%% of the distribution is within %s CT values difference',
-                   round(diff(mean(platcov_dat$CT_RNaseP) + c(-1.96,1.96)*sd(platcov_dat$CT_RNaseP)),2)))
-```
 
 
 ### Overall data plot
 
 ```{r trt_data_plot, fig.width=10, fig.height=7}
 par(las=1, cex.lab=1.5, cex.axis=1.5, family='serif', mfrow=c(1,2))
-hist(bvl$log10_viral_load,
-     breaks = seq(1,8.5,by=.5),
-     xlab='Baseline viral load (copies per mL)',
-     ylab ='Number of patients',xlim=c(1,8.5),
-     main='', xaxt ='n')
-axis(1, at = c(2,4,6,8), labels = c(expression(10^2),
-                                    expression(10^4),
-                                    expression(10^6),
-                                    expression(10^8)))
-## Color by randomised treatment
-# make treatment colors and indices
-PCR_dat = aggregate(log10_viral_load_pred ~ ID + Timepoint_ID +
-                      Trt_number + Trt, 
-                    data = platcov_dat, mean)
-trt_cols = brewer.pal(n = length(unique(PCR_dat$Trt)),name = 'Dark2')
-trt_smmry = aggregate(formula = log10_viral_load_pred ~ Timepoint_ID+Trt_number, 
-                      data = PCR_dat, FUN = median)
-prop_neg = aggregate(log10_viral_load_pred ~ Timepoint_ID + Trt_number, data=PCR_dat, FUN = function(x) round(100*(mean(x>2))))
-PCR_dat$Timepoint_ID=jitter(PCR_dat$Timepoint_ID)
+plot_baseline_data(platcov_dat)
+mtext(text = 'a',side = 3,adj = 0,cex=1.5,line = 1.5)
 
-gap.plot(PCR_dat$Timepoint_ID, PCR_dat$log10_viral_load_pred,
-         ylab = 'Viral copies per mL', panel.first=grid(),
-         xlab = 'Time since randomisation (days)',
-         gap = c(7.5,13.5), gap.axis = 'x',
-         yticlab = '',ytics = 2, xtics = c(0,3,6,14),
-         xlim = c(0,14), type='n', yaxt='n',
-         col = trt_cols[PCR_dat$Trt_number],
-         ylim = c(1, max(PCR_dat$log10_viral_load_pred)))
-axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
-                                    expression(10^4),
-                                    expression(10^6),
-                                    expression(10^8)))
-for(id in IDs){
-  ind = PCR_dat$ID==id
-  gap.plot(PCR_dat$Timepoint_ID[ind],
-           PCR_dat$log10_viral_load_pred[ind],
-           gap = c(7.5,13.5), gap.axis = 'x',add = T,
-           col=adjustcolor(trt_cols[PCR_dat$Trt_number[ind]],.3))
-}
-gap.plot(trt_smmry$Timepoint_ID, trt_smmry$log10_viral_load_pred,
-         col= trt_cols[trt_smmry$Trt_number],
-         gap = c(7.5,13.5), gap.axis = 'x',add = T,
-         pch = 14+trt_smmry$Trt_number, cex=1.5)
-for(tt in unique(trt_smmry$Trt_number)){
-  ind = trt_smmry$Trt_number==tt
-  gap.plot(trt_smmry$Timepoint_ID[ind],
-           trt_smmry$log10_viral_load_pred[ind], 
-           gap = c(7.5,13.5), gap.axis = 'x',add = T,
-           type='l',
-           col = trt_cols[tt],lwd=3)
-}
-legend('topright', col=trt_cols, 
-       legend = unique(PCR_dat$Trt),title = 'Median',
-       lwd=2,pch=14+unique(PCR_dat$Trt_number),
-       cex=1.2, inset = 0.03)
-
-par(mfrow=c(1,1))
-plot(prop_neg$Timepoint_ID, prop_neg$log10_viral_load_pred,
-     ylim = c(0,100), col=trt_cols[prop_neg$Trt_number],
-     panel.first=grid(), pch=16, xlab='Time since randomisation (days)',
-     ylab = 'Patients with viral load > 100 copies per mL (%)')
-for(tt in unique(prop_neg$Trt_number)){
-  ind = prop_neg$Trt_number==tt
-  lines(prop_neg$Timepoint_ID[ind],
-        prop_neg$log10_viral_load_pred[ind], 
-        lwd=3,col=trt_cols[tt])
-}
-legend('topright', col=trt_cols, 
-       legend = unique(PCR_dat$Trt),title = 'Median',
-       lwd=2,pch=14+unique(PCR_dat$Trt_number),
-       cex=1.2, inset = 0.03)
-
-K_sites = length(unique(platcov_dat$Site))
-par(mfrow=c(1,K_sites))
-for(ss in unique(bvl$Site)){
-  ind = bvl$Site==ss
-  hist(bvl$log10_viral_load[ind],
-       breaks = seq(1,9,by=1),
-       xlab='Baseline viral load (copies per mL)',
-       ylab ='Number of patients',xlim=c(1,8.5),
-       main=ss, xaxt ='n')
-  axis(1, at = c(2,4,6,8), labels = c(expression(10^2),
-                                      expression(10^4),
-                                      expression(10^6),
-                                      expression(10^8)))
-}
+trt_cols = brewer.pal(n = length(unique(platcov_dat$Trt)),
+                      name = 'Dark2')
+plot_serial_data(platcov_dat,trt_cols)
+mtext(text = 'b',side = 3,adj = 0,cex=1.5,line = 1.5)
 ```
 
 
 ## Model fitting
-
-```{r}
-bayes_R2 = function(mod_preds, mod_residuals) {
-  var_pred = apply(mod_preds, 1, var)
-  var_res = apply(mod_residuals, 1, var)
-  var_pred / (var_pred + var_res)
-}
-```
-
-
 ### Specify priors
 
 ```{r priors}
-prior_params = list(alpha_0_prior_mean = 5,
-                    alpha_0_prior_sd = 2,
-                    beta_0_prior_mean = -.5,
-                    beta_0_prior_sd = 1,
-                    trt_effect_sd = .5,
-                    sigma_logvl_mean = 1,
-                    sigma_logvl_sd = 1,
-                    gamma_rnasep_sd = 1,
-                    slope_coefs_sd = 1,
-                    intercept_coefs_sd = 1,
-                    t_max_pop_mean = -3,
-                    t_max_pop_sd = 3)
-
-prior_params_sensitive = prior_params
-for(i in grep('sd',x = names(prior_params))){
-  prior_params_sensitive[[i]] = prior_params_sensitive[[i]]*10
-}
-print(prior_params)
-
-print(prior_params_sensitive)
-
-all_priors = list(prior_params, prior_params_sensitive)
+source('priors.R')
+print(all_priors)
 ```
 
 
@@ -448,6 +280,10 @@ Covariates that we use in model 2:
 
 
 ```{r}
+## re-arrange so that censored values come last
+platcov_dat = dplyr::arrange(platcov_dat, log10_viral_load==log10_cens_vl)
+ind_dup = !duplicated(platcov_dat$ID)
+
 trts = c("Regeneron",
          "Ivermectin",
          "Remdesivir",
@@ -502,7 +338,7 @@ Trt_mats = list(Trt_matrix, Trt_matrix_subgroup)
 ID_map = data.frame(ID_key = platcov_dat_fit$ID,
                     ID_stan = as.numeric(as.factor(platcov_dat_fit$ID)))
 
-ind_cens = !platcov_dat_fit$log10_viral_load_pred>platcov_dat_fit$log10_cens_vl
+ind_cens = !platcov_dat_fit$log10_viral_load>platcov_dat_fit$log10_cens_vl
 writeLines(sprintf('%s%% of samples are below LOD',
                    round(100*mean(ind_cens),digits = 2)))
 
@@ -512,7 +348,7 @@ analysis_data_stan = list(Ntot = nrow(platcov_dat_fit),
                           id = ID_map$ID_stan,
                           ind_start = which(!duplicated(ID_map$ID_stan)),
                           obs_day = platcov_dat_fit$Time,
-                          log_10_vl = platcov_dat_fit$log10_viral_load_pred,
+                          log_10_vl = platcov_dat_fit$log10_viral_load,
                           log10_cens_vl = platcov_dat_fit$log10_cens_vl,
                           RNaseP = platcov_dat_fit$RnaseP_scaled,
                           K_cov_intercept = ncol(X_matrix_intercept),
@@ -582,6 +418,7 @@ if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all mo
 
 
 ### Model fits: summaries
+
 
 ```{r summary}
 #
@@ -674,29 +511,10 @@ plot_effect_estimates(effect_ests = effect_ests,
                                             '3: covariate',
                                             '4: non-linear'))
 
-main_models_sens = which(model_settings$prior==2 & model_settings$trt_mat==1)
-writeLines('The main 4 models with non-informative priors:')
-plot_effect_estimates(effect_ests = effect_ests,
-                      plot_models = main_models_sens,
-                      names_plot_models = c('1: vanilla',
-                                            '2: linear',
-                                            '3: covariate',
-                                            '4: non-linear'))
-
-
 main_models2 = which(model_settings$prior==1 & model_settings$trt_mat==2)
 writeLines('The main 4 models with weakly informative priors:')
 plot_effect_estimates(effect_ests = effect_ests,
                       plot_models = main_models2,
-                      names_plot_models = c('1: vanilla',
-                                            '2: linear',
-                                            '3: covariate',
-                                            '4: non-linear'))
-
-main_models2_sens = which(model_settings$prior==2 & model_settings$trt_mat==2)
-writeLines('The main 4 models with non-informative priors:')
-plot_effect_estimates(effect_ests = effect_ests,
-                      plot_models = main_models2_sens,
                       names_plot_models = c('1: vanilla',
                                             '2: linear',
                                             '3: covariate',
@@ -964,4 +782,19 @@ plot(dd_RNaseP$RTS-dd_RNaseP$TSL,
 cor_out = cor.test(dd_RNaseP$RTS-dd_RNaseP$TSL, 
                    dd_CT_NS$RTS-dd_CT_NS$TSL)
 mtext(text = sprintf('Pearson correlation is %s',signif(cor_out$estimate,2)),side = 3,line = 0)
+```
+
+
+### Human RNaseP
+
+```{r RNaseP}
+par(las=1, cex.lab=1.5, cex.axis=1.5,family='serif')
+hist(platcov_dat$CT_RNaseP, main='',
+     xlab='RNaseP CT',ylab='',yaxt='n', breaks = 30)
+abline(v = mean(platcov_dat$CT_RNaseP) + c(1.96,-1.96)*sd(platcov_dat$CT_RNaseP),
+       lwd=3, lty=2)
+writeLines(sprintf('the standard deviation of the RNaseP CT distribution is %s.', 
+                   round(sd(platcov_dat$CT_RNaseP),2)))
+writeLines(sprintf('95%% of the distribution is within %s CT values difference',
+                   round(diff(mean(platcov_dat$CT_RNaseP) + c(-1.96,1.96)*sd(platcov_dat$CT_RNaseP)),2)))
 ```
