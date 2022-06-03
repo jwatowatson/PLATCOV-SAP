@@ -17,6 +17,6 @@ echo "job=$JOB_ID"
 echo "hostname="`hostname`
 echo "OS="`uname -s`
 echo "username="`whoami`
-Rscript /well/moru-batty/users/gka292/PLATCOV/Ivermectin/run_models_bmrc.R ${SGE_TASK_ID} --no-save --no-restore
+Rscript /well/moru-batty/users/gka292/PLATCOV/Ivermectin/run_models.R ${SGE_TASK_ID} --no-save --no-restore
 echo "finished="`date`
 exit 0

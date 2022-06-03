@@ -43,6 +43,33 @@ if(sum(ind)>0) {
 }
 
 
+# Cross check with online randomisation app data
+# Sites TH57 and TH58 did not use app so cannot cross check
+data.TH1 <- read.csv("~/Dropbox/PLATCOV/data-TH1.csv")
+data.TH1$ID = paste0('PLT-TH1-',stringr::str_pad(data.TH1$randomizationID, 3, pad = "0"))
+writeLines('The following randomisation database IDs are not in clinical database:\n')
+print(data.TH1$ID[!data.TH1$ID %in% clin_data$Label])
+data.TH1 = data.TH1[data.TH1$ID%in% clin_data$Label, ]
+
+# discrepancies between randomisation database and CRFs?
+for(i in 1:nrow(data.TH1)){
+  ind = clin_data$Label==data.TH1$ID[i]
+  if(!data.TH1$age[i] == clin_data$age_yr[ind]){
+    writeLines(sprintf('Patient %s: in randomisation database age is %s, in CRF age is %s',
+                       data.TH1$ID[i],
+                       data.TH1$age[i],
+                       clin_data$age_yr[ind]))
+  }
+  if(!data.TH1$sex[i] == sjlabelled::as_character(clin_data$sex[clin_data$Label==data.TH1$ID[i]])){
+    writeLines(sprintf('Patient %s: in randomisation database age is %s, in CRF age is %s',
+                       data.TH1$ID[i],
+                       data.TH1$sex[i],
+                       clin_data$sex[ind]))
+    }
+}
+
+
+## Per protocol for treatment data
 trt_distcont_data = haven::read_dta('../Data/InterimChangeTreatment.dta')
 
 
@@ -66,13 +93,39 @@ clin_data = merge(clin_data, ab_rdt, all = T)
 
 
 ### Variant data
-var_data = read.csv('../Data/Variant_csv_files/variant genotyping Run 1.csv')
-for(i in 1:nrow(var_data)){ 
-  # extract patient ID
-  var_data$Sample.ID[i]=unlist(strsplit(var_data$Sample.ID[i],split = '_'))[1]
-  # simplify genotyping
-  var_data$Variant.genotyping[i]=unlist(strsplit(var_data$Variant.genotyping[i],split = '_'))[1]
+fnames_var = list.files('../Data/Variant_csv_files/')
+for(i in 1:length(fnames_var)){
+  writeLines(sprintf('Loading data from file:\n %s \n*********************************************************', fnames_var[i]))
+  if(i==1){
+    var_data = readr::read_csv(paste0('../Data/Variant_csv_files/', fnames_var[i],sep=''))
+  } else {
+    temp = readr::read_csv(paste0('../Data/Variant_csv_files/', fnames_var[i],sep=''))
+    var_data = rbind(var_data,temp)
+  }
 }
+writeLines(sprintf('We have variant genotyping for %s patients',length(unique(var_data$`SUBJECT ID`))))
+
+table(var_data$Summary, useNA = 'ifany')
+var_data$Summary = plyr::mapvalues(x = var_data$Summary, 
+                                   from = c('Delta_B1.617.2',
+                                            'Omicron BA.2_B.1.1.529',
+                                            'Omicron_B.1.1.529',
+                                            'undetermined'),
+                                   to = c('Delta','BA.2','BA.1',NA))
+table(var_data$Summary,useNA = 'ifany')
+var_data=merge(x = clin_data,y = var_data, by.x = 'Label', by.y = 'SUBJECT ID')
+
+var_data = dplyr::arrange(var_data, randat)
+par(las=1,cex.axis=1.3,cex.lab=1.3)
+var_data$var=as.numeric(factor(var_data$Summary,levels=c('Delta','BA.1','BA.2')))
+plot(var_data$randat, 1:nrow(var_data), 
+     xlab='Randomisation Date', ylab='Genotyped Patient number',
+     panel.first=grid(),col = adjustcolor(var_data$var,.6),
+     pch = 14+var_data$var,
+     cex=1.5)
+legend('bottomright',pch=15:17,col=1:3,cex=2,
+       legend = c('Delta','BA.1','BA.2'),inset=0.03)
+
 
 ##******************** Vaccine database *******************
 ##*********************************************************
@@ -129,10 +182,9 @@ log_data = log_data[!is.na(log_data$sl_barc), ]
 ##******************** qPCR database **********************
 ##*********************************************************
 ##*********************************************************
-
-
 fnames = list.files('../Data/CSV files/')
 for(i in 1:length(fnames)){
+  writeLines(sprintf('Loading data from file:\n %s \n*********************************************************', fnames[i]))
   if(i==1){
     Res = readr::read_csv(paste0('../Data/CSV files/', fnames[i],sep=''))
   } else {
@@ -271,7 +323,7 @@ for(i in 1:nrow(Res)){
       my_sample_time = s_times[which(!is.na(s_times))]
     }
   }
- 
+  
   Res$Time[i] = difftime(sample_time,rand_time,units = 'days')
   if(is.na(Res$Time[i])) {
     writeLines(sprintf('Missing sample time for patient %s',id))
@@ -314,19 +366,25 @@ Res$Variant=NA
 Res$Variant_Imputed=1 #1: imputed; 0: genotyped
 
 # Imputation based on date
-ind_Delta = Res$Rand_date < as.POSIXct('2021-12-17')
-ind_BA1 = Res$Rand_date >= as.POSIXct('2021-12-17') &
-  Res$Rand_date < as.POSIXct('2022-02-13')
-ind_BA2 = Res$Rand_date >= as.POSIXct('2022-02-13')
+d1 = as.POSIXct('2022-01-01')
+d2 = as.POSIXct('2022-02-20')
+ind_Delta = Res$Rand_date < d1
+ind_BA1 = Res$Rand_date >= d1 & Res$Rand_date < d2
+ind_BA2 = Res$Rand_date >= d2
 Res$Variant[ind_Delta] = 'Delta'
 Res$Variant[ind_BA1] = 'BA.1'
 Res$Variant[ind_BA2] = 'BA.2'
 
 for(id in unique(Res$ID)){
   ind = Res$ID==id
-  if(id %in% var_data$Sample.ID){
-    k = which(var_data$Sample.ID==id)
-    Res$Variant[ind] = var_data$Variant.genotyping[k]
+  if(id %in% var_data$Label){
+    k = which(var_data$Label==id)
+    if(!is.na(var_data$Summary[k]) & unique(Res$Variant[ind]) != var_data$Summary[k]){
+      writeLines(sprintf('Imputed as %s, genotyped as %s',
+                         unique(Res$Variant[ind]),
+                         var_data$Summary[k]))
+    }
+    Res$Variant[ind] = var_data$Summary[k]
     Res$Variant_Imputed[ind] = 0
   } 
 }
@@ -344,7 +402,7 @@ writeLines('\n column names:')
 print(cols)
 Res = Res[, cols]
 
-Res = dplyr::arrange(Res, Site, ID, Time)
+Res = dplyr::arrange(Res, Rand_date, ID, Time)
 SC = dplyr::arrange(SC, Plate, ID)
 
 
