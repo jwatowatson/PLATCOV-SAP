@@ -14,7 +14,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(cache = T, cache.comments = FALSE,
+knitr::opts_chunk$set(cache = F, cache.comments = FALSE,
                       echo = F, include = TRUE, 
                       fig.width = 8, fig.height = 8,
                       fig.pos = 'H',dev = 'png', dpi = 300)
@@ -41,8 +41,9 @@ TODO list:
 This is the analysis of the Ivermectin arm of the PLATCOV study
 
 Data preparation is done in a different R script called data_prep.R.
-This Markdown script assumes that the data are saved in a .csv file *interim_dat.csv* in long format. 
-The file *interim_dat.csv* contains the patient clinical and viral load data with the following column headers:
+This Markdown script assumes that the data are saved in a .csv file *Ivermectin_analysis.csv* in long format. 
+The intention to treat population (all randomised patients included in this analysis)
+The file *Ivermectin_analysis.csv* contains the patient clinical and viral load data with the following column headers:
 
 - ID: anonymised patient id code
 - Time: time from randomisation
@@ -174,7 +175,8 @@ par(las=1, cex.lab=1.5, cex.axis=1.5, family='serif')
 plot(platcov_dat$Rand_date[ind_dup], 1:length(IDs),
      col= adjustcolor(as.numeric(as.factor(platcov_dat$Variant[ind_dup])),.5),
      pch = 15-platcov_dat$Variant_Imputed[ind_dup]*15+1,
-     xlab='Randomisation date', ylab='Patient ID',panel.first=grid())
+     xlab='Randomisation date', ylab='Sequential patient number',
+     panel.first=grid())
 legend('topleft',col = 1:length(unique(platcov_dat$Variant)),
        legend = levels(as.factor(platcov_dat$Variant[ind_dup])),pch=16,inset = 0.03)
 legend('left',col=1, pch=c(16,1),legend = c('Genotyped','Imputed'),inset = 0.03)
@@ -302,9 +304,9 @@ model_settings = rbind(basic_settings,
                        expand.grid(mod = all_mods[2:3],
                                    prior = 1:length(all_priors),
                                    cov_matrices = 1:2))
-model_settings$Niter = 4000
-model_settings$Nwarmup = 2000
-model_settings$Nthin = 5
+model_settings$Niter = 10000
+model_settings$Nwarmup = 5000
+model_settings$Nthin = 10
 model_settings$Nchain = 4
 
 writeLines(sprintf('We are running all models with %s chains and %s samples for each chain, discarding half for burn-in and thining every %s, thus giving a total of %s posterior samples per model.',
