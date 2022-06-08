@@ -29,6 +29,7 @@ vignettes/*.pdf
 # knitr and R markdown default cache directories
 /*_files/
 Ivermectin/*_files/
+*/*_files/
 /files/
 
 # analysis output - private until publication of result
