@@ -33,6 +33,7 @@ Ivermectin/*_files/
 /*_cache/
 Ivermectin/*_cache/
 /cache/
+*/*_cache/
 
 # Temporary files created by R markdown
 *.utf8.md
