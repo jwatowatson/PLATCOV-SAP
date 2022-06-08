@@ -52,6 +52,9 @@ print(data.TH1$ID[!data.TH1$ID %in% clin_data$Label])
 data.TH1 = data.TH1[data.TH1$ID%in% clin_data$Label, ]
 
 # discrepancies between randomisation database and CRFs?
+clin_data$sex_char = sjlabelled::as_character(clin_data$sex)
+clin_data$sex = as.numeric(sjlabelled::as_character(clin_data$sex)=='Male')
+
 for(i in 1:nrow(data.TH1)){
   ind = clin_data$Label==data.TH1$ID[i]
   if(!data.TH1$age[i] == clin_data$age_yr[ind]){
@@ -60,12 +63,12 @@ for(i in 1:nrow(data.TH1)){
                        data.TH1$age[i],
                        clin_data$age_yr[ind]))
   }
-  if(!data.TH1$sex[i] == sjlabelled::as_character(clin_data$sex[clin_data$Label==data.TH1$ID[i]])){
-    writeLines(sprintf('Patient %s: in randomisation database age is %s, in CRF age is %s',
+  if(!data.TH1$sex[i] == clin_data$sex_char[clin_data$Label==data.TH1$ID[i]]){
+    writeLines(sprintf('Patient %s: in randomisation database sex is %s, in CRF sex is %s',
                        data.TH1$ID[i],
                        data.TH1$sex[i],
-                       clin_data$sex[ind]))
-    }
+                       clin_data$sex_char[ind]))
+  }
 }
 
 
@@ -98,12 +101,15 @@ for(i in 1:length(fnames_var)){
   writeLines(sprintf('Loading data from file:\n %s \n*********************************************************', fnames_var[i]))
   if(i==1){
     var_data = readr::read_csv(paste0('../Data/Variant_csv_files/', fnames_var[i],sep=''))
+    my_specs = readr::spec(var_data)
   } else {
-    temp = readr::read_csv(paste0('../Data/Variant_csv_files/', fnames_var[i],sep=''))
+    temp = readr::read_csv(paste0('../Data/Variant_csv_files/', fnames_var[i],sep=''),col_types = my_specs)
     var_data = rbind(var_data,temp)
   }
 }
 writeLines(sprintf('We have variant genotyping for %s patients',length(unique(var_data$`SUBJECT ID`))))
+writeLines(sprintf('Variant genotyping for %s is duplicated',var_data$`SUBJECT ID`[duplicated(var_data$`SUBJECT ID`)]))
+var_data = var_data[!duplicated(var_data$`SUBJECT ID`), ]
 
 table(var_data$Summary, useNA = 'ifany')
 var_data$Summary = plyr::mapvalues(x = var_data$Summary, 
@@ -163,7 +169,6 @@ for(i in 1:nrow(clin_data)){
 }
 
 
-clin_data$sex = as.numeric(sjlabelled::as_character(clin_data$sex)=='Male')
 clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
 clin_data$cov_test = sjlabelled::as_character(clin_data$cov_test)
 clin_data$cov_test[clin_data$cov_test=='Not done']=NA
@@ -457,7 +462,14 @@ IDs_pos_control = unique(Res$ID[Res$Rand_date < "2021-12-17 00:00:00" &
                                   Res$Trt == 'Regeneron' & 
                                   Res$Site == 'th001'])
 Res_ivermectin = Res[Res$ID %in% c(IDs_Ivermectin, IDs_pos_control), ]
+
+
+IDs_Remdesivir = unique(Res$ID[Res$Trt %in% c('Remdesivir',"No study drug") &
+                                 Res$Rand_date < "2022-06-10 00:00:00"])
+Res_Remdesivir = Res[Res$ID %in% IDs_Remdesivir, ]
+
 write.csv(x = Res_ivermectin, file = 'Ivermectin_analysis.csv', row.names = F)
+write.csv(x = Res_Remdesivir, file = 'Remdesivir_analysis.csv', row.names = F)
 
 writeLines('Barcodes of conflicting sample times:')
 print(sampling_time_conflicts)

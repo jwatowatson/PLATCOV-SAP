@@ -2,11 +2,8 @@
 
 plot_effect_estimates = function(effect_ests, #list of stan outputs
                                  plot_models, # indices of models to plot in list
-                                 names_plot_models, # names for plotting
-                                 place='topright', 
                                  my_pch=1,
                                  mod_cols = NULL,
-                                 left_space=8,
                                  study_threshold){
   
   if (length(my_pch)==1) my_pch = rep(1,length(plot_models))
@@ -17,18 +14,17 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
   }
   if(length(mod_cols)!=length(plot_models)) stop('number of colors needs to be equal to number of models to be plotted')
   
-  par(bty='n', cex.lab=1.3, cex.axis=1.3,family='serif',
-      mar=c(5,left_space,2,2),las=1, mfrow=c(1,1))
   
   K_treatments = nrow(effect_ests[[plot_models[1]]])
   
   xlims = range(sapply(effect_ests[plot_models], rbind))
-  plot(NA, NA, xlim = xlims,
-       ylim = c(0.5,K_treatments+.5),
+  x_points = pretty(exp(xlims), n = 4)
+  plot(NA, NA, xlim = range(log(x_points)),
+       ylim = c(0.25,K_treatments+.25),
        panel.first=grid(), ylab='', yaxt='n', type='n',
        xlab = 'Multiplicative change in slope relative to control',
        xaxt = 'n')
-  axis(1, at = log(c(0.7,1,1.5,2)), labels = c(0.7,1,1.5,2))
+  axis(1, at = log(x_points), labels = (x_points))
   axis(2, at = 1:K_treatments,
        labels = rownames(effect_ests[[plot_models[1]]]),
        tick = F)
@@ -39,7 +35,7 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
           col = adjustcolor('grey',.4))
   for(i in 1:length(plot_models)){
     points(effect_ests[[plot_models[i]]][,'mean'],
-           1:K_treatments+index_p[i],pch=15+my_pch[i],
+           1:K_treatments+index_p[i],pch=my_pch[i],
            col=mod_cols[i])
     for(j in 1:K_treatments){
       lines(c(effect_ests[[plot_models[i]]][j,'2.5%'],
@@ -50,11 +46,6 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
             rep(j+index_p[i],2),col=mod_cols[i],lwd=3)
     }
   }
-  
-  legend(place, col=mod_cols,lwd = 3,
-         title = 'Model',cex=1,pch = 15+my_pch,
-         legend = names_plot_models)
-  legend('right',pch = 16:17,legend = c('Linear','Non-linear'))
 }
 
 
@@ -262,17 +253,18 @@ make_baseline_table = function(input_data){
   }
   xx_site[is.na(xx_site)]=0
   
-  xx = merge(merge(merge(merge(merge(merge(merge(
+  xx = merge(merge(merge(merge(merge(merge(
     xx_n, xx_age,by = 'Trt_code'),
     xx_vl,by = 'Trt_code'),
-    xx_Any_vac,by = 'Trt_code'),
     xx_Nvac,by = 'Trt_code'),
     xx_Antibody,by = 'Trt_code'),
     xx_sex, by = 'Trt_code'),
     xx_site, by = 'Trt_code')
+  
   colnames(xx)=c('Arm','n','Age','Baseline viral load (log10)',
-                 'Vaccinated (%)','Number of vaccine doses',
-                 'Antibody+ (%)','Male (%)',unique(platcov_sm_dat$Site))
+                 'Number of vaccine doses',
+                 'Antibody+ (%)','Male (%)',
+                 unique(platcov_sm_dat$Site))
   
   
   return(xx)
@@ -301,62 +293,71 @@ plot_individ_data = function(mod_out, # model fits
   while(id <= max(ID_map$ID_stan)){
     
     # every K_plots put a legend in bottom right panel
-    if(counter %% K_plots == 0){
-      plot(NA,NA,xlab='',ylab='',xaxt='n',
-           yaxt='n',xlim=c(0,1),ylim=c(0,1))
-      legend('left', col = mod_cols[models_plot],lwd=1,
-             inset=0.03,bty='n',
-             legend = c('Standard',
-                        'Non-linear'),
-             cex=1.1,title = 'Model')
-    } else {
-      # draw individual model fit with data
-      ind = analysis_data_stan$id==id
-      plot(analysis_data_stan$obs_day[ind],
-           analysis_data_stan$log_10_vl[ind],
-           xlab='', ylab='', 
-           xaxt='n', yaxt='n',
-           panel.first=grid(), xlim=c(0,7),
-           ylim = range(analysis_data_stan$log_10_vl))
-      if(counter %% sqrt(K_plots) == 1){
-        mtext(text = 'RNA copies per mL',side = 2,
-              line = 3,las = 3)
-      }
-      axis(1, at = c(0,3,7))
-      axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
-                                          expression(10^4),
-                                          expression(10^6),
-                                          expression(10^8)))
-      if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
-        mtext(text = 'Days',side = 1,line = 2)
-      }
-      for(mm in models_plot){
-        ix = order(analysis_data_stan$obs_day[ind])
-        my_xs = analysis_data_stan$obs_day[ind][ix]
-        polygon(x = c(my_xs, rev(my_xs)),
-                y = c(apply(thetas[[mm]]$preds[,ind],2,
-                            quantile,probs=0.025)[ix],
-                      rev(apply(thetas[[mm]]$preds[,ind],2,
-                                quantile,probs=0.975)[ix])),
-                border = NA, 
-                col = adjustcolor(mod_cols[mm],alpha.f = .3))
-        lines(my_xs,
-              colMeans(thetas[[mm]]$preds[,ind])[ix],
-              col = mod_cols[mm],lwd=2)
-      }
-      points(analysis_data_stan$obs_day[ind],
-             analysis_data_stan$log_10_vl[ind],pch=16)
-      id_map_ind = ID_map$ID_stan==id
-      
-      mtext(text = paste0(ID_map$ID_key[id_map_ind],
-                          '\n',
-                          ID_map$Trt[id_map_ind]),
-            side = 3, line = -0.5, cex=0.8)
-      id=id+1
+    # if(counter %% K_plots == 0){
+    #   plot(NA,NA,xlab='',ylab='',xaxt='n',
+    #        yaxt='n',xlim=c(0,1),ylim=c(0,1))
+    #   legend('left', col = mod_cols[models_plot],lwd=1,
+    #          inset=0.03,bty='n',
+    #          legend = c('Standard',
+    #                     'Non-linear'),
+    #          cex=1.1,title = 'Model')
+    # } else {
+    # draw individual model fit with data
+    ind = analysis_data_stan$id==id
+    plot(analysis_data_stan$obs_day[ind],
+         analysis_data_stan$log_10_vl[ind],
+         xlab='', ylab='', 
+         xaxt='n', yaxt='n',
+         panel.first=grid(), xlim=c(0,7),
+         ylim = range(analysis_data_stan$log_10_vl))
+    if(counter %% sqrt(K_plots) == 1){
+      mtext(text = 'RNA copies per mL',side = 2,
+            line = 3,las = 3)
     }
+    axis(1, at = c(0,3,7))
+    axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
+                                        expression(10^4),
+                                        expression(10^6),
+                                        expression(10^8)))
+    if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
+      mtext(text = 'Days',side = 1,line = 2)
+    }
+    for(mm in models_plot){
+      ix = order(analysis_data_stan$obs_day[ind])
+      my_xs = analysis_data_stan$obs_day[ind][ix]
+      polygon(x = c(my_xs, rev(my_xs)),
+              y = c(apply(thetas[[mm]]$preds[,ind],2,
+                          quantile,probs=0.025)[ix],
+                    rev(apply(thetas[[mm]]$preds[,ind],2,
+                              quantile,probs=0.975)[ix])),
+              border = NA, 
+              col = adjustcolor(mod_cols[mm],alpha.f = .3))
+      lines(my_xs,
+            colMeans(thetas[[mm]]$preds[,ind])[ix],
+            col = mod_cols[mm],lwd=2)
+    }
+    points(analysis_data_stan$obs_day[ind],
+           analysis_data_stan$log_10_vl[ind],pch=16)
+    id_map_ind = ID_map$ID_stan==id
+    
+    mtext(text = paste0(ID_map$ID_key[id_map_ind],
+                        '\n',
+                        ID_map$Trt[id_map_ind]),
+          side = 3, line = -0.5, cex=0.8)
+    id=id+1
+    # }
+    
     counter=counter+1
   }
   
+  # add legend to final plot
+  plot(NA,NA,xlab='',ylab='',xaxt='n',
+       yaxt='n',xlim=c(0,1),ylim=c(0,1))
+  legend('left', col = mod_cols[models_plot],lwd=1,
+         inset=0.03,bty='n',
+         legend = c('Standard',
+                    'Non-linear'),
+         cex=1.1,title = 'Model')
 }
 
 
@@ -394,8 +395,8 @@ plot_coef_effects = function(stan_out, model_plot, cov_mat, stan_inputs){
           c(i,i), lwd=1)
   }
   axis(2, at =1:ncol(alpha_coefs), labels = cov_names_intercept,tick = F)
- 
-   x_points = signif(10^seq(xlims[1], xlims[2],length.out = 5),2)
+  
+  x_points = signif(10^seq(xlims[1], xlims[2],length.out = 5),2)
   axis(1, at = log10(x_points), labels = x_points)
   
   beta_coefs = apply(thetas$slope_coefs,2,quantile,

@@ -75,15 +75,14 @@ rstan_options(auto_write = TRUE)
 Dmax = 8
 RUN_MODELS = F
 
-source('functions.R')
+source('../functions.R')
 ```
 
 # Overview of data
 ## Load data
 
 ```{r}
-screen_dat = read.csv('interim_screening_dat.csv')
-platcov_dat = read.csv('interim_dat.csv')
+platcov_dat = read.csv('../Remdesivir_analysis.csv')
 
 ind_na_time = is.na(platcov_dat$Time)
 writeLines(sprintf('Missing time for following samples: %s',
@@ -182,26 +181,10 @@ Summary table
 
 ```{r table1}
 print(unique(platcov_dat$Trt))
-trts = c("Regeneron",
-         "Ivermectin",
-         "Remdesivir",
-         "Favipiravir",
-         "Fluoxetine")
+trts = c("Remdesivir")
 platcov_dat$Trt_code = 
   factor(platcov_dat$Trt,
          levels=c("No study drug", trts))
-
-trts_subgroup = c("Regeneron (Delta)",
-                  "Regeneron (BA.1)",
-                  "Regeneron (BA.2)",
-                  "Ivermectin",
-                  "Remdesivir",
-                  "Favipiravir",
-                  "Fluoxetine")
-platcov_dat$Trt_code_subgroup = 
-  factor(platcov_dat$Trt_subgroup,
-         levels=c("No study drug", trts_subgroup))
-
 
 xx=make_baseline_table(input_data = platcov_dat[platcov_dat$ID %in% PP$ID[PP$Include_mITT],])
 knitr::kable(xx, caption = sprintf('Summary of patient characteristics included in the current interim analysis (n= %s). Age: median (range); baseline viral load (log10 copies per mL: mean (range)); vaccinated: %% with any number of doses; number of vaccine doses: median (range); antibody data are from rapid tests done at screening (+ is presence of IgM or IgG band).', sum(PP$Include_mITT)))
@@ -225,32 +208,7 @@ plot_serial_data(xx = platcov_dat[ind_plot,],
 mtext(text = 'b',side = 3,adj = 0,cex=1.5,line = 1.5)
 ```
 
-Saliva versus throat swabs
 
-```{r saliva_throat}
-ids_saliva = unique(platcov_dat$ID[platcov_dat$Swab_ID=='Saliva'])
-par(las=1, mfrow=c(1,2))
-for(id in ids_saliva){
-  ind1 = platcov_dat$ID==id & platcov_dat$Swab_ID != 'Saliva'
-  ind2 = platcov_dat$ID==id & platcov_dat$Swab_ID == 'Saliva'
-  
-  plot(platcov_dat$Time[ind1], platcov_dat$log10_viral_load[ind1], pch=17,
-       ylim = range(platcov_dat$log10_viral_load), panel.first=grid(),
-       xlab = 'Time (days)', ylab = 'RNA copies per ml', yaxt='n',
-       xlim = c(0,Dmax))
-  axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
-                                      expression(10^4),
-                                      expression(10^6),
-                                      expression(10^8)))
-  title(id)
-  points(platcov_dat$Time[ind2],
-         platcov_dat$log10_viral_load[ind2],
-         pch=16,col='red')
-}
-legend('topright', pch=17:16, col=1:2,inset = 0.03, 
-       legend = c('Oropharyngeal','Saliva'))
-
-```
 
 # Model fitting
 
@@ -284,7 +242,7 @@ and two sets of covariate adjustments:
 get priors
 
 ```{r priors}
-source('priors.R')
+source('../priors.R')
 print(all_priors)
 ```
 
@@ -313,23 +271,13 @@ covs_full=c(covs_base,'Age_scaled',
             'Antibody_test','Symptom_onset','N_dose')
 
 table(platcov_dat$Trt_code[ind_dup&ind_fitting])
-stan_inputs_overall = 
+stan_inputs = 
   make_stan_inputs(input_data_fit = platcov_dat[ind_fitting,],
                    int_covs_base = covs_base,
                    int_covs_full = covs_full,
                    slope_covs_base = covs_base,
                    slope_covs_full = covs_full,
                    trt_col = 'Trt_code',
-                   Dmax = Dmax)
-
-table(platcov_dat$Trt_code_subgroup[ind_dup&ind_fitting])
-stan_inputs_subgroup = 
-  make_stan_inputs(input_data_fit = platcov_dat[ind_fitting,],
-                   int_covs_base = covs_base,
-                   int_covs_full = covs_full,
-                   slope_covs_base = covs_base,
-                   slope_covs_full = covs_full,
-                   trt_col = 'Trt_code_subgroup',
                    Dmax = Dmax)
 ```
 
@@ -338,16 +286,14 @@ stan_inputs_subgroup =
 List all parameters settings for the model fitting:
 
 ```{r setup_models}
-all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
+all_mods = list.files('../Stan_models',full.names = TRUE,pattern = '*stan')
 print(all_mods)
 basic_settings = expand.grid(mod = all_mods[1],
                              prior = 1,
-                             subgroup = 0:1,
                              cov_matrices = 1)
 model_settings = rbind(basic_settings,
                        expand.grid(mod = all_mods[2:3],
                                    prior = 1:length(all_priors),
-                                   subgroup = 0:1,
                                    cov_matrices = 1:2))
 
 model_settings$Niter = 10000
@@ -363,8 +309,7 @@ writeLines(sprintf('We are running all models with %s chains and %s samples for 
 
 
 save(model_settings, 
-     stan_inputs_overall, 
-     stan_inputs_subgroup, 
+     stan_inputs, 
      all_priors,
      file = 'Rout/model_run_setup.RData')
 ```
@@ -427,20 +372,17 @@ for(mm in 1:nrow(model_settings)){
   effect_ests[[mm]]=
     summary(out_all[[mm]],pars='trt_effect',
             probs = c(0.025, 0.1, 0.9, 0.975))$summary[,c('mean','2.5%','10%','90%','97.5%')]
-  if(model_settings$subgroup[mm]==0){ my_trt_names = trts } else {my_trt_names = trts_subgroup}
-  names(trt_estimate[[mm]]) = my_trt_names
-  names(prob_superior[[mm]]) = my_trt_names
-  rownames(effect_ests[[mm]]) = my_trt_names
+  names(trt_estimate[[mm]]) = trts
+  names(prob_superior[[mm]]) = trts
+  rownames(effect_ests[[mm]]) = trts
 }
 
 
 writeLines('\n*******************\nMean estimated treatment effects (multiplicative):')
-print(do.call(rbind, trt_estimate[model_settings$subgroup==0]))
-print(do.call(rbind, trt_estimate[model_settings$subgroup==1]))
+print(do.call(rbind, trt_estimate))
 
 writeLines('\n*******************\nProbability of super-superiority:')
-print(do.call(rbind, prob_superior[model_settings$subgroup==0]))
-print(do.call(rbind, prob_superior[model_settings$subgroup==1]))
+print(do.call(rbind, prob_superior))
 ```
 
 
@@ -450,12 +392,9 @@ print(do.call(rbind, prob_superior[model_settings$subgroup==1]))
 Posterior distributions over the treatment effects for the interventions. Thick lines show the 80% credible intervals; thin lines show the 95% credible intervals. The grey zone is the futility region. Stopping rule is met if the 80% CI is completely inside/outside the grey zone.
 
 ```{r treatment_effect_plot, fig.width=8, fig.height=8}
-source('functions.R')
 main_models = which(model_settings$prior==1 &
-                      model_settings$subgroup==0 &
                       model_settings$mod %in% all_mods[2:3])
 model_report = main_models[1]
-
 
 writeLines('The main 4 models with weakly informative priors:')
 par(bty='n', cex.lab=1.3, cex.axis=1.3,family='serif',
@@ -476,33 +415,6 @@ legend('right', col=mod_cols, lwd = 2,inset=0.03,
                   'Non-linear',
                   'Linear covariate adjusted',
                   'Non-linear covariate adjusted'))
-
-main_models_sg = which(model_settings$prior==1 &
-                         model_settings$subgroup==1 &
-                         model_settings$mod %in% all_mods[2:3])
-main_models_sg = main_models_sg[!main_models_sg==15]
-model_report_sg = main_models_sg[1]
-writeLines('The main 4 models with weakly informative priors:')
-
-par(bty='n', cex.lab=1.3, cex.axis=1.3,family='serif',
-    mar=c(5,11,2,2),las=1, mfrow=c(1,1))
-layout(mat = matrix(c(1,1,1,2),nrow = 1))
-
-mod_cols = brewer.pal(n = length(main_models_sg), name = 'Set1')
-my_pch = 15+as.numeric(model_settings$mod[main_models_sg]==all_mods[3])+1
-
-plot_effect_estimates(effect_ests = effect_ests,
-                      plot_models = main_models_sg,
-                      study_threshold = study_threshold,
-                      my_pch = my_pch)
-
-par(mar=c(1,1,1,1))
-plot(NA,NA,xlim=0:1, ylim=0:1,xlab='',ylab='',bty='n',xaxt='n',yaxt='n')
-legend('right', col=mod_cols, lwd = 2,inset=0.03,
-       title = 'Model', bty='n', pch = my_pch,
-       legend = c('Linear (main model)',
-                  'Non-linear',
-                  'Non-linear covariate adjusted'))
 ```
 
 
@@ -517,15 +429,6 @@ print(round(100*(exp(xx)-1),1))
 ```
 
 
-summary for the main subgroup model
-
-```{r main_model_summary_sg}
-writeLines(sprintf('Summary of treatment effects for model %s',model_report_sg))
-xx = summary(out_all[[model_report_sg]], pars='trt_effect',
-             probs = c(0.025, 0.50, 0.975))$summary[, c('2.5%','50%','97.5%')]
-rownames(xx) = trts_subgroup
-print(round(100*(exp(xx)-1),1))
-```
 
 ## Covariate effects 
 
@@ -534,8 +437,7 @@ Left: intercept (baseline viral load)l right: slope (viral clearance):
 ```{r cov_effects,fig.height=5, fig.width=9}
 coef_mod = which(model_settings$mod == all_mods[2] &
                    model_settings$cov_matrices==1 & 
-                   model_settings$prior==1 & 
-                   model_settings$subgroup == 1)
+                   model_settings$prior==1 )
 
 par(mfrow=c(1,2),las=1,family='serif',mar=c(5,7,2,2))
 plot_coef_effects(stan_out = out_all,
@@ -545,8 +447,7 @@ plot_coef_effects(stan_out = out_all,
 
 coef_mod = which(model_settings$mod == all_mods[2] &
                    model_settings$cov_matrices==2 & 
-                   model_settings$prior==2 & 
-                   model_settings$subgroup == 1)
+                   model_settings$prior==2 )
 
 par(mfrow=c(1,2),las=1,family='serif',mar=c(5,7,2,2))
 plot_coef_effects(stan_out = out_all,
@@ -604,7 +505,7 @@ writeLines(sprintf('The population mean clearance half-life is %s (95%% CI %s-%s
                    round(quantile(24*log10(0.5)/thetas_main_model$beta_0,.025),1),
                    round(quantile(24*log10(0.5)/thetas_main_model$beta_0,.975),1)))
 
-par(mfrow=c(6,1), mar = c(3,5,0.5,1),las=1,
+par(mfrow=c(2,1), mar = c(3,5,0.5,1),las=1,
     family='serif', cex.lab=1.5, cex.axis=1.5)
 
 for(tt in c('No study drug', trts)){
@@ -635,11 +536,8 @@ for(tt in c('No study drug', trts)){
           c(t_12_low[i], t_12_up[i]),
           col=trt_cols[trt_allocations[i]])
   }
-  
   axis(1, at = c(as.POSIXct(c('2021-10-01',
-                              # '2021-11-01',
                               '2021-12-01',
-                              # '2022-01-01',
                               '2022-02-01',
                               '2022-03-27'))), 
        labels = c('Oct','Dec','Feb','Apr'),cex.axis=2)
@@ -652,24 +550,8 @@ legend('top',legend = c('Delta','BA.1','BA.2'),
 changes in half life
 
 ```{r}
-t12_delta_IVM = 24*(log10(0.5)/(exp(thetas_main_model$trt_effect[,which(trts=='Ivermectin')])*(thetas_main_model$beta_0)) -
-                      log10(0.5)/(thetas_main_model$beta_0))
-
-t12_delta_REGN = 24*(log10(0.5)/(exp(thetas_main_model$trt_effect[,which(trts=='Regeneron')])*(thetas_main_model$beta_0)) -
-                       log10(0.5)/(thetas_main_model$beta_0))
-
 t12_delta_rems = 24*(log10(0.5)/(exp(thetas_main_model$trt_effect[,which(trts=='Remdesivir')])*(thetas_main_model$beta_0)) -
                        log10(0.5)/(thetas_main_model$beta_0))
-
-writeLines(sprintf('In the Ivermectin arm the mean change in half life is %s (95%% CI %s to %s)',
-                   round(mean(t12_delta_IVM),2),
-                   round(quantile(t12_delta_IVM,0.025),2),
-                   round(quantile(t12_delta_IVM,0.975),2)))
-
-writeLines(sprintf('In the Regeneron arm the mean change in half life is %s (95%% CI %s to %s)',
-                   round(mean(t12_delta_REGN),2),
-                   round(quantile(t12_delta_REGN,0.025),2),
-                   round(quantile(t12_delta_REGN,0.975),2)))
 
 writeLines(sprintf('In the Remdesivir arm the mean change in half life is %s (95%% CI %s to %s)',
                    round(mean(t12_delta_rems),2),
@@ -794,14 +676,12 @@ overall_mods = model_settings$subgroup==0
 mylty = as.numeric(model_settings$mod == all_mods[3])+1
 plot_effect_estimates(effect_ests = effect_ests,
                       plot_models = which(overall_mods),
-                      names_plot_models = which(overall_mods),
                       my_pch = mylty[which(overall_mods)],
                       study_threshold = study_threshold)
 
 subgroup_mods = model_settings$subgroup==1
 plot_effect_estimates(effect_ests = effect_ests,
                       plot_models = which(subgroup_mods),
-                      names_plot_models = which(subgroup_mods),
                       my_pch = mylty[which(subgroup_mods)],
                       study_threshold = study_threshold)
 ```

@@ -16,4 +16,7 @@ for(i in grep('sd',x = names(prior_params))){
   prior_params_sensitive[[i]] = prior_params_sensitive[[i]]*10
 }
 
+## we get convergence issues with the covariate models if you have very wide priors on the slope coefs
+prior_params_sensitive$slope_coefs_sd=1
+
 all_priors = list(WIP=prior_params, NIP=prior_params_sensitive)
