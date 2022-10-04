@@ -1,19 +1,11 @@
-# script for running all the stan models with all settings on the BMRC cluster
-
-args = commandArgs(trailingOnly = FALSE) # comes from the SGE_TASKID in *.sh file
-i = as.numeric(args[6])
-print(paste0("job(i) = ", i)) # this will print out in the *.o file
-
-
 ## Packages needed
 library(rstan)
 library(matrixStats)
 library(doParallel)
 
 load('Rout/model_run_setup.RData')
-
-Max_job = nrow(model_settings)
-if(i > Max_job) stop('no model setting corresponding to job ID')
+i=7
+# for(i in 1:nrow(model_settings)){
 
 writeLines('Doing the following job:')
 print(model_settings[i, ])
@@ -58,4 +50,4 @@ out = sampling(mod,
 save(out, file = paste0('Rout/model_fits_',i,'.RData'))# save output
 
 writeLines('Finished job')
-
+# }

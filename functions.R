@@ -6,7 +6,7 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
                                  mod_cols = NULL,
                                  study_threshold){
   
-  if (length(my_pch)==1) my_pch = rep(1,length(plot_models))
+  if (length(my_pch)==1) my_pch = (1:length(plot_models))+15
   if (length(my_pch)!=length(plot_models)) stop('length of my_pch needs to be the same as the number of input models')
   if (is.null(mod_cols)){
     mod_cols = brewer.pal(n = length(plot_models), name = 'Set1')
@@ -17,32 +17,32 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
   
   K_treatments = nrow(effect_ests[[plot_models[1]]])
   
-  xlims = range(sapply(effect_ests[plot_models], rbind))
-  x_points = pretty(exp(xlims), n = 4)
-  plot(NA, NA, xlim = range(log(x_points)),
-       ylim = c(0.25,K_treatments+.25),
+  xlims = (exp(range(c(0, range(sapply(effect_ests[plot_models], rbind)))) )-1)*100
+  x_points = pretty((xlims),6)
+  plot(NA, NA, xlim = range(x_points),
+       ylim = c(0.75,K_treatments+.25),
        panel.first=grid(), ylab='', yaxt='n', type='n',
-       xlab = 'Multiplicative change in slope relative to control',
+       xlab = 'Change in rate of clearance (%)',
        xaxt = 'n')
-  axis(1, at = log(x_points), labels = (x_points))
+  axis(1, at = x_points)
   axis(2, at = 1:K_treatments,
        labels = rownames(effect_ests[[plot_models[1]]]),
-       tick = F)
+       tick = F, cex.lab=1.5, cex.axis=1.5)
   index_p = rev(seq(-.2,.2, length.out = length(plot_models)))
   abline(v=0,lwd=2)
-  polygon(c(-10, log(study_threshold), log(study_threshold), -10),
+  polygon(c(-1000, 100*(study_threshold-1), 100*(study_threshold-1), -1000),
           c(-100, -100, 100, 100), border = NA,
           col = adjustcolor('grey',.4))
   for(i in 1:length(plot_models)){
-    points(effect_ests[[plot_models[i]]][,'mean'],
+    points((exp(effect_ests[[plot_models[i]]][,'mean'])-1)*100,
            1:K_treatments+index_p[i],pch=my_pch[i],
-           col=mod_cols[i])
+           col=mod_cols[i],cex=1.5)
     for(j in 1:K_treatments){
-      lines(c(effect_ests[[plot_models[i]]][j,'2.5%'],
-              effect_ests[[plot_models[i]]][j,'97.5%']),
+      lines((exp(c(effect_ests[[plot_models[i]]][j,'2.5%'],
+                   effect_ests[[plot_models[i]]][j,'97.5%']))-1)*100,
             rep(j+index_p[i],2),col=mod_cols[i],lwd=1)
-      lines(c(effect_ests[[plot_models[i]]][j,'10%'],
-              effect_ests[[plot_models[i]]][j,'90%']),
+      lines((exp(c(effect_ests[[plot_models[i]]][j,'10%'],
+                   effect_ests[[plot_models[i]]][j,'90%']))-1)*100,
             rep(j+index_p[i],2),col=mod_cols[i],lwd=3)
     }
   }
@@ -68,10 +68,9 @@ plot_baseline_data = function(input_data){
   hist(bvl$log10_viral_load,breaks = seq(1,8.5,by=.5),add=T)
 }
 
-plot_serial_data = function(xx,Trt, trt_cols){
+plot_serial_data = function(xx, trt_cols){
   
-  xx$Trt = Trt
-  xx$Trt_number = as.numeric(as.factor(xx$Trt))
+  xx$Trt_number = as.numeric(as.factor(as.character(xx$Trt)))
   
   PCR_dat = aggregate(log10_viral_load ~ ID + Timepoint_ID +
                         Trt_number + Trt, 
@@ -99,7 +98,7 @@ plot_serial_data = function(xx,Trt, trt_cols){
     gap.plot(PCR_dat$Timepoint_ID[ind],
              PCR_dat$log10_viral_load[ind],
              gap = c(7.5,13.5), gap.axis = 'x',add = T,
-             col=adjustcolor(trt_cols[PCR_dat$Trt_number[ind]],.3))
+             col=adjustcolor(trt_cols[PCR_dat$Trt_number[ind]],.6))
   }
   gap.plot(trt_smmry$Timepoint_ID, trt_smmry$log10_viral_load,
            col= trt_cols[trt_smmry$Trt_number],
@@ -123,7 +122,7 @@ plot_serial_data = function(xx,Trt, trt_cols){
   }
   legend('topright', col=trt_cols, 
          legend = trts, title = 'Median',
-         lwd=2,pch=14+trt_nums,cex=1, inset = 0.03)
+         lwd=2,pch=14+trt_nums,cex=1.5, inset = 0.03)
 }
 
 bayes_R2 = function(mod_preds, mod_residuals) {
@@ -138,17 +137,22 @@ make_stan_inputs = function(input_data_fit,
                             int_covs_full,
                             slope_covs_base,
                             slope_covs_full,
-                            trt_col,
+                            trt_frmla,
                             Dmax
 ){
   
-  ## re-arrange so that censored values come last
-  input_data_fit = dplyr::arrange(input_data_fit,
-                                  log10_viral_load==log10_cens_vl)
+  ## check censored values come last
+  if(!all(diff(input_data_fit$log10_viral_load == input_data_fit$log10_cens_vl)>=0)) stop()
   ind_dup = !duplicated(input_data_fit$ID)
   
-  input_data_fit$RnaseP_scaled = t(scale(40 - input_data_fit$CT_RNaseP, 
-                                         scale = F))[1,] 
+  for(ll in unique(input_data_fit$Lab)){
+    ind = input_data_fit$Lab==ll
+    med_val = median(input_data_fit$CT_RNaseP[ind], na.rm = T)
+    input_data_fit$CT_RNaseP[ind & is.na(input_data_fit$CT_RNaseP)]=med_val
+    input_data_fit$CT_RNaseP[ind] = input_data_fit$CT_RNaseP[ind]-med_val
+  }
+  input_data_fit$RnaseP_scaled = input_data_fit$CT_RNaseP
+  
   input_data_fit$Age_scaled = (input_data_fit$Age-mean(input_data_fit$Age[ind_dup]))/sd(input_data_fit$Age[ind_dup])
   
   # make the covariate matrix
@@ -157,16 +161,41 @@ make_stan_inputs = function(input_data_fit,
     stop('Missing data in covariate matrix!')
   }
   
-  X_intcpt_1 = model.matrix( ~ ., 
-                             data = input_data_fit[, int_covs_base])[, -1, drop=F]
-  X_intcpt_2 = model.matrix( ~ ., 
-                             data = input_data_fit[, int_covs_full])[, -1, drop=F]
-  X_slope_1 = model.matrix( ~ ., 
-                            data = input_data_fit[, slope_covs_base])[, -1, drop=F]
-  X_slope_2 = model.matrix( ~ ., 
-                            data = input_data_fit[, slope_covs_full])[, -1, drop=F]
-  nrow(X_intcpt_1) == nrow(input_data_fit)
-  nrow(X_slope_1) == nrow(input_data_fit)
+  ind_contr = which(apply(input_data_fit[, int_covs_base,drop=F], 2, 
+                          function(x) length(unique(x))>1))
+  if(length(ind_contr)>0){
+    X_intcpt_1 = model.matrix( ~ ., 
+                               data = input_data_fit[, int_covs_base[ind_contr],drop=F])[, -1, drop=F]
+  } else {
+    X_intcpt_1 = array(dim = c(nrow(input_data_fit),0))
+  }
+  
+  ind_contr = which(apply(input_data_fit[, int_covs_full,drop=F], 2, function(x) length(unique(x))>1))
+  if(length(ind_contr)>0){
+    X_intcpt_2 = model.matrix( ~ ., 
+                               data = input_data_fit[, int_covs_full[ind_contr],drop=F])[, -1, drop=F]
+  } else {
+    X_intcpt_2 = array(dim = c(nrow(input_data_fit),0))
+  }
+  
+  ind_contr = which(apply(input_data_fit[, slope_covs_base,drop=F], 2, function(x) length(unique(x))>1))
+  if(length(ind_contr)>0){
+    X_slope_1 = model.matrix( ~ ., 
+                              data = input_data_fit[, slope_covs_base[ind_contr],drop=F])[, -1, drop=F]
+  } else {
+    X_slope_1 = array(dim = c(nrow(input_data_fit),0))
+  }
+  
+  ind_contr = which(apply(input_data_fit[, slope_covs_full,drop=F], 2, function(x) length(unique(x))>1))
+  if(length(ind_contr)>0){
+    X_slope_2 = model.matrix( ~ ., 
+                              data = input_data_fit[, slope_covs_full[ind_contr],drop=F])[, -1, drop=F]
+  } else {
+    X_slope_2 = array(dim = c(nrow(input_data_fit),0))
+  }
+  
+  if(!nrow(X_intcpt_1) == nrow(input_data_fit)) stop()
+  if(!nrow(X_slope_1) == nrow(input_data_fit)) stop()
   
   cov_matrices = list(X_int=list(X_intcpt_1, X_intcpt_2),
                       X_slope=list(X_slope_1, X_slope_2))
@@ -201,7 +230,7 @@ make_stan_inputs = function(input_data_fit,
     all(analysis_data_stan$log_10_vl[(1+analysis_data_stan$N_obs):analysis_data_stan$Ntot] ==
           analysis_data_stan$log10_cens_vl[(1+analysis_data_stan$N_obs):analysis_data_stan$Ntot])
   
-  Trt_matrix = model.matrix( ~ ., data = input_data_fit[, trt_col, drop=F])
+  Trt_matrix = model.matrix(trt_frmla, data = input_data_fit)
   Trt_matrix[,1]=0 # first column is dummy
   
   analysis_inputs = list(cov_matrices=cov_matrices,
@@ -270,7 +299,18 @@ make_baseline_table = function(input_data){
   return(xx)
 }
 
-
+get_rates_linear_mod = function(mod_out, # single model fit - not a list
+                                analysis_data_stan){
+  
+  # get the indices of first datapoint for each individual
+  ind_id = which(!duplicated(analysis_data_stan$id))
+  thetas = 
+    rstan::extract(mod_out, 
+                   pars = c('beta_0','beta_cov','theta_rand_id','trt_effect'))
+  beta_cov = x_slope*slope_coefs;
+  
+  beta_0*exp(trt_slope[i]+theta_rand_id[id[i]][2]+beta_cov[i])
+}
 
 plot_individ_data = function(mod_out, # model fits
                              models_plot, # which models to plot
@@ -283,27 +323,17 @@ plot_individ_data = function(mod_out, # model fits
   # extract posterior parameters and outputs
   thetas = list()
   for(mm in 1:length(mod_out)){
-    thetas[[mm]] = extract(mod_out[[mm]])
+    thetas[[mm]] = rstan::extract(mod_out[[mm]])
   }
-  id = counter = 1
+  counter = 1
   
   ID_map$Trt = gsub(pattern = '\n',
-                    replacement = ' ',
+                    replacement = '',
                     x = ID_map$Trt,fixed = T)
-  while(id <= max(ID_map$ID_stan)){
+  while(counter <= nrow(ID_map)){
     
-    # every K_plots put a legend in bottom right panel
-    # if(counter %% K_plots == 0){
-    #   plot(NA,NA,xlab='',ylab='',xaxt='n',
-    #        yaxt='n',xlim=c(0,1),ylim=c(0,1))
-    #   legend('left', col = mod_cols[models_plot],lwd=1,
-    #          inset=0.03,bty='n',
-    #          legend = c('Standard',
-    #                     'Non-linear'),
-    #          cex=1.1,title = 'Model')
-    # } else {
     # draw individual model fit with data
-    ind = analysis_data_stan$id==id
+    ind = analysis_data_stan$id==ID_map$ID_stan[counter]
     plot(analysis_data_stan$obs_day[ind],
          analysis_data_stan$log_10_vl[ind],
          xlab='', ylab='', 
@@ -338,26 +368,14 @@ plot_individ_data = function(mod_out, # model fits
     }
     points(analysis_data_stan$obs_day[ind],
            analysis_data_stan$log_10_vl[ind],pch=16)
-    id_map_ind = ID_map$ID_stan==id
     
-    mtext(text = paste0(ID_map$ID_key[id_map_ind],
+    mtext(text = paste0(ID_map$ID_key[counter],
                         '\n',
-                        ID_map$Trt[id_map_ind]),
+                        ID_map$Trt[counter]),
           side = 3, line = -0.5, cex=0.8)
-    id=id+1
-    # }
-    
     counter=counter+1
   }
   
-  # add legend to final plot
-  plot(NA,NA,xlab='',ylab='',xaxt='n',
-       yaxt='n',xlim=c(0,1),ylim=c(0,1))
-  legend('left', col = mod_cols[models_plot],lwd=1,
-         inset=0.03,bty='n',
-         legend = c('Standard',
-                    'Non-linear'),
-         cex=1.1,title = 'Model')
 }
 
 
@@ -430,6 +448,52 @@ checkStrict <- function(f, silent=FALSE) {
   !any(found)
 }
 
+calculate_fever_clearance = function(temp_dat,
+                                     window_clear = 24/24, # look ahead window to define "fever clearance"
+                                     threshold=37){
+  
+  if(!'temperature_ax' %in% colnames(temp_dat)) stop('needs to contain a temperature_ax column')
+  
+  temp_dat$clearance_time = NA
+  # For interval censored data, the status indicator is 0=right censored, 1=event at time, 2=left censored, 3=interval censored. 
+  temp_dat$clearance_time_cens = 1
+  
+  temp_dat$fever_binary = temp_dat$temperature_ax>threshold
+  temp_dat = dplyr::arrange(temp_dat, ID, Time) 
+  temp_dat = temp_dat[!is.na(temp_dat$temperature_ax), ]
+  
+  for(id in unique(temp_dat$ID)){
+    ind = temp_dat$ID==id
+    if(all(!temp_dat$fever_binary[ind])){ # never fever
+      temp_dat$clearance_time[ind]=0
+    } else if(all(temp_dat$fever_binary[ind])){ # always fever
+      writeLines(sprintf('all fever for %s with %s FUP points',id,sum(ind)))
+      temp_dat$clearance_time[ind] = max(temp_dat$Time[ind])
+      temp_dat$clearance_time_cens[ind] = 0 #censored obs
+    } else { # fever cleared
+      j_cleared = which(ind & !temp_dat$fever_binary)
+      check_ahead=F
+      for(j in j_cleared){
+        if(!check_ahead){
+          ind_check = 
+            which(ind & 
+                    temp_dat$Time>temp_dat$Time[j] &
+                    temp_dat$Time<temp_dat$Time[j] + window_clear)
+          if(length(ind_check)>0 & all(!temp_dat$fever_binary[ind_check])){
+            temp_dat$clearance_time[ind]=temp_dat$Time[j]
+            check_ahead=T
+          }
+        }
+      }
+      if(!check_ahead){
+        temp_dat$clearance_time[ind]=tail(temp_dat$Time[ind],1)
+        temp_dat$clearance_time_cens[ind]=0
+      }
+    }
+  }
+  
+  return(temp_dat[!duplicated(temp_dat$ID), ])
+}
 
 checkStrict(make_stan_inputs)
 checkStrict(plot_serial_data)
@@ -437,3 +501,4 @@ checkStrict(plot_effect_estimates)
 checkStrict(plot_individ_data)
 checkStrict(make_baseline_table)
 checkStrict(plot_coef_effects)
+checkStrict(calculate_fever_clearance)

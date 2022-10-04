@@ -30,22 +30,22 @@ data {
   matrix[Ntot,K_cov_intercept] x_intercept;    // covariate design matrix for regression onto intercept
   int<lower=0> K_cov_slope;                    // number of columns in covariate design matrix for slope
   matrix[Ntot,K_cov_slope] x_slope;            // covariate design matrix for regression onto slope
-
+  
   // priors
   real alpha_0_prior_mean; // prior mean intercept
   real alpha_0_prior_sd;   // prior sd intercept
-
+  
   real beta_0_prior_mean;  // prior mean slope
   real beta_0_prior_sd;    // prior sd slope
-
+  
   real trt_effect_sd;   // prior sd on treatment effect
-
+  
   real sigma_logvl_mean;   // prior mean of sd in error model
   real sigma_logvl_sd;     // prior sd of sd in error model
-
+  
   real slope_coefs_sd;     // prior sd for prior on covariate effect on slope
   real intercept_coefs_sd; // prior sd for prior on covariate effect on intercept
-
+  
   real t_max_pop_mean;     // prior on mean time since peak viral load
   real t_max_pop_sd;       // priors on sd for mean time since peak viral load
 }
@@ -59,10 +59,10 @@ parameters {
   // hyperparameters
   cholesky_factor_corr[3] L_Omega;     // correlation matrix
   vector<lower=0>[3] sigmasq_u;        // variance of random effects
-
+  
   // Measurement error
   real<lower=0> sigma_logvl;
-
+  
   // Population parameters
   real alpha_0;                             // population intercept at tmax
   real tmax_pop;                            // population intercept at tmax
@@ -71,10 +71,10 @@ parameters {
   vector[K_trt-1] trt_effect;               // Estimates of the treatment effect
   vector[K_cov_slope] slope_coefs;          // Covariate effects on slope
   vector[K_cov_intercept] intercept_coefs;  // Covariate effects on intercept
-
+  
   // Random effects
   vector[3] theta_rand_id[n_id];            // individual random effects vector
-
+  
   // Degrees of freedom for the t-distribution error model
   real<lower=0> t_dof;
 }
@@ -82,21 +82,22 @@ parameters {
 transformed parameters {
   real pred_log10_vl[Ntot];
   vector[Ntot] trt_slope;
+  vector[Ntot] beta_cov;
+  vector[Ntot] alpha_cov;
+  
   {
     vector[K_trt] trt_effect_prime;
-    vector[Ntot] beta_cov;
-    vector[Ntot] alpha_cov;
-
+    
     trt_effect_prime = append_row(0, trt_effect);
     trt_slope = trt_mat * trt_effect_prime;
-
+    
     // make individual covariate transform
     beta_cov = x_slope*slope_coefs;
     alpha_cov = x_intercept*intercept_coefs;
-
+    
     for(i in 1:Ntot){
       real intercept = alpha_0 + theta_rand_id[id[i]][1] + alpha_cov[i];
-      real a = beta_0[1];
+      real a = beta_0[1] * exp(trt_slope[i]); // no random effect for the first term as does not converge
       real b = beta_0[2] * exp(theta_rand_id[id[i]][2] + trt_slope[i] + beta_cov[i]);
       real tmax = tmax_pop + theta_rand_id[id[i]][3];
       pred_log10_vl[i] = gamma_rnasep*RNaseP[i]+intercept+log(a+b)-
@@ -111,7 +112,7 @@ model {
   t_dof ~ exponential(1);
   // error model variance
   sigma_logvl ~ normal(sigma_logvl_mean, sigma_logvl_sd) T[0,];
-
+  
   // random effects
   sigmasq_u[1] ~ exponential(1);
   sigmasq_u[2] ~ exponential(1);
@@ -119,7 +120,7 @@ model {
   L_Omega ~ lkj_corr_cholesky(3);  // covariance matrix - random effects for individs
   // individual random effects
   for(i in 1:n_id) theta_rand_id[i] ~ multi_normal_cholesky(zeros3, diag_pre_multiply(sigmasq_u, L_Omega));
-
+  
   // Population parameters
   alpha_0 ~ normal(alpha_0_prior_mean,alpha_0_prior_sd);
   beta_0[1] ~ normal(1.5,.5);
@@ -129,11 +130,11 @@ model {
   intercept_coefs ~ normal(0,intercept_coefs_sd);
   tmax_pop ~ normal(t_max_pop_mean, t_max_pop_sd);
   trt_effect ~ normal(0,trt_effect_sd);   // Treatment effect
-
+  
   //***** Likelihood *****
   // Non censored observations
   log_10_vl[1:N_obs] ~ student_t(t_dof, pred_log10_vl[1:N_obs], sigma_logvl);
-
+  
   // Censored observations
   for(i in (N_obs+1):Ntot){
     target += student_t_lcdf(log10_cens_vl[i] | t_dof, pred_log10_vl[i], sigma_logvl);
@@ -144,7 +145,7 @@ generated quantities {
   real preds[Ntot]; // For plotting
   vector[Ntot] log_lik;
   vector[n_id] slope;
-
+  
   for(i in 1:N_obs){
     preds[i] = pred_log10_vl[i]-gamma_rnasep*RNaseP[i];
     log_lik[i] = student_t_lpdf(log_10_vl[i] | t_dof, pred_log10_vl[i], sigma_logvl);
@@ -155,6 +156,6 @@ generated quantities {
   }
   for(i in 1:n_id){
     int j = ind_start[i];
-    slope[i] = beta_0[2] * exp(theta_rand_id[id[j]][2] + trt_slope[j]);
+    slope[i] = beta_0[2] * exp(theta_rand_id[id[j]][2] + trt_slope[j] + beta_cov[j]);
   }
 }
