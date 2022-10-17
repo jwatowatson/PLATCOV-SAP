@@ -23,6 +23,7 @@ library(RColorBrewer)
 library(reshape2)
 library(plotrix)
 library(lme4cens)
+library(censReg)
 ```
 
 TODO list:
@@ -133,6 +134,7 @@ for(ss in c('th001','br003')){
   boxplot(bvl$log10_viral_load[ind] ~ round(bvl$Symptom_onset[ind]),main=ss,
           ylim = c(3,8), xlab = 'Days from symptom onset', 
           ylab = 'Baseline viral load (log10)')
+  print(summary(lm(bvl$log10_viral_load[ind] ~ bvl$Symptom_onset[ind])))
 }
 ```
 
@@ -212,7 +214,8 @@ trts = c("Regeneron",
          "Fluoxetine",
          'Molnupiravir',
          'Nirmatrelvir + Ritonavir',
-         'Nitazoxanide')
+         'Nitazoxanide',
+         'Evusheld')
 platcov_dat$Trt_code = 
   factor(platcov_dat$Trt,
          levels=c("No study drug", trts))
@@ -233,8 +236,18 @@ mtext(text = 'a',side = 3,adj = 0,cex=1.5,line = 1.5)
 
 trt_cols = brewer.pal(n = length(unique(platcov_dat$Trt)),
                       name = 'Paired')
+names(trt_cols) = c('No study drug', # all treatments
+                    "Favipiravir",
+                    'Fluoxetine',
+                    'Nirmatrelvir + Ritonavir',
+                    'Molnupiravir',
+                    'Nitazoxanide',
+                    'Regeneron',
+                    'Remdesivir',
+                    'Ivermectin',
+                    'Evusheld')
+
 plot_serial_data(xx = platcov_dat[ind_plot,],
-                 Trt = platcov_dat$Trt[ind_plot],
                  trt_cols = trt_cols)
 mtext(text = 'b',side = 3,adj = 0,cex=1.5,line = 1.5)
 ```
@@ -280,14 +293,16 @@ platcov_dat$Trt =
                     "Nitazoxanide",
                     "Fluoxetine",
                     "Molnupiravir",
-                    "Nirmatrelvir + Ritonavir"))
+                    "Nirmatrelvir + Ritonavir",
+                    "Evusheld"))
 platcov_dat$Epoch=as.factor(platcov_dat$Epoch)
-
-# ind_fit = platcov_dat$Timepoint_ID<14
+# 
+# ind_fit = platcov_dat$Timepoint_ID<14 & platcov_dat$Site=='br003'
+# sum(ind_fit)
 # if(RUN_MODELS){
 #   mod_naive = brm(log10_viral_load | cens(censor) ~ Time*Trt-Trt +
 #                     Time*Variant+Time*Epoch+(1+Time|ID),
-#                   data = platcov_dat[ind_fit, ], 
+#                   data = platcov_dat[ind_fit, ],
 #                   prior = c(prior(lkj(2), class = "cor"),
 #                             prior(normal(5, 5), class = Intercept),
 #                             prior(constant(7), class = 'nu')),
@@ -334,20 +349,20 @@ for(id in IDs){
     mod = lm(log10_viral_load ~ Time + CT_RNaseP, 
              data = platcov_dat[ind,],)
   } else {
-  mod = censReg(log10_viral_load ~ Time + CT_RNaseP, 
-                left = cens_val,data = platcov_dat[ind,])
+    mod = censReg(log10_viral_load ~ Time + CT_RNaseP, 
+                  left = cens_val,data = platcov_dat[ind,])
   }
   naive_slopes[id] = coef(mod)['Time']
 }
 
 naive_fit = merge(data.frame(ID=names(naive_slopes),slope=naive_slopes),
-      platcov_dat[!duplicated(platcov_dat$ID), ])
+                  platcov_dat[!duplicated(platcov_dat$ID), ])
 par(las=3, mar=c(12,5,2,2))
 boxplot(slope~Trt, data = naive_fit,xlab='')
 naive_fit$Trt=as.character(naive_fit$Trt)
 boxplot(slope~Variant+Trt, 
         data = naive_fit[naive_fit$Trt%in%c('No study drug',
-                                                               'Regeneron'),],xlab='')
+                                            'Regeneron'),],xlab='')
 ```
 
 
@@ -408,7 +423,8 @@ trts_lists = list(c('No study drug', # all treatments
                     'Nitazoxanide',
                     'Regeneron',
                     'Remdesivir',
-                    'Ivermectin'),
+                    'Ivermectin',
+                    'Evusheld'),
                   c('No study drug', "Favipiravir"),
                   c('No study drug', "Fluoxetine"),
                   c('No study drug', 'Molnupiravir'),
@@ -422,6 +438,11 @@ ind_fitting_list = list()
 for(i in 1:length(analysis_datasets)){
   analysis_name = names(analysis_datasets)[i]
   platcov_dat_list[[i]] = read.csv(file = analysis_datasets[i])
+  
+  writeLines(sprintf('Time since symtpm onset not yet entered for %s patients', sum(is.na(platcov_dat_list[[i]]$Symptom_onset[!duplicated(platcov_dat_list[[i]]$ID)]))))
+  platcov_dat_list[[i]]$Symptom_onset[is.na(platcov_dat_list[[i]]$Symptom_onset)]=1
+  
+  
   writeLines(sprintf('In %s there are %s PCR datapoints and %s patients',
                      analysis_datasets[i], 
                      nrow(platcov_dat_list[[i]]),
@@ -480,10 +501,7 @@ stan_inputs[['interim']] =
 ```{r viral_clearance_data}
 par(las=1, cex.lab=1.5, cex.axis=1.5, family='serif', mfrow=c(1,1))
 for(dd in names(analysis_datasets)[-1]){
-  trt_cols = brewer.pal(n = 9,
-                        name = 'Paired')
   plot_serial_data(xx = platcov_dat_list[[dd]],
-                   Trt = platcov_dat_list[[dd]]$Trt,
                    trt_cols = trt_cols)
 }
 ```
@@ -542,7 +560,7 @@ ff = paste0('Rout/',ff)
 # Results
 ## Model fits:
 
-```{r summary_plots}
+```{r summary_plots, fig.width=10, fig.height=7}
 trt_effect_thetas = effect_ests = list()
 for(i in 1:nrow(model_settings)){
   load(paste0('Rout/model_fits_',i,'.RData'))
@@ -564,14 +582,26 @@ for(i in 1:nrow(model_settings)){
   }
 }
 
-par(las=1, mar=c(5, 12, 2,2))
-for(dd in analysis_datasets){
-  ind = which(model_settings$dataset==dd & model_settings$prior==1)
+par(las=1, mar=c(5, 12, 2,2), family='serif')
+ind = which(model_settings$dataset==analysis_datasets[1] & model_settings$prior==1)
+plot_effect_estimates(effect_ests = effect_ests,
+                      plot_models = ind,
+                      study_threshold = study_threshold,
+                      my_pch = 15+as.numeric(model_settings$mod[ind]==all_mods[3]),
+                      mod_cols = brewer.pal(n = 8,name = 'Dark2')[1:length(ind)])
+
+for(i in 2:length(analysis_datasets)){
+  par(las=1, mar=c(5, 12, 2,2), mfrow=c(1,2), family='serif')
+  
+  ind = which(model_settings$dataset==analysis_datasets[i] & model_settings$prior==1)
   plot_effect_estimates(effect_ests = effect_ests,
                         plot_models = ind,
                         study_threshold = study_threshold,
                         my_pch = 15+as.numeric(model_settings$mod[ind]==all_mods[3]),
                         mod_cols = brewer.pal(n = 8,name = 'Dark2')[1:length(ind)])
+  par(mar=c(5,5,2,2))
+  plot_serial_data(xx = platcov_dat_list[[names(analysis_datasets)[i]]],
+                   trt_cols = trt_cols)
 }
 ```
 
@@ -579,7 +609,7 @@ for(dd in analysis_datasets){
 ## Estimated treatment effects under all models
 
 ```{r treatment_effects}
-for(i in which(model_settings$dataset != 'REGN_analysis.csv')){
+for(i in 1:length(model_settings$dataset)){
   probs_sup = round(100*apply(trt_effect_thetas[[i]],2,function(x) mean(x > log(study_threshold))),1)
   names(probs_sup) = trts_lists[[model_settings$dataset[i]]][-1]
   trt_outputs = round(100* exp(apply(trt_effect_thetas[[i]], 2, quantile, probs=c(0.025,.5,.975))) - 100, 1)
@@ -601,38 +631,53 @@ for(i in which(model_settings$dataset != 'REGN_analysis.csv')){
 }
 ```
 
-```{r}
-hist(platcov_dat_list[['Favipiravir_analysis.csv']]$Weight[ind_fitting_list[['Favipiravir_analysis.csv']] & !duplicated(platcov_dat_list[['Favipiravir_analysis.csv']]$ID)],main='',xlab='kg')
+Molnupiravir vs paxlovid 
 
-ind_start = stan_inputs[['Favipiravir_analysis.csv']]$analysis_data_stan$ind_start
-ids_stan_fvp = stan_inputs[['Favipiravir_analysis.csv']]$analysis_data_stan$id[ind_start]
-ids_true_fvp = 
-  plyr::mapvalues(ids_stan_fvp, 
-                  from = stan_inputs[['Favipiravir_analysis.csv']]$ID_map$ID_stan,
-                  to = stan_inputs[['Favipiravir_analysis.csv']]$ID_map$ID_key)
+```{r molnupiravir_v_paxlovid, fig.height=6, fig.width=9}
+load(paste0('Rout/model_fits_',which(model_settings$dataset=='Paxlovid_Molnupiravir_analysis.csv')[1],'.RData'))
+thetas_trt = extract(out, pars='trt_effect')$trt_effect
+writeLines(sprintf('Molnupiravir has a lower effect than paxlovid with probability %s',
+                   mean(thetas_trt[,1]<thetas_trt[,2])))
 
-ind_dup = !duplicated(platcov_dat_list[['Favipiravir_analysis.csv']]$ID)
-trt_allocations_fvp =
-  plyr::mapvalues(ids_true_fvp, 
-                  from=platcov_dat_list[['Favipiravir_analysis.csv']]$ID[ind_dup],
-                  to=as.character(platcov_dat_list[['Favipiravir_analysis.csv']]$Trt[ind_dup]))
+par(mfrow=c(1,2), las=1, mar=c(5, 10, 2,2))
+ind = which(model_settings$dataset=='Paxlovid_Molnupiravir_analysis.csv' &
+              model_settings$prior==1)
+plot_effect_estimates(effect_ests = effect_ests,
+                      plot_models = ind,
+                      study_threshold = study_threshold,
+                      my_pch = 15+as.numeric(model_settings$mod[ind]==all_mods[3]),
+                      mod_cols = brewer.pal(n = 8,name = 'Dark2')[1:length(ind)])
+par( mar=c(5, 4, 2,2))
+hist(100*(exp(thetas_trt[,1])-exp(thetas_trt[,2])),
+     main='',  xlab = 'Difference in treatment effect', 
+     ylab='', yaxt='n')
+abline(v=0, lwd=3, col='red', lty=2)
 
-weight_kg_fvp = 
-  as.numeric(plyr::mapvalues(ids_true_fvp, 
-                             from = platcov_dat_list[['Favipiravir_analysis.csv']]$ID[ind_dup],
-                             to = platcov_dat_list[['Favipiravir_analysis.csv']]$Weight[ind_dup]))
+load(paste0('Rout/model_fits_',which(model_settings$dataset=='Paxlovid_Molnupiravir_analysis.csv')[2],'.RData'))
+thetas_trt = extract(out, pars='trt_effect')$trt_effect
+writeLines(sprintf('Molnupiravir has a lower effect than paxlovid with probability %s',
+                   mean(thetas_trt[,1]<thetas_trt[,2])))
+```
 
+
+
+
+```{r favirapivir_weight_halflife}
 load(paste0('Rout/model_fits_',which(model_settings$dataset=='Favipiravir_analysis.csv')[1],'.RData'))
 slopes_fvp = colMeans(extract(out,pars='slope')$slope)
+t12_output = data.frame(
+  ID_stan = stan_inputs$favi$analysis_data_stan$id[stan_inputs$favi$analysis_data_stan$ind_start],
+  t12 = 24*log10(.5)/slopes_fvp)
+t12_output = merge(t12_output, stan_inputs$favi$ID_map, by='ID_stan')
+t12_output = merge(platcov_dat_list$favi[!duplicated(platcov_dat_list$favi$ID), ],
+                   t12_output, by.x = 'ID', by.y = 'ID_key')
 
-fvp_summary = data.frame(ID=ids_true_fvp, 
-                         slope=slopes_fvp, 
-                         dose_mg_kg=1/weight_kg_fvp,
-                         Trt=trt_allocations_fvp)
-fvp_summary$dose_mg_kg[fvp_summary$Trt=='No study drug']=0
 
-summary(lm(slope ~ dose_mg_kg, data = fvp_summary[fvp_summary$Trt=='Favipiravir',]))
-
+summary(lm(t12 ~ Weight, data = t12_output[t12_output$Trt=='Favipiravir',]))
+par(las=1)
+plot(t12_output$Weight, t12_output$t12,
+     col=as.numeric(t12_output$Trt=='Favipiravir')+1,
+     xlab='Patient weight', panel.first=grid(), ylab=expression(t[1/2]))
 ```
 
 
@@ -643,38 +688,31 @@ summary(lm(slope ~ dose_mg_kg, data = fvp_summary[fvp_summary$Trt=='Favipiravir'
 Individual plots colored by model
 
 ```{r individ_fits}
-# set.seed(4648865);
-# mod_cols = rep(sample(brewer.pal(n = 9, name = 'Set1')),2)
-# ID_map = stan_inputs[['interim_dat.csv']]$ID_map
-# ind_not_dup = which(!duplicated(platcov_dat_list[["interim_dat.csv"]]$ID))
-# ID_map$Trt = 
-#   plyr::mapvalues(ID_map$ID_key, 
-#                   from = platcov_dat_list[["interim_dat.csv"]]$ID[ind_not_dup], 
-#                   to = as.character(platcov_dat_list[["interim_dat.csv"]]$Trt[ind_not_dup]))
-# out_all = list()
-# load('Rout/model_fits_1.RData')
-# out_all[[1]] = out
-# 
-# load('Rout/model_fits_2.RData')
-# out_all[[2]] = out
-# 
-# 
-# thetas = list()
-#   for(mm in 1:length(mod_out)){
-#     thetas[[mm]] = rstan::extract(out_all[[mm]])
-#   }
-# 
-# 
-# for(my_trt in unique(ID_map$Trt)){
-# par(las=1, mfrow=c(4,4), mar=c(4,5,2,0),bty='n', 
-#     cex.lab=1.5, cex.axis=1.5,family='serif')
-# plot_individ_data(mod_out = out_all,
-#                   models_plot = 1:2,
-#                   K_plots = 16,
-#                   mod_cols = mod_cols[1:2],
-#                   ID_map = ID_map[which(ID_map$Trt==my_trt), ],
-#                   analysis_data_stan = stan_inputs[['interim_dat.csv']]$analysis_data_stan)
-# }
+set.seed(4648865);
+mod_cols = rep(sample(brewer.pal(n = 9, name = 'Set1')),2)
+ID_map = stan_inputs$interim$ID_map
+ind_not_dup = which(!duplicated(platcov_dat_list$interim$ID))
+ID_map = merge(platcov_dat_list$interim[ind_not_dup, ], ID_map, by.x = 'ID',by.y = 'ID_key')
+
+out_all = list()
+load('Rout/model_fits_1.RData')
+out_all[[1]] = out
+
+load('Rout/model_fits_2.RData')
+out_all[[2]] = out
+
+
+ID_map = dplyr::arrange(ID_map, Site, Trt)
+
+par(las=1, mfrow=c(5,5), mar=c(3,3,3,1),bty='n',
+    cex.lab=1.5, cex.axis=1.5,family='serif')
+plot_individ_data(mod_out = out_all,
+                  models_plot = 1:2,
+                  K_plots = 25,
+                  mod_cols = mod_cols[1:2],
+                  ID_map = ID_map,
+                  analysis_data_stan = stan_inputs$interim$analysis_data_stan)
+
 ```
 
 # Sensitivity analysis

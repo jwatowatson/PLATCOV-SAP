@@ -12,16 +12,23 @@ This work is licensed under a
 [cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
 
+## Publications and outputs
 
+This git repo will change over time. For reproducibility of the individual results, each trial output has its own git repo.
+
+Ivermectin data and results: github repo [PLATCOV-Ivermectin](https://github.com/jwatowatson/PLATCOV-Ivermectin)
+ and [preprint](https://www.medrxiv.org/content/10.1101/2022.07.15.22277570v1).
+ 
+Casirivimab/imdevimab and remdesivir (the parenteral treatment arms): [github repo](https://github.com/jwatowatson/PLATCOV-Remdesivir-Regeneron) and preprint not yet online
 
 ## Overview
 
-This github repo provides the statistical analysis plan (see PLATCOV_SAP_*.pdf) and the code used for the statistical analysis.
+This github repo provides the statistical analysis plan (see folder Analysis_Plan and PLATCOV_SAP_*.pdf) and the code used for the statistical analysis.
 
 Each interim analysis is done by running the full workflow given in *Full_Analysis.Rmd*. This does the following:
 
 * Loads data and makes some summary data plots
-* Does some QC analysis of the PCR data (compares standard curves and check all plates have approximately similar results for the control samples)
+* Does some QC analysis of the PCR data 
 * Runs a series of Bayesian hierarchical linear regression models on the available data (these models are coded in *stan* provided in the folder *Stan_models*)
 * Checks for convergence and compares model fits
 * Displays results

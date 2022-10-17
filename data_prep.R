@@ -1,5 +1,6 @@
 library(lubridate)
 library(readxl)
+library(readr)
 
 ##******************** Clinical database *******************
 ##*********************************************************
@@ -261,6 +262,9 @@ variant_data$Summary[ind] = plyr::mapvalues(x = variant_data$Summary[ind],
                                             from = c('BA.5.2', 'BA.5.2.1'),
                                             to = c('BA.5','BA.5'))
 table(variant_data$Summary, useNA = 'ifany')
+
+print(variant_data[variant_data$ID %in% variant_data$ID[duplicated(variant_data$ID)], ])
+variant_data = variant_data[!duplicated(variant_data$ID), ]
 ####################################################
 
 
@@ -336,8 +340,8 @@ log_data = log_data[!is.na(log_data$sl_samptim), ]
 ##*********************************************************
 ##********************************** ***********************
 fnames = list.files('../Data/CSV files',full.names = T,recursive = T)
-library(readr)
 
+# column type specification for each csv file
 my_specs = cols(
   `SUBJECT ID` = col_character(),
   BARCODE = col_character(),
@@ -362,11 +366,14 @@ my_specs = cols(
 )
 
 for(i in 1:length(fnames)){
-  writeLines(sprintf('Loading data from file:\n %s \n*********************************************************', fnames[i]))
-  if(i==1){
-    temp = readr::read_csv(fnames[i])
-  } else {
-    temp = readr::read_csv(fnames[i],col_types = my_specs)
+ # writeLines(sprintf('Loading data from file:\n %s \n*********************************************************', fnames[i]))
+ 
+  # read in file
+  temp = readr::read_csv(fnames[i],col_types = my_specs)
+  
+  # check for duplicates
+  if(any(duplicated(temp$BARCODE[!is.na(temp$BARCODE)]))){
+    writeLines(sprintf('in file %s there are duplicate barcodes',fnames[i]))
   }
   # make sure that PCR plates have unique codes across sites
   if(length(grep(pattern = 'Brazil', x = fnames[i], ignore.case = F))>0){
@@ -380,13 +387,22 @@ for(i in 1:length(fnames)){
     Res=temp
   } else {
     Res = rbind(Res,temp)
-    
   }
-  
 }
 
-ind_rm = is.na(Res$`SUBJECT ID`) & is.na(Res$`Sample ID`)
+# take out the summary PCR columns
+ind_rm = Res$`Sample ID` %in% c('PC','R-squared','Efficiency (%)','Slope (M)')|
+  (is.na(Res$`SUBJECT ID`) & is.na(Res$`Sample ID`))
+sum(ind_rm)
 Res = Res[!ind_rm, ]
+
+# take out duplicate rows
+ind_rm = !is.na(Res$BARCODE) & duplicated(Res$BARCODE)
+sum(ind_rm)
+Res = Res[!ind_rm, ]
+
+
+# make the plate/lab variables
 Res$Lab = NA
 Res$Lab[grep(pattern = 'Thailand',x = Res$`Lot no.`)]='Thailand'
 Res$Lab[grep(pattern = 'Brazil',x = Res$`Lot no.`)]='Brazil'
@@ -397,14 +413,14 @@ Res$Lab = as.factor(Res$Lab)
 
 
 writeLines('\nShowing the number of plates and the number of samples per plate:')
-print(table(Res$Plate))
+print(table(Res$`Lot no.`))
 range(table(Res$Plate))
-if(max(table(Res$Plate))>98){
-  writeLines('**************XXXXXXXXX MORE THAN 98 samples on a single plate!! XXXXXXXX************')
+if(max(table(Res$Plate))>96){
+  writeLines('**************XXXXXXXXX MORE THAN 96 samples on a single plate!! XXXXXXXX************')
 }
 
 writeLines('\nAre there 96 samples per plate?')
-print(table(table(Res$Plate)==96))
+print(table(table(Res$Plate)==92))
 
 ## Extract standard curve data by plate
 ind = grep('std', Res$`Sample ID`)
@@ -496,9 +512,6 @@ na_sample_times = c()
 # manual corrections
 
 log_data$sl_sampdat[log_data$sl_barc=='20SA069'] = '2022-01-23'
-
-log_data$sl_sampdat[log_data$sl_barc=='20QE973'] = '2022-06-22'
-log_data$sl_sampdat[log_data$sl_barc=='20QE970'] = '2022-06-22'
 
 
 log_data$sl_samptim[log_data$sl_barc=='20SA069'] = '09:11:00'
@@ -647,7 +660,8 @@ writeLines(sprintf('there are a total of %s patients in the PCR database',
                    length(unique(Res$`SUBJECT ID`))))
 
 variant_data$Variant = variant_data$Summary
-Res = merge(Res, variant_data[, c('ID','Variant')], by = 'ID', all.x = T)
+variant_data = variant_data[, c('ID','Variant')]
+Res = merge(Res, variant_data, by = 'ID', all.x = T)
 
 ## Add genotyping data
 ind_missing_variant = is.na(Res$Variant)
@@ -698,6 +712,7 @@ control_dat$CT[control_dat$CT_NS==40]=NA
 control_dat$batch = as.factor(control_dat$Plate)
 
 library(lme4)
+# random slope and intercept
 conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch), 
                 data = control_dat,
                 control = lmerControl(optimizer ="Nelder_Mead"))
@@ -706,17 +721,20 @@ preds = predict(conv_mod)
 plot(control_dat$CT, jitter(control_dat$log10_true_density), xlim=c(20,40))
 for(bb in levels(control_dat$batch)){
   ind = control_dat$batch==bb
-  lines(control_dat$CT[ind], preds[ind])
+  lines(control_dat$CT[ind], preds[ind], col = as.numeric(control_dat$Lab[ind]=='Thailand')+1)
 }
 
 preds_all = 
   predict(conv_mod,
           newdata = data.frame(CT=Res$CT_NS,
-                               batch=as.factor(Res$Plate)))
+                               batch=as.factor(Res$Plate)),
+          allow.new.levels = F)
 preds_cens = 
   predict(conv_mod, 
           newdata = data.frame(CT=rep(40,nrow(Res)),
-                               batch=as.factor(Res$Plate)))
+                               batch=as.factor(Res$Plate)),
+          allow.new.levels = F)
+
 Res$log10_viral_load = preds_all
 Res$log10_cens_vl = preds_cens
 
@@ -731,9 +749,9 @@ table(Res$log10_viral_load == Res$log10_cens_vl)
 
 writeLines('The follwoing IDs have duplicated barcodes:')
 
-# bs_dup = Res$BARCODE[duplicated(Res$BARCODE)]
-# View(Res[Res$BARCODE %in% bs_dup, ])
 print(unique(Res$ID[duplicated(Res$BARCODE)]))
+View(Res[Res$BARCODE %in% unique(Res$BARCODE[duplicated(Res$BARCODE)]), ])
+
 Res = Res[!duplicated(Res$BARCODE), ]
 
 ###### Write csv files

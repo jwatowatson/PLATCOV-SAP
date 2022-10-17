@@ -68,6 +68,8 @@ plot_baseline_data = function(input_data){
   hist(bvl$log10_viral_load,breaks = seq(1,8.5,by=.5),add=T)
 }
 
+
+
 plot_serial_data = function(xx, trt_cols){
   
   xx$Trt_number = as.numeric(as.factor(as.character(xx$Trt)))
@@ -75,7 +77,7 @@ plot_serial_data = function(xx, trt_cols){
   PCR_dat = aggregate(log10_viral_load ~ ID + Timepoint_ID +
                         Trt_number + Trt, 
                       data = xx, mean)
-  trt_smmry = aggregate(formula = log10_viral_load ~ Timepoint_ID+Trt_number, 
+  trt_smmry = aggregate(formula = log10_viral_load ~ Timepoint_ID+Trt_number+Trt, 
                         data = PCR_dat, FUN = median)
   PCR_dat$Timepoint_ID=jitter(PCR_dat$Timepoint_ID)
   
@@ -85,8 +87,8 @@ plot_serial_data = function(xx, trt_cols){
            gap = c(7.5,13.5), gap.axis = 'x',
            yticlab = '',ytics = 2, xtics = c(0,3,6,14),
            xlim = c(0,14), type='n', yaxt='n',
-           col = trt_cols[PCR_dat$Trt_number],
-           ylim = c(1, max(PCR_dat$log10_viral_load)))
+           col = trt_cols[as.character(PCR_dat$Trt)],
+           ylim = c(1, 8))
   axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
                                       expression(10^4),
                                       expression(10^6),
@@ -98,32 +100,29 @@ plot_serial_data = function(xx, trt_cols){
     gap.plot(PCR_dat$Timepoint_ID[ind],
              PCR_dat$log10_viral_load[ind],
              gap = c(7.5,13.5), gap.axis = 'x',add = T,
-             col=adjustcolor(trt_cols[PCR_dat$Trt_number[ind]],.6))
+             col=adjustcolor(trt_cols[as.character(PCR_dat$Trt[ind])],.5))
   }
   gap.plot(trt_smmry$Timepoint_ID, trt_smmry$log10_viral_load,
-           col= trt_cols[trt_smmry$Trt_number],
+           col= trt_cols[as.character(trt_smmry$Trt)],
            gap = c(7.5,13.5), gap.axis = 'x',add = T,
-           pch = 14+trt_smmry$Trt_number, cex=1.5)
-  for(tt in unique(trt_smmry$Trt_number)){
-    ind = trt_smmry$Trt_number==tt
+           pch = 15, cex=1.5)
+  for(tt in as.character(unique(trt_smmry$Trt))){
+    ind = trt_smmry$Trt==tt
     gap.plot(trt_smmry$Timepoint_ID[ind],
              trt_smmry$log10_viral_load[ind], 
              gap = c(7.5,13.5), gap.axis = 'x',add = T,
              type='l',col = trt_cols[tt],lwd=3)
   }
   
-  trt_nums = sort(unique(PCR_dat$Trt_number))
-  trt_cols = trt_cols[trt_nums]
-  trts = plyr::mapvalues(trt_nums,
-                         from=PCR_dat$Trt_number[!duplicated(PCR_dat$Trt_number)],
-                         to=PCR_dat$Trt[!duplicated(PCR_dat$Trt_number)])
+  trts = as.character(unique(PCR_dat$Trt))
   for(i in 1:length(trts)){
     trts[i] = paste0(trts[i],' (n=',sum(PCR_dat$Trt[!duplicated(PCR_dat$ID)]==trts[i]),')')
   }
-  legend('topright', col=trt_cols, 
-         legend = trts, title = 'Median',
-         lwd=2,pch=14+trt_nums,cex=1.5, inset = 0.03)
+  legend('topright', col=trt_cols[as.character(unique(PCR_dat$Trt))], 
+         legend = trts,
+         lwd=2,pch=15,cex=1, inset = 0.03)
 }
+
 
 bayes_R2 = function(mod_preds, mod_residuals) {
   var_pred = apply(mod_preds, 1, var)
@@ -340,18 +339,18 @@ plot_individ_data = function(mod_out, # model fits
          xaxt='n', yaxt='n',
          panel.first=grid(), xlim=c(0,7),
          ylim = range(analysis_data_stan$log_10_vl))
-    if(counter %% sqrt(K_plots) == 1){
-      mtext(text = 'RNA copies per mL',side = 2,
-            line = 3,las = 3)
-    }
+    # if(counter %% sqrt(K_plots) == 1){
+    #   mtext(text = 'RNA copies per mL',side = 2,
+    #         line = 3,las = 3)
+    # }
     axis(1, at = c(0,3,7))
     axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
                                         expression(10^4),
                                         expression(10^6),
                                         expression(10^8)))
-    if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
-      mtext(text = 'Days',side = 1,line = 2)
-    }
+    # if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
+    #   mtext(text = 'Days',side = 1,line = 2)
+    # }
     for(mm in models_plot){
       ix = order(analysis_data_stan$obs_day[ind])
       my_xs = analysis_data_stan$obs_day[ind][ix]
@@ -369,7 +368,7 @@ plot_individ_data = function(mod_out, # model fits
     points(analysis_data_stan$obs_day[ind],
            analysis_data_stan$log_10_vl[ind],pch=16)
     
-    mtext(text = paste0(ID_map$ID_key[counter],
+    mtext(text = paste0(ID_map$ID[counter],
                         '\n',
                         ID_map$Trt[counter]),
           side = 3, line = -0.5, cex=0.8)
