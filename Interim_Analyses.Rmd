@@ -21,8 +21,8 @@ library(brms)
 library(loo)
 library(RColorBrewer)
 library(reshape2)
+library(tidyverse)
 library(plotrix)
-library(lme4cens)
 library(censReg)
 ```
 
@@ -66,7 +66,7 @@ Data preparation is done in a different R script called data_prep.R. This Markdo
 ## PCR QC
 
 ```{r}
-source('PCR_quality_checks.R')
+# source('PCR_quality_checks.R')
 ```
 
 
@@ -112,9 +112,9 @@ writeLines(sprintf('All negative samples for id: %s', ids_neg))
 # Exclude from mITT pop
 PP$Include_mITT[PP$ID %in% ids_neg] = F
 
-platcov_dat = platcov_dat[!platcov_dat$ID %in% ids_neg, ]
+platcov_dat = platcov_dat %>% filter(!ID %in% ids_neg & ID %in% PP$ID[PP$Include_mITT])
 
-writeLines(sprintf('PCR database contains data from %s patients',nrow(PP)))
+writeLines(sprintf('PCR analysis database (mITT) contains data from %s patients',nrow(PP)))
 ```
 
 
@@ -126,12 +126,16 @@ writeLines(sprintf('PCR database contains data from %s patients',nrow(PP)))
 Time from symptom onset
 
 ```{r symptom_onset}
-bvl=aggregate(log10_viral_load ~ ID + Symptom_onset + Site, 
-              data = platcov_dat[platcov_dat$Timepoint_ID==0,],FUN = mean)
+platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
+  mutate(daily_viral_load = mean(log10_viral_load),
+         daily_mean_CT = mean(CT_NS),
+         baseline_viral_load = mean(log10_viral_load[Timepoint_ID==0]))
+
 par(mfrow=c(1,2),las=1)
 for(ss in c('th001','br003')){
-  ind = bvl$Site==ss
-  boxplot(bvl$log10_viral_load[ind] ~ round(bvl$Symptom_onset[ind]),main=ss,
+  bvl = platcov_dat %>% filter(Timepoint_ID==0) %>% distinct(ID,.keep_all = T)
+  ind = bvl$Site==ss 
+  boxplot(bvl$baseline_viral_load[ind] ~ round(bvl$Symptom_onset[ind]),main=ss,
           ylim = c(3,8), xlab = 'Days from symptom onset', 
           ylab = 'Baseline viral load (log10)')
   print(summary(lm(bvl$log10_viral_load[ind] ~ bvl$Symptom_onset[ind])))
@@ -163,20 +167,17 @@ writeLines(sprintf('We have %s PCR datapoints on %s patients from %s sites betwe
                    min(platcov_dat$Rand_date),
                    max(platcov_dat$Rand_date)))
 
-# baseline samples: taken within 6 hours of randomisation
-baseline_ind = platcov_dat$Timepoint_ID==0
-
-bvl = aggregate(log10_viral_load ~ ID + Site, 
-                platcov_dat[baseline_ind, ], median)
-nrow(bvl) == length(IDs)
-
-writeLines(sprintf('In the %s patients, the geometric mean baseline (defined as samples taken within 6 hours of randomisation) viral load was %s copies per mL (95 percentile interval from %s to %s; range from %s to %s)',
-                   length(IDs),
-                   round(10^mean(bvl$log10_viral_load)),
-                   round(10^(mean(bvl$log10_viral_load)-1.96*sd(bvl$log10_viral_load))),
-                   round(10^(mean(bvl$log10_viral_load)+1.96*sd(bvl$log10_viral_load))),
-                   round(min(10^bvl$log10_viral_load)),
-                   round(max(10^bvl$log10_viral_load))))
+xx=platcov_dat %>% distinct(ID, Timepoint_ID,.keep_all = T) %>% 
+  group_by(Timepoint_ID) %>%
+  summarise(Median_viral_load = median(daily_viral_load))
+plot(xx$Timepoint_ID, xx$Median_viral_load)
+# writeLines(sprintf('In the %s patients, the geometric mean baseline (defined as samples taken within 6 hours of randomisation) viral load was %s copies per mL (95 percentile interval from %s to %s; range from %s to %s)',
+#                    length(IDs),
+#                    round(10^mean(bvl$log10_viral_load)),
+#                    round(10^(mean(bvl$log10_viral_load)-1.96*sd(bvl$log10_viral_load))),
+#                    round(10^(mean(bvl$log10_viral_load)+1.96*sd(bvl$log10_viral_load))),
+#                    round(min(10^bvl$log10_viral_load)),
+#                    round(max(10^bvl$log10_viral_load))))
 ```
 
 
@@ -215,13 +216,16 @@ trts = c("Regeneron",
          'Molnupiravir',
          'Nirmatrelvir + Ritonavir',
          'Nitazoxanide',
-         'Evusheld')
+         'Evusheld',
+         'Ensitrelvir')
+all(platcov_dat$Trt %in% c("No study drug", trts))
+
 platcov_dat$Trt_code = 
   factor(platcov_dat$Trt,
          levels=c("No study drug", trts))
-
-xx=make_baseline_table(input_data = platcov_dat[platcov_dat$ID %in% PP$ID[PP$Include_mITT],])
-knitr::kable(xx, caption = sprintf('Summary of patient characteristics included in the current interim analysis (n= %s). Age: median (range); baseline viral load (log10 copies per mL: mean (range)); vaccinated: %% with any number of doses; number of vaccine doses: median (range); antibody data are from rapid tests done at screening (+ is presence of IgM or IgG band).', sum(PP$Include_mITT)))
+# 
+# xx=make_baseline_table(input_data = platcov_dat[platcov_dat$ID %in% PP$ID[PP$Include_mITT],])
+# knitr::kable(xx, caption = sprintf('Summary of patient characteristics included in the current interim analysis (n= %s). Age: median (range); baseline viral load (log10 copies per mL: mean (range)); vaccinated: %% with any number of doses; number of vaccine doses: median (range); antibody data are from rapid tests done at screening (+ is presence of IgM or IgG band).', sum(PP$Include_mITT)))
 ```
 
 ## Summary data plot
@@ -237,36 +241,12 @@ mtext(text = 'a',side = 3,adj = 0,cex=1.5,line = 1.5)
 trt_cols = brewer.pal(n = length(unique(platcov_dat$Trt)),
                       name = 'Paired')
 names(trt_cols) = c('No study drug', # all treatments
-                    "Favipiravir",
-                    'Fluoxetine',
-                    'Nirmatrelvir + Ritonavir',
-                    'Molnupiravir',
-                    'Nitazoxanide',
-                    'Regeneron',
-                    'Remdesivir',
-                    'Ivermectin',
-                    'Evusheld')
+                    trts)
 
-plot_serial_data(xx = platcov_dat[ind_plot,],
-                 trt_cols = trt_cols)
-mtext(text = 'b',side = 3,adj = 0,cex=1.5,line = 1.5)
+# plot_serial_data(xx = platcov_dat[ind_plot,],
+#                  trt_cols = trt_cols)
+# mtext(text = 'b',side = 3,adj = 0,cex=1.5,line = 1.5)
 ```
-
-
-### Saliva versus swab
-
-```{r saliva_PLATCOV, fig.height=5}
-# IDs_saliva = unique(platcov_dat$ID[platcov_dat$Swab_ID == 'Saliva'])
-# par(mfrow=c(2,3),las=1,family='serif',cex.axis=1.5, cex.lab=1.5)
-# for(id in IDs_saliva){
-#   ind = platcov_dat$ID==id
-#   plot(platcov_dat$Time[ind], platcov_dat$log10_viral_load[ind],
-#        col=as.numeric(platcov_dat$Swab_ID[ind]%in% c('Saliva','SAL'))+1,
-#        panel.first=grid(),main=id,cex=1.5,pch=16,
-#        xlab='Days from randomisation', ylab = 'Log10 viral load (copies per ml)')
-# }
-```
-
 
 
 # Initial analysis
@@ -286,15 +266,9 @@ We fit a linear model to all data to check for:
 platcov_dat$Trt = 
   factor(platcov_dat$Trt, 
          levels = c("No study drug",
-                    "Ivermectin",
-                    "Regeneron",
-                    "Remdesivir",
-                    "Favipiravir",
-                    "Nitazoxanide",
-                    "Fluoxetine",
-                    "Molnupiravir",
-                    "Nirmatrelvir + Ritonavir",
-                    "Evusheld"))
+                    trts))
+table(platcov_dat$Trt , useNA = 'ifany')
+
 platcov_dat$Epoch=as.factor(platcov_dat$Epoch)
 # 
 # ind_fit = platcov_dat$Timepoint_ID<14 & platcov_dat$Site=='br003'
@@ -390,7 +364,6 @@ and two sets of covariate adjustments:
 -   Vaccination (number of doses)
 -   Age (standardized to have mean=0 and sd=1)
 -   Time since symptom onset (days, between 0 and 4)
--   Serology rapid test (+/-)
 -   Serum antibody: not yet decided which antibody will be measured - expected June 2022
 
 ## Specify priors
@@ -409,28 +382,16 @@ We make the stan data sets.
 ```{r}
 # All analysis datasets - data_prep.R does the construction of datasets
 analysis_datasets = c(interim="interim_dat.csv",
-                      favi = "Favipiravir_analysis.csv" ,
                       fluox = "Fluoxetine_analysis.csv" ,
                       molnpvr = "Molnupiravir_analysis.csv",
                       paxlovid = "Paxlovid_analysis.csv",
-                      pax_mol = "Paxlovid_Molnupiravir_analysis.csv",
-                      nitzox = "Nitazoxanide_analysis.csv")
+                      pax_mol = "Paxlovid_Molnupiravir_analysis.csv")
 trts_lists = list(c('No study drug', # all treatments
-                    "Favipiravir",
-                    'Fluoxetine',
-                    'Nirmatrelvir + Ritonavir',
-                    'Molnupiravir',
-                    'Nitazoxanide',
-                    'Regeneron',
-                    'Remdesivir',
-                    'Ivermectin',
-                    'Evusheld'),
-                  c('No study drug', "Favipiravir"),
+                    trts),
                   c('No study drug', "Fluoxetine"),
                   c('No study drug', 'Molnupiravir'),
                   c('No study drug', 'Nirmatrelvir + Ritonavir'),
-                  c('No study drug','Molnupiravir', 'Nirmatrelvir + Ritonavir'),
-                  c('No study drug', 'Nitazoxanide'))
+                  c('Nirmatrelvir + Ritonavir','No study drug','Molnupiravir'))
 names(trts_lists) = names(analysis_datasets)
 print(trts_lists)
 platcov_dat_list = list()
@@ -439,7 +400,7 @@ for(i in 1:length(analysis_datasets)){
   analysis_name = names(analysis_datasets)[i]
   platcov_dat_list[[i]] = read.csv(file = analysis_datasets[i])
   
-  writeLines(sprintf('Time since symtpm onset not yet entered for %s patients', sum(is.na(platcov_dat_list[[i]]$Symptom_onset[!duplicated(platcov_dat_list[[i]]$ID)]))))
+  writeLines(sprintf('Time since symtpom onset not yet entered for %s patients', sum(is.na(platcov_dat_list[[i]]$Symptom_onset[!duplicated(platcov_dat_list[[i]]$ID)]))))
   platcov_dat_list[[i]]$Symptom_onset[is.na(platcov_dat_list[[i]]$Symptom_onset)]=1
   
   

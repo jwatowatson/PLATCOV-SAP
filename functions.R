@@ -14,7 +14,6 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
   }
   if(length(mod_cols)!=length(plot_models)) stop('number of colors needs to be equal to number of models to be plotted')
   
-  
   K_treatments = nrow(effect_ests[[plot_models[1]]])
   
   xlims = (exp(range(c(0, range(sapply(effect_ests[plot_models], rbind)))) )-1)*100
@@ -24,28 +23,31 @@ plot_effect_estimates = function(effect_ests, #list of stan outputs
        panel.first=grid(), ylab='', yaxt='n', type='n',
        xlab = 'Change in rate of clearance (%)',
        xaxt = 'n')
-  axis(1, at = x_points)
-  axis(2, at = 1:K_treatments,
-       labels = rownames(effect_ests[[plot_models[1]]]),
-       tick = F, cex.lab=1.5, cex.axis=1.5)
+  
   index_p = rev(seq(-.2,.2, length.out = length(plot_models)))
   abline(v=0,lwd=2)
   polygon(c(-1000, 100*(study_threshold-1), 100*(study_threshold-1), -1000),
           c(-100, -100, 100, 100), border = NA,
           col = adjustcolor('grey',.4))
+  
+  sort_ind = order(effect_ests[[plot_models[1]]][,'50%'])
   for(i in 1:length(plot_models)){
-    points((exp(effect_ests[[plot_models[i]]][,'mean'])-1)*100,
+    points((exp(effect_ests[[plot_models[i]]][sort_ind,'50%'])-1)*100,
            1:K_treatments+index_p[i],pch=my_pch[i],
            col=mod_cols[i],cex=1.5)
-    for(j in 1:K_treatments){
-      lines((exp(c(effect_ests[[plot_models[i]]][j,'2.5%'],
-                   effect_ests[[plot_models[i]]][j,'97.5%']))-1)*100,
+    for(j in 1:length(sort_ind)){
+      kk = sort_ind[j]
+      lines((exp(c(effect_ests[[plot_models[i]]][kk,'2.5%'],
+                   effect_ests[[plot_models[i]]][kk,'97.5%']))-1)*100,
             rep(j+index_p[i],2),col=mod_cols[i],lwd=1)
-      lines((exp(c(effect_ests[[plot_models[i]]][j,'10%'],
-                   effect_ests[[plot_models[i]]][j,'90%']))-1)*100,
+      lines((exp(c(effect_ests[[plot_models[i]]][kk,'10%'],
+                   effect_ests[[plot_models[i]]][kk,'90%']))-1)*100,
             rep(j+index_p[i],2),col=mod_cols[i],lwd=3)
     }
   }
+  axis(1, at = x_points)
+  axis(2, at = 1:K_treatments, labels = rownames(effect_ests[[plot_models[1]]])[sort_ind])
+  
 }
 
 
@@ -56,71 +58,57 @@ plot_baseline_data = function(input_data){
   bvl = aggregate(log10_viral_load ~ ID, input_data[baseline_ind, ], median)
   
   hist(bvl$log10_viral_load,
-       breaks = seq(1,8.5,by=.5),
-       xlab='Baseline viral load (RNA copies per mL)',
-       ylab ='Number of patients',xlim=c(1,8.5),
+       breaks = seq(1,9,by=.5),
+       xlab='Baseline viral load (SARS CoV2 genomes/mL)',
+       ylab ='Number of patients',xlim=c(1,9),
        main='', xaxt ='n')
   axis(1, at = c(2,4,6,8), labels = c(expression(10^2),
                                       expression(10^4),
                                       expression(10^6),
                                       expression(10^8)))
   grid(); 
-  hist(bvl$log10_viral_load,breaks = seq(1,8.5,by=.5),add=T)
 }
 
 
-
-plot_serial_data = function(xx, trt_cols){
+plot_serial_data = function(xx, xlims=c(0,7)){
   
-  xx$Trt_number = as.numeric(as.factor(as.character(xx$Trt)))
+  daily_VL_data = xx %>% group_by(ID, Time) %>%
+    mutate(daily_VL = mean(log10_viral_load,na.rm = T))
   
-  PCR_dat = aggregate(log10_viral_load ~ ID + Timepoint_ID +
-                        Trt_number + Trt, 
-                      data = xx, mean)
-  trt_smmry = aggregate(formula = log10_viral_load ~ Timepoint_ID+Trt_number+Trt, 
-                        data = PCR_dat, FUN = median)
-  PCR_dat$Timepoint_ID=jitter(PCR_dat$Timepoint_ID)
+  summary_VL_data = daily_VL_data %>% group_by(Timepoint_ID, Trt) %>%
+    summarise(daily_VL = mean(daily_VL,na.rm = T),
+              trt_color=unique(trt_color))
   
-  gap.plot(PCR_dat$Timepoint_ID, PCR_dat$log10_viral_load,
-           ylab = 'RNA copies per mL', panel.first=grid(),
-           xlab = 'Time since randomization (days)',
-           gap = c(7.5,13.5), gap.axis = 'x',
-           yticlab = '',ytics = 2, xtics = c(0,3,6,14),
-           xlim = c(0,14), type='n', yaxt='n',
-           col = trt_cols[as.character(PCR_dat$Trt)],
-           ylim = c(1, 8))
+  summary_dat = daily_VL_data %>% ungroup() %>% distinct(ID, .keep_all = T) %>%
+    group_by(Trt) %>%
+    summarise(n = n(),
+              trt_color = unique(trt_color)) %>% ungroup() %>%
+    mutate(legend = paste0(Trt, ' (n=',n,')'))
+  
+  par(las=1)
+  plot(summary_VL_data$Timepoint_ID, summary_VL_data$daily_VL,
+       ylab = 'SARS CoV2 genomes/mL', panel.first=grid(),
+       xlab = 'Time since randomization (days)',
+       xlim = xlims, yaxt='n',type='n',
+       ylim = c(0.7, 8))
   axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
                                       expression(10^4),
                                       expression(10^6),
                                       expression(10^8)))
-  IDs = unique(xx$ID)
-  writeLines(sprintf('Plotting data for %s individuals', length(IDs)))
-  for(id in IDs){
-    ind = PCR_dat$ID==id
-    gap.plot(PCR_dat$Timepoint_ID[ind],
-             PCR_dat$log10_viral_load[ind],
-             gap = c(7.5,13.5), gap.axis = 'x',add = T,
-             col=adjustcolor(trt_cols[as.character(PCR_dat$Trt[ind])],.5))
-  }
-  gap.plot(trt_smmry$Timepoint_ID, trt_smmry$log10_viral_load,
-           col= trt_cols[as.character(trt_smmry$Trt)],
-           gap = c(7.5,13.5), gap.axis = 'x',add = T,
-           pch = 15, cex=1.5)
-  for(tt in as.character(unique(trt_smmry$Trt))){
-    ind = trt_smmry$Trt==tt
-    gap.plot(trt_smmry$Timepoint_ID[ind],
-             trt_smmry$log10_viral_load[ind], 
-             gap = c(7.5,13.5), gap.axis = 'x',add = T,
-             type='l',col = trt_cols[tt],lwd=3)
+  
+  points(daily_VL_data$Time, daily_VL_data$daily_VL,
+         col= adjustcolor(daily_VL_data$trt_color,.3),
+         pch = 1)
+  for(tt in unique(summary_VL_data$Trt)){
+    ind = summary_VL_data$Trt==tt
+    lines(summary_VL_data$Timepoint_ID[ind],
+          summary_VL_data$daily_VL[ind], pch=15,
+          type='b',col = summary_VL_data$trt_color[ind],lwd=3)
   }
   
-  trts = as.character(unique(PCR_dat$Trt))
-  for(i in 1:length(trts)){
-    trts[i] = paste0(trts[i],' (n=',sum(PCR_dat$Trt[!duplicated(PCR_dat$ID)]==trts[i]),')')
-  }
-  legend('topright', col=trt_cols[as.character(unique(PCR_dat$Trt))], 
-         legend = trts,
-         lwd=2,pch=15,cex=1, inset = 0.03)
+  legend('topright', col = summary_dat$trt_color, 
+         legend = summary_dat$legend,
+         lwd=2, pch=15, cex=1, inset = 0.03)
 }
 
 
@@ -240,63 +228,8 @@ make_stan_inputs = function(input_data_fit,
 }
 
 
-make_baseline_table = function(input_data){
-  
-  ind_dup = !duplicated(input_data$ID)
-  platcov_sm_dat = input_data[ind_dup, ]
-  
-  xx_vl = aggregate(log10_viral_load ~ ID + Timepoint_ID + Trt_code, input_data, mean)
-  xx_vl = aggregate(log10_viral_load ~ Trt_code, xx_vl[xx_vl$Timepoint_ID==0, ],
-                    function(x) {
-                      paste(round(mean(x),1),' (',
-                            round(min(x),1),'-',round(max(x),1),
-                            ')',sep='')})
-  xx_age = aggregate(Age ~ Trt_code, platcov_sm_dat,function(x) {
-    paste(round(median(x),1),' (',
-          round(min(x),1),'-',round(max(x),1),
-          ')',sep='')})
-  xx_n = aggregate(Age ~ Trt_code, platcov_sm_dat, length)
-  xx_Nvac = aggregate(N_dose ~ Trt_code, platcov_sm_dat,function(x) {
-    paste(round(median(x),1),' (',
-          round(min(x),1),'-',round(max(x),1),
-          ')',sep='')})
-  platcov_sm_dat$Vaccinated = as.numeric(platcov_sm_dat$Any_dose=='Yes')
-  xx_Any_vac = aggregate(Vaccinated ~ Trt_code, platcov_sm_dat,function(x) round(100*mean(x)))
-  xx_Antibody = aggregate(Antibody_test ~ Trt_code, platcov_sm_dat,function(x) round(100*mean(x)))
-  xx_sex = aggregate(Sex ~ Trt_code, platcov_sm_dat,function(x) round(100*mean(x)))
-  
-  # Drugs allocated by Site
-  xx_site = merge(data.frame(Trt_code=levels(platcov_sm_dat$Trt_code)),
-                  aggregate(Site ~ Trt_code, FUN = length,data = platcov_sm_dat,
-                            subset = platcov_sm_dat$Site==unique(platcov_sm_dat$Site)[1]),
-                  all.x=TRUE)
-  if(length(unique(platcov_sm_dat$Site)>1)){
-    for(ss in unique(platcov_sm_dat$Site)[-1]){
-      xx_site = cbind(xx_site,
-                      merge(data.frame(Trt_code=levels(platcov_sm_dat$Trt_code)),
-                            aggregate(Site ~ Trt_code, FUN = length,data = platcov_sm_dat,
-                                      subset = platcov_sm_dat$Site==ss),
-                            all.x=TRUE)[,-1])
-    }
-  }
-  xx_site[is.na(xx_site)]=0
-  
-  xx = merge(merge(merge(merge(merge(merge(
-    xx_n, xx_age,by = 'Trt_code'),
-    xx_vl,by = 'Trt_code'),
-    xx_Nvac,by = 'Trt_code'),
-    xx_Antibody,by = 'Trt_code'),
-    xx_sex, by = 'Trt_code'),
-    xx_site, by = 'Trt_code')
-  
-  colnames(xx)=c('Arm','n','Age','Baseline viral load (log10)',
-                 'Number of vaccine doses',
-                 'Antibody+ (%)','Male (%)',
-                 unique(platcov_sm_dat$Site))
-  
-  
-  return(xx)
-}
+
+
 
 get_rates_linear_mod = function(mod_out, # single model fit - not a list
                                 analysis_data_stan){
@@ -311,76 +244,177 @@ get_rates_linear_mod = function(mod_out, # single model fit - not a list
   beta_0*exp(trt_slope[i]+theta_rand_id[id[i]][2]+beta_cov[i])
 }
 
-plot_individ_data = function(mod_out, # model fits
-                             models_plot, # which models to plot
-                             K_plots,
-                             mod_cols,
-                             ID_map,
-                             analysis_data_stan
-){
-  
-  # extract posterior parameters and outputs
-  thetas = list()
-  for(mm in 1:length(mod_out)){
-    thetas[[mm]] = rstan::extract(mod_out[[mm]])
-  }
-  counter = 1
-  
-  ID_map$Trt = gsub(pattern = '\n',
-                    replacement = '',
-                    x = ID_map$Trt,fixed = T)
-  while(counter <= nrow(ID_map)){
+# plot_data_model_fits = function(mod_out, # model fits
+#                              models_plot, # which models to plot
+#                              K_plots,
+#                              mod_cols,
+#                              ID_map,
+#                              analysis_data_stan
+# ){
+#   
+#   # extract posterior parameters and outputs
+#   thetas = list()
+#   for(mm in 1:length(mod_out)){
+#     thetas[[mm]] = rstan::extract(mod_out[[mm]])
+#   }
+#   counter = 1
+#   
+#   ID_map$Trt = gsub(pattern = '\n',
+#                     replacement = '',
+#                     x = ID_map$Trt,fixed = T)
+#   while(counter <= nrow(ID_map)){
+#     
+#     # draw individual model fit with data
+#     ind = analysis_data_stan$id==ID_map$ID_stan[counter]
+#     plot(analysis_data_stan$obs_day[ind],
+#          analysis_data_stan$log_10_vl[ind],
+#          xlab='', ylab='', 
+#          xaxt='n', yaxt='n',
+#          panel.first=grid(), xlim=c(0,7),
+#          ylim = range(analysis_data_stan$log_10_vl))
+#     # if(counter %% sqrt(K_plots) == 1){
+#     #   mtext(text = 'RNA copies per mL',side = 2,
+#     #         line = 3,las = 3)
+#     # }
+#     axis(1, at = c(0,3,7))
+#     axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
+#                                         expression(10^4),
+#                                         expression(10^6),
+#                                         expression(10^8)))
+#     # if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
+#     #   mtext(text = 'Days',side = 1,line = 2)
+#     # }
+#     for(mm in models_plot){
+#       ix = order(analysis_data_stan$obs_day[ind])
+#       my_xs = analysis_data_stan$obs_day[ind][ix]
+#       polygon(x = c(my_xs, rev(my_xs)),
+#               y = c(apply(thetas[[mm]]$preds[,ind],2,
+#                           quantile,probs=0.025)[ix],
+#                     rev(apply(thetas[[mm]]$preds[,ind],2,
+#                               quantile,probs=0.975)[ix])),
+#               border = NA, 
+#               col = adjustcolor(mod_cols[mm],alpha.f = .3))
+#       lines(my_xs,
+#             colMeans(thetas[[mm]]$preds[,ind])[ix],
+#             col = mod_cols[mm],lwd=2)
+#     }
+#     points(analysis_data_stan$obs_day[ind],
+#            analysis_data_stan$log_10_vl[ind],pch=16)
+#     
+#     mtext(text = paste0(ID_map$ID[counter],
+#                         '\n',
+#                         ID_map$Trt[counter]),
+#           side = 3, line = -0.5, cex=0.8)
+#     counter=counter+1
+#   }
+#   
+# }
+
+plot_data_model_fits = 
+  function(model_list, # list of model fits
+           models_to_plot, # which models to plot
+           K_plots,
+           mod_cols,
+           ID_map,
+           analysis_data_stan
+  ){
     
-    # draw individual model fit with data
-    ind = analysis_data_stan$id==ID_map$ID_stan[counter]
-    plot(analysis_data_stan$obs_day[ind],
-         analysis_data_stan$log_10_vl[ind],
+    # extract posterior parameters and outputs
+    thetas = list()
+    for(mm in 1:length(model_list)){
+      thetas[[mm]] = rstan::extract(model_list[[mm]], pars='preds')
+    }
+    counter = 1
+    
+    ID_map$Trt = gsub(pattern = '\n',
+                      replacement = '',
+                      x = ID_map$Trt,fixed = T)
+    while(counter <= nrow(ID_map)){
+      
+      # draw individual model fit with data
+      ind = analysis_data_stan$id==ID_map$ID_stan[counter]
+      plot(analysis_data_stan$obs_day[ind],
+           analysis_data_stan$log_10_vl[ind],
+           xlab='', ylab='', 
+           xaxt='n', yaxt='n',
+           panel.first=grid(), xlim=c(0,7),
+           ylim = range(analysis_data_stan$log_10_vl))
+      if(counter %% sqrt(K_plots) == 1){
+        mtext(text = 'SARS CoV2 genomes/mL',side = 2,
+              line = 3,las = 3)
+      }
+      axis(1, at = c(0,3,7))
+      axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
+                                          expression(10^4),
+                                          expression(10^6),
+                                          expression(10^8)))
+      if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
+        mtext(text = 'Days',side = 1,line = 2)
+      }
+      for(mm in models_to_plot){
+        ix = order(analysis_data_stan$obs_day[ind])
+        my_xs = analysis_data_stan$obs_day[ind][ix]
+        polygon(x = c(my_xs, rev(my_xs)),
+                y = c(apply(thetas[[mm]]$preds[,ind],2,
+                            quantile,probs=0.025)[ix],
+                      rev(apply(thetas[[mm]]$preds[,ind],2,
+                                quantile,probs=0.975)[ix])),
+                border = NA, 
+                col = adjustcolor(mod_cols[mm],alpha.f = .3))
+        lines(my_xs,
+              colMeans(thetas[[mm]]$preds[,ind])[ix],
+              col = mod_cols[mm],lwd=2)
+      }
+      points(analysis_data_stan$obs_day[ind],
+             analysis_data_stan$log_10_vl[ind],pch=16)
+      
+      mtext(text = paste0(ID_map$ID_key[counter],
+                          '\n',
+                          ID_map$Trt[counter]),
+            side = 3, line = -0.5, cex=0.8)
+      counter=counter+1
+    }
+    
+  }
+
+
+
+plot_individ_curves = function(platcov_dat, IDs, xlims){
+  
+  if(!all(IDs %in% platcov_dat$ID)) stop('missing IDs!!')
+  ylims = range(platcov_dat$log10_viral_load)
+  platcov_dat$Day = floor(platcov_dat$Time)
+  
+  for(id in unique(IDs)){
+    
+    ind = platcov_dat$ID==id
+    xx = aggregate(log10_viral_load ~ Day, data = platcov_dat[ind,], mean)
+    plot(platcov_dat$Time[ind],
+         platcov_dat$log10_viral_load[ind],
+         pch = as.numeric(platcov_dat$log10_cens_vl[ind]==platcov_dat$log10_viral_load[ind])+1,
          xlab='', ylab='', 
          xaxt='n', yaxt='n',
-         panel.first=grid(), xlim=c(0,7),
-         ylim = range(analysis_data_stan$log_10_vl))
-    # if(counter %% sqrt(K_plots) == 1){
-    #   mtext(text = 'RNA copies per mL',side = 2,
-    #         line = 3,las = 3)
-    # }
-    axis(1, at = c(0,3,7))
+         panel.first=grid(), xlim=xlims,
+         ylim = ylims)
+    title(id)
+    lines(xx$Day, xx$log10_viral_load, lwd=2, lty=2)
+    points(platcov_dat$Time[ind],
+           platcov_dat$log10_viral_load[ind],
+           pch = as.numeric(platcov_dat$log10_cens_vl[ind]==platcov_dat$log10_viral_load[ind])+16)
+    axis(1, at = c(0,7,14,21))
     axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
                                         expression(10^4),
                                         expression(10^6),
                                         expression(10^8)))
-    # if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
-    #   mtext(text = 'Days',side = 1,line = 2)
-    # }
-    for(mm in models_plot){
-      ix = order(analysis_data_stan$obs_day[ind])
-      my_xs = analysis_data_stan$obs_day[ind][ix]
-      polygon(x = c(my_xs, rev(my_xs)),
-              y = c(apply(thetas[[mm]]$preds[,ind],2,
-                          quantile,probs=0.025)[ix],
-                    rev(apply(thetas[[mm]]$preds[,ind],2,
-                              quantile,probs=0.975)[ix])),
-              border = NA, 
-              col = adjustcolor(mod_cols[mm],alpha.f = .3))
-      lines(my_xs,
-            colMeans(thetas[[mm]]$preds[,ind])[ix],
-            col = mod_cols[mm],lwd=2)
-    }
-    points(analysis_data_stan$obs_day[ind],
-           analysis_data_stan$log_10_vl[ind],pch=16)
     
-    mtext(text = paste0(ID_map$ID[counter],
-                        '\n',
-                        ID_map$Trt[counter]),
-          side = 3, line = -0.5, cex=0.8)
-    counter=counter+1
   }
   
 }
 
 
-plot_coef_effects = function(stan_out, model_plot, cov_mat, stan_inputs){
+plot_coef_effects = function(stan_out, cov_mat, stan_inputs){
   
-  thetas = rstan::extract(stan_out[[model_plot]])
+  thetas = rstan::extract(stan_out)
   alpha_coefs = apply(thetas$intercept_coefs,2,
                       quantile,probs=c(0.025,.1,.5,.9,0.975))
   xlims=range(alpha_coefs)
@@ -494,10 +528,135 @@ calculate_fever_clearance = function(temp_dat,
   return(temp_dat[!duplicated(temp_dat$ID), ])
 }
 
+
+
+make_slopes_plot = function(stan_out, 
+                            analysis_data_stan,
+                            ID_map, 
+                            data_summary,
+                            my_lims = c(5, 72), # hours
+                            my_vals = c(7,24,48,72)){
+  
+  slopes = rstan::extract(stan_out, pars='slope')$slope
+  
+  t12_output = data.frame(t_12_med = 24*log10(.5)/(apply(slopes,2,mean)),
+                          t_12_up = 24*log10(.5)/(apply(slopes,2,quantile,.9)),
+                          t_12_low = 24*log10(.5)/(apply(slopes,2,quantile,.1)),
+                          ID_stan = analysis_data_stan$id[analysis_data_stan$ind_start])
+  t12_output = merge(t12_output, ID_map, by = 'ID_stan')
+  data_summary = merge(data_summary, t12_output, by.x = 'ID', by.y = 'ID_key')
+  
+  data_summary = dplyr::arrange(data_summary, Trt, t_12_med)
+  
+  par(mar=c(5,2,2,2))
+  plot(data_summary$t_12_med, 1:nrow(data_summary),
+       yaxt='n', xaxt='n',
+       xlim=my_lims, panel.first=grid(), xlab='', 
+       pch=15, ylab='', col=data_summary$trt_color)
+  mtext(text = expression('t'[1/2] ~ ' (hours)'),side = 1,line=3)
+  axis(1, at = my_vals,labels = my_vals)
+  
+  for(i in 1:nrow(data_summary)){
+    lines(c(data_summary$t_12_low[i],
+            data_summary$t_12_up[i]),
+          rep(i,2),
+          col=adjustcolor(data_summary$trt_color[i],alpha.f = .5))
+  }
+  
+  for(kk in which(!duplicated(data_summary$Trt))){
+    ind = data_summary$Trt==data_summary$Trt[kk]
+    writeLines(sprintf('In %s the median clearance half life was %s (range %s to %s)',
+                       data_summary$Trt[kk],
+                       round(median(data_summary$t_12_med[ind]),1),
+                       round(min(data_summary$t_12_med[ind]),1),
+                       round(max(data_summary$t_12_med[ind]),1)))
+    abline(v = median(data_summary$t_12_med[ind]), col=data_summary$trt_color[kk],lty=2,lwd=2)
+  }
+  
+  legend('bottomright', legend = unique(data_summary$Trt),
+         col = unique(data_summary$trt_color),
+         pch=15,lwd=2,inset=0.03)
+  return(data_summary)
+}
+
+
+get_itt_population = function(){
+  rand.TH58 <- read.csv("~/Dropbox/PLATCOV/rand-TH58.csv")[0:9, ]
+  rand.TH57 <- read.csv("~/Dropbox/PLATCOV/rand-TH57.csv")[0:10, ]
+  
+  data.TH1 <- read.csv("~/Dropbox/PLATCOV/data-TH1.csv")
+  data.TH1$Date = as.POSIXct(data.TH1$Date,format='%a %b %d %H:%M:%S %Y')
+  
+  data.BR3 <- read.csv("~/Dropbox/PLATCOV/data-BR3.csv")
+  data.BR3$Date = as.POSIXct(data.BR3$Date,format='%a %b %d %H:%M:%S %Y')
+  
+  data.LA08 <- read.csv("~/Dropbox/PLATCOV/data-LA08.csv")
+  data.LA08$Date = as.POSIXct(data.LA08$Date,format='%a %b %d %H:%M:%S %Y')
+  
+  data.TH1$ID = paste('PLT-TH1-',data.TH1$randomizationID,sep='')
+  rand.TH58$ID = paste('PLT-TH58-',rand.TH58$RandomisationID,sep='')
+  rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
+  data.BR3$ID = paste('PLT-BR3-',data.BR3$randomizationID,sep='')
+  data.LA08$ID = paste('PLT-LA08-',data.LA08$randomizationID,sep='')
+  
+  xx = rbind(data.TH1[, c('ID', 'Treatment')],
+             rand.TH58[, c('ID', 'Treatment')],
+             rand.TH57[, c('ID', 'Treatment')],
+             data.BR3[, c('ID', 'Treatment')])
+  
+  library(stringr)
+  for(i in 1:nrow(xx)){
+    id = unlist(strsplit(xx$ID[i],split = '-'))
+    id[3] = str_pad(id[3], 3, pad = "0")
+    id = paste(id, collapse = '-')
+    xx$ID[i]=id
+  }
+  
+  
+  return(xx)
+}
+
+
+get_trt_colors = function(plot_cols=F){
+  trt_cols = array(dim = 11)
+  names(trt_cols) = 
+    c("Ivermectin",
+      "Regeneron",
+      'No study drug',
+      "Remdesivir",
+      "Favipiravir",
+      "Nitazoxanide",           
+      "Fluoxetine",
+      "Molnupiravir",
+      "Nirmatrelvir + Ritonavir",
+      "Evusheld",
+      'Ensitrelvir')
+  trt_cols['No study drug'] = viridis::viridis(n = 10)[8]
+  trt_cols['Fluoxetine'] = viridis::viridis(n = 10)[5]
+  trt_cols['Nitazoxanide'] = viridis::magma(n = 10)[8]
+  trt_cols['Evusheld'] = viridis::magma(n = 10)[1]
+  trt_cols['Favipiravir'] = viridis::plasma(n = 100)[92]
+  trt_cols['Ivermectin'] = viridis::plasma(n = 10)[4]
+  trt_cols['Nirmatrelvir + Ritonavir'] = viridis::plasma(n = 10)[1]
+  trt_cols['Regeneron'] = viridis::inferno(n = 10)[5]
+  trt_cols['Molnupiravir'] = viridis::inferno(n = 10)[7]
+  trt_cols['Remdesivir'] = RColorBrewer::brewer.pal('Dark2',n=8)[8]
+  trt_cols['Ensitrelvir'] = RColorBrewer::brewer.pal('Set1',n=8)[1]
+  
+  if(plot_cols){
+    my_labels = gsub(pattern = ' + Ritonavir',replacement = '',fixed = T,x = names(trt_cols))
+    plot(1:length(trt_cols), col=trt_cols, pch=16, cex=5, xlim = c(1,15),
+         xaxt='n',yaxt='n',xlab='',ylab='',bty='n')
+    text(x = 1:length(trt_cols)+2.5, y= 1:length(trt_cols), labels = my_labels)
+  }
+  return(trt_cols)
+}
+
+
+
 checkStrict(make_stan_inputs)
 checkStrict(plot_serial_data)
 checkStrict(plot_effect_estimates)
-checkStrict(plot_individ_data)
-checkStrict(make_baseline_table)
+checkStrict(plot_data_model_fits)
 checkStrict(plot_coef_effects)
 checkStrict(calculate_fever_clearance)
