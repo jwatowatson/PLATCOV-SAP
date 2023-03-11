@@ -12,10 +12,10 @@ source('get_fever_symptom_data.R')
 fever_data = read_csv('Analysis_Data/temperature_data.csv')
 fever_data = fever_data %>% distinct(Label, .keep_all = T)
 
-clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
+clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimEnrolment.dta')
 clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
-final_status = haven::read_dta('../Data/InterimFinalStatus.dta')
-AE_data = haven::read_dta('../Data/InterimAE.dta')
+final_status = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimFinalStatus.dta')
+AE_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimAE.dta')
 
 
 final_status = final_status[!is.na(final_status$fs_compyn), ]
@@ -179,12 +179,12 @@ clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
 
 ## Per protocol for treatment data
 # trt_distcont_data = haven::read_dta('../Data/InterimChangeTreatment.dta')
-trt_distcont_data = haven::read_dta('../Data/InterimDrugRescue.dta') %>% filter(!is.na(dardat))
+trt_distcont_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimDrugRescue.dta') %>% filter(!is.na(dardat))
 
 
 ### Variant data
 ## PCR variant data (up until July 2022)
-fnames_var = list.files('../Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
+fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
 dat = lapply(fnames_var,read_excel)
 for(i in 1:length(dat)) dat[[i]] = dat[[i]][, c("SUBJECT ID","Summary")]
 dat = do.call(what = rbind, dat)
@@ -199,7 +199,7 @@ var_data$Summary_PCR = plyr::mapvalues(x = var_data$Summary_PCR,
 writeLines(sprintf('We have PCR variant genotyping for %s patients',nrow(var_data)))
 
 ## Nanopore data
-fnames_var = list.files('../Data/Nanopore sequencing',full.names = T,pattern = '.csv')
+fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/Nanopore sequencing',full.names = T,pattern = '.csv')
 res_nano = lapply(fnames_var, read.csv)
 for(i in 1:length(res_nano)) res_nano[[i]] = res_nano[[i]][, c('Sequence.name','Scorpio.call','Lineage')]
 res_nano = do.call(rbind, res_nano )

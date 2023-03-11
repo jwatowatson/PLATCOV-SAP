@@ -539,9 +539,10 @@ make_slopes_plot = function(stan_out,
   
   slopes = rstan::extract(stan_out, pars='slope')$slope
   
-  t12_output = data.frame(t_12_med = 24*log10(.5)/(apply(slopes,2,mean)),
-                          t_12_up = 24*log10(.5)/(apply(slopes,2,quantile,.9)),
-                          t_12_low = 24*log10(.5)/(apply(slopes,2,quantile,.1)),
+  t12_output = data.frame(t_12_med = 24*log10(.5)/apply(slopes,2,mean),
+                          t_12_up = 24*log10(.5)/apply(slopes,2,quantile,.9),
+                          t_12_low = 24*log10(.5)/apply(slopes,2,quantile,.1),
+                          slope_median = apply(slopes,2,median),
                           ID_stan = analysis_data_stan$id[analysis_data_stan$ind_start])
   t12_output = merge(t12_output, ID_map, by = 'ID_stan')
   data_summary = merge(data_summary, t12_output, by.x = 'ID', by.y = 'ID_key')

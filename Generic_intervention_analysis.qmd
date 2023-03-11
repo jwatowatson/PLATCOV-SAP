@@ -251,14 +251,28 @@ for(i in 1:length(ff)){
 ```
 
 ```{r slopes_plot}
+load(ff[1])
 par(las=1, cex.lab=1.5, cex.axis=1.5)
-xx=make_slopes_plot(stan_out = out, 
+slope_out=make_slopes_plot(stan_out = out, 
                     analysis_data_stan = stan_inputs$analysis_data_stan,
                     ID_map = stan_inputs$ID_map,
                     data_summary = Baseline_data,
-                    trt_cols = trt_cols,
                     my_lims = c(2,50),
                     my_vals = c(5,15,25,35,45))
+
+sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
+sero_dat = merge(slope_out, sero_dat, by='ID', all=T) %>% 
+  filter(!is.na(log10_IgG)) %>%
+  mutate(Day = ifelse(Day<=7, Day, 14))
+
+par(mfrow=c(2,2))
+for(dd in sort(unique(sero_dat$Day))){
+  sero_dat_dd = sero_dat%>%filter(Day==dd)
+plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope', ylab='log IgG', main= paste('Day',dd), panel.first=grid())
+}
+
+
+sero_no_increase = sero_dat%>% filter(Day==14 & log10_IgG==0)
 ```
 
 ```{r coef_plot}
