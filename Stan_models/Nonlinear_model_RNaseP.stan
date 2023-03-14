@@ -156,6 +156,6 @@ generated quantities {
   }
   for(i in 1:n_id){
     int j = ind_start[i];
-    slope[i] = beta_0[2] * exp(theta_rand_id[id[j]][2] + trt_slope[j] + beta_cov[j]);
+    slope[i] = -beta_0[2] * exp(theta_rand_id[id[j]][2] + trt_slope[j] + beta_cov[j]);
   }
 }
