@@ -1,6 +1,6 @@
-dosing_data = haven::read_dta('../Data/InterimStudyDrugIvermectin.dta')
+dosing_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimStudyDrugIvermectin.dta')
 dosing_data = dosing_data[!is.na(dosing_data$da_dat),]
-clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
+clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimEnrolment.dta')
 
 dosing_data$Date_Time = NA
 for(i in 1:nrow(dosing_data)){
@@ -30,7 +30,7 @@ median(weight_based_doses)
 range(weight_based_doses)
 plot(dosing_data$weight[!duplicated(dosing_data$Label)], weight_based_doses,xlab='Weight', ylab = 'Dose (ug/kg)',panel.first=grid())
 
-pk_dat = readr::read_csv('../Data/PK/IVM_levels.csv')
+pk_dat = readr::read_csv('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/PK/IVM_levels.csv')
 pk_dat$Date_Time = NA
 for(i in 1:nrow(pk_dat)){
   pk_dat$Date_Time[i] = as.character(as.POSIXct(paste(pk_dat$`Collection date`[i],
@@ -95,12 +95,12 @@ IVM_nonmem = rbind(c('#','hours','mg','ng/ml','log','','','','','years',
 plot(diff(as.numeric(IVM_nonmem$TIME[-1])), IVM_nonmem$LNDV[-(1:2)],
      xlim = c(0,100))
 
-readr::write_csv(x = IVM_nonmem, file = '../Data/PK/IVM_NONMEM_data.csv',na = '.')
+readr::write_csv(x = IVM_nonmem, file = '~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/PK/IVM_NONMEM_data.csv',na = '.')
 
 
 ### Read NONMEM output
-
-id_map = IVM_nonmem[!duplicated(IVM_nonmem$`#ID`), c('#ID', 'ID_true'),][-1,]
-pk_summaries = readr::read_csv('Ivermectin/NONMEM_out.csv')[,c('ID','F1','AUC_72','CMAX_72','AUC_168','CMAX_168')]
-pk_summaries$ID = plyr::mapvalues(pk_summaries$ID, from = id_map$`#ID`, to=id_map$ID_true)
-readr::write_csv(x = pk_summaries, file = 'Ivermectin/PK_summaries.csv')
+# 
+# id_map = IVM_nonmem[!duplicated(IVM_nonmem$`#ID`), c('#ID', 'ID_true'),][-1,]
+# pk_summaries = readr::read_csv('Ivermectin/NONMEM_out.csv')[,c('ID','F1','AUC_72','CMAX_72','AUC_168','CMAX_168')]
+# pk_summaries$ID = plyr::mapvalues(pk_summaries$ID, from = id_map$`#ID`, to=id_map$ID_true)
+# readr::write_csv(x = pk_summaries, file = 'Ivermectin/PK_summaries.csv')

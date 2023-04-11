@@ -19,6 +19,7 @@ library(tidyverse)
 library(kableExtra)
 library(finalfit)
 library(RColorBrewer)
+library(lubridate)
 
 ## information on software/hardware used
 version
@@ -28,6 +29,7 @@ rstan_options(auto_write = TRUE)
 ## parameters for the analysis
 Dmax = 8
 RUN_MODELS = F
+add_epoch = T # if using non-concurrent controls
 
 my_probs = c(0.025, 0.1, .5, .9, .975)
 source('functions.R')
@@ -41,9 +43,8 @@ trt_colors = get_trt_colors()
 ```{r load_data}
 intervention = 'interim_all' # prefix of analysis file
 ref_arm = 'No study drug'
-# ref_arm = 'No study drug'
-# study_threshold = 1.2 # depending on comparison with no study drug or positive control
-study_threshold = 0.9
+study_threshold = 1.2 # depending on comparison with no study drug or positive control
+# study_threshold = 0.9
 ```
 
 ```{r define_population}
@@ -137,6 +138,7 @@ platcov_dat_analysis =
   filter(Time <= Dmax, mITT) %>%
   arrange(log10_viral_load==log10_cens_vl) %>%
   mutate(Variant = factor(Variant, levels = c('Delta','BA.1','BA.2','BA.3','BA.4','BA.5')),
+         Epoch = paste(month(Rand_date), year(Rand_date), sep = '_'),
          Site = factor(Site, levels = c('th001','th057','th058','br003')),
          RnaseP_scaled = scale(40 - CT_RNaseP,scale = F),
          Mean_age = mean(Age[!duplicated(ID)]),
@@ -160,13 +162,14 @@ stan_inputs =
                    slope_covs_base = covs_base,
                    slope_covs_full = covs_full,
                    trt_frmla = formula('~ Trt'),
+                   epoch = add_epoch,
                    Dmax = Dmax)
 ```
 
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-model_settings = expand.grid(mod = all_mods[2:3],
+model_settings = expand.grid(mod = all_mods[2:5],
                              prior = 1,
                              cov_matrices = 1)
 
@@ -251,7 +254,7 @@ for(i in 1:length(ff)){
 ```
 
 ```{r slopes_plot}
-load(ff[2])
+load(ff[1])
 par(las=1, cex.lab=1.5, cex.axis=1.5)
 slope_out=make_slopes_plot(stan_out = out, 
                     analysis_data_stan = stan_inputs$analysis_data_stan,
@@ -261,15 +264,38 @@ slope_out=make_slopes_plot(stan_out = out,
                     my_vals = c(5,15,25,35,45))
 
 sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
-sero_dat = merge(slope_out, sero_dat, by='ID', all=F) %>% 
-  filter(!is.na(log10_IgG)) %>%
-  mutate(Day = ifelse(Day<=7, Day, 14))
+sero_dat = merge(slope_out, sero_dat, by='ID', all=F)
 
-par(mfrow=c(2,2))
+sero_dat = sero_dat %>% 
+  filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
+  mutate(Day = ifelse(Day<=7, Day, 14),
+         Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
+  group_by(ID, Day) %>%
+  mutate(Delta_IgG = log10_IgG-Baseline_IgG)
+
+par(mfrow=c(3,2))
 for(dd in sort(unique(sero_dat$Day))){
   sero_dat_dd = sero_dat%>%filter(Day==dd)
-plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope', ylab='log IgG', main= paste('Day',dd), panel.first=grid())
+  plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope',
+       ylab='log IgG', main= paste('Day',dd), panel.first=grid(),
+       ylim = range(sero_dat$log10_IgG))
+  cor.test(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG)
+  mod=lm(log10_IgG~slope_median, data= sero_dat_dd)
+  abline(mod, col='red',lwd=3)
+  print(summary(mod))
+  if(dd>0){
+    plot(sero_dat_dd$slope_median, sero_dat_dd$Delta_IgG, xlab='slope',
+       ylab='Delta IgG', main= paste('Day',dd), panel.first=grid(),
+       ylim = range(sero_dat$Delta_IgG,na.rm=T))
+  }
 }
+
+
+sero_wide = 
+  sero_dat %>% pivot_wider(names_from = Day, 
+                                     values_from = c(log10_IgG,Delta_IgG),
+                                     values_fill = NA,
+                                     values_fn = mean)
 
 par(mfrow=c(2,2))
 sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)

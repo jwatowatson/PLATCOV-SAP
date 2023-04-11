@@ -1,4 +1,4 @@
-dat=read.csv('../Data/Result Validate half vol.csv')
+dat=read.csv('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/Result Validate half vol.csv')
 
 
 par(mfrow=c(2,2),las=1)

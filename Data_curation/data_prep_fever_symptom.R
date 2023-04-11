@@ -8,9 +8,9 @@ library(tidyverse)
 ##*********************************************************
 ##*
 
-clin_data = haven::read_dta('../Data/InterimEnrolment.dta')
-temp_data = haven::read_dta('../Data/InterimFUTemp.dta')
-vita_data = haven::read_dta('../Data/InterimVitalSigns.dta')
+clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimEnrolment.dta')
+temp_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimFUTemp.dta')
+vita_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimVitalSigns.dta')
 # x0 = vita_data[, c('Site', 'Label', 'visit', 'vd_dat', "vs_tim", "vs_temp")]
 x1 = temp_data[, c('Site', 'Label', 'visit', 'fut_amdat', "fut_amtim", "fut_amtemp")]
 x2 = temp_data[, c('Site', 'Label', 'visit', 'fut_pmdat', "fut_pmtim", "fut_pmtemp")]
@@ -57,7 +57,7 @@ temp_data = temp_data %>% filter(!is.na(scrpassed),
   group_by(Label) %>%
   mutate(Fever_Baseline = ifelse(any(fut_temp>37.4 & Time<1), 1, 0))
 
-write.csv(x = temp_data, file = 'Analysis_Data/temperature_data.csv', row.names = F, quote = F)
+write.csv(x = temp_data, file = '../Analysis_Data/temperature_data.csv', row.names = F, quote = F)
 
 xx=sort(table(temp_data$Label))
 sort(names(xx[xx<=20]))
@@ -65,7 +65,7 @@ sort(names(xx[xx<=20]))
 
 
 ######################### ******* Symptoms *********** ##################################
-symp=haven::read_dta('../Data/InterimSymptoms.dta')
+symp=haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimSymptoms.dta')
 symp = symp[!is.na(symp$sq_yn),]
 sort(table(symp$Label),decreasing = T)
 ids_symp_data = names(which(table(symp$Label)>4)) ## need at least 4 records to be included
@@ -90,7 +90,7 @@ symp_data = merge(symp, HR_data[, c('Label', 'Timepoint_ID','heart_rate')],
 symp_data$Timepoint_ID = as.numeric(symp_data$Timepoint_ID)
 symp_data = symp_data %>% arrange(Label, Timepoint_ID)
 
-write.csv(x = symp_data, file = 'Analysis_Data/symptom_data.csv', row.names = F, quote = F)
+write.csv(x = symp_data, file = '../Analysis_Data/symptom_data.csv', row.names = F, quote = F)
 
 rm(list=ls())
 

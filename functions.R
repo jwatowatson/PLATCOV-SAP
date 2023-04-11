@@ -119,12 +119,14 @@ bayes_R2 = function(mod_preds, mod_residuals) {
 }
 
 
+
 make_stan_inputs = function(input_data_fit, 
                             int_covs_base,
                             int_covs_full,
                             slope_covs_base,
                             slope_covs_full,
                             trt_frmla,
+                            epoch=NA,
                             Dmax
 ){
   
@@ -209,6 +211,10 @@ make_stan_inputs = function(input_data_fit,
                             log10_cens_vl = input_data_fit$log10_cens_vl,
                             RNaseP = input_data_fit$RnaseP_scaled,
                             Time_max = Dmax)
+  if(!is.na(epoch)){
+    analysis_data_stan$epoch = as.numeric(as.factor(input_data_fit$Epoch))
+    analysis_data_stan$K_epoch = max(analysis_data_stan$epoch)
+  }
   ID_map = ID_map[!duplicated(ID_map$ID_key), ]
   
   writeLines('check stan data formatting:')
@@ -226,6 +232,7 @@ make_stan_inputs = function(input_data_fit,
                          ID_map=ID_map)
   return(analysis_inputs)
 }
+
 
 
 

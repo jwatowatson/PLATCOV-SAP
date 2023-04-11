@@ -23,20 +23,27 @@ Casirivimab/imdevimab and remdesivir (the parenteral treatment arms): [github re
 
 ## Overview
 
-This github repo provides the statistical analysis plan (see folder Analysis_Plan and PLATCOV_SAP_*.pdf) and the code used for the statistical analysis.
+This github repo provides the study protocol (master protocol) and the statistical analysis plan (both in folder Analysis_Plan and PLATCOV_SAP_*.pdf), and the generic code used for the statistical analysis of each study arm (Generic_intervention_analysis.qmd)
 
-Each interim analysis is done by running the full workflow given in *Full_Analysis.Rmd*. This does the following:
+Each interim analysis is done by running the full workflow given in *Generic_intervention_analysis.qmd* applied to the data from each arm separately. Each analysis is encoded as a separate csv file with the intervention and the concurrent controls (either negative controls for the futility/success analyses, or both negative and positive controls for the non-inferiority analyses). 
 
-* Loads data and makes some summary data plots
-* Does some QC analysis of the PCR data 
-* Runs a series of Bayesian hierarchical linear regression models on the available data (these models are coded in *stan* provided in the folder *Stan_models*)
+
+The generic statistical analysis for each arm does the following:
+
+* Loads data: the dataset is specified via the variable *intervention*. The reference arm also needs to be specified (eg *no study drug*);
+* Checks patients in dataset against ITT data and produces a mITT variable (does the patient have at least 3 days where samples are per protocol?);
+* Makes some summary data plots and tables;
+* Sets up the model runs for stan along with run parameters (number of chains etc..);
+* Model fitting is done separately via the code in *run_models_local.R* (to do on local machine) or *run_models.R* (to do on cluster). The stan models are provided in the folder *Stan_models*;
 * Checks for convergence and compares model fits
 * Displays results
 * Some sensitivity analyses
 
 The underlying data are not made publicly available until publication of results.
 
-The stan models are all left-censored (everything is on the log base 10 viral copies per mL scale) regression models with varying degrees of complexity:
+## Model structure
+
+The stan models all treat the PCR data as left-censored. All viral load data are on the log base 10 viral copies per mL scale. We fit regression models with varying degrees of complexity:
 
 * Base model M0: individual/site random effects for slope and intercept
 * M1: add human RNaseP correction (more human cells taken up by swab should in theory indicate more virus)
