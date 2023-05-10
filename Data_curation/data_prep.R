@@ -180,98 +180,30 @@ clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
 trt_distcont_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimDrugRescue.dta') %>% filter(!is.na(dardat))
 
 
-### Variant data
-## PCR variant data (up until July 2022)
-fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
-dat = lapply(fnames_var,read_excel)
-for(i in 1:length(dat)) dat[[i]] = dat[[i]][, c("SUBJECT ID","Summary")]
-dat = do.call(what = rbind, dat)
-dat = dat[!is.na(dat$Summary),]
-var_data = dat[!duplicated(dat$`SUBJECT ID`), ]
-colnames(var_data)=c('ID', 'Summary_PCR')
-
-var_data$Summary_PCR = plyr::mapvalues(x = var_data$Summary_PCR,
-                                       from = c('Delta_B1.617.2','Omicron BA.2_B.1.1.529',
-                                                'Omicron_B.1.1.529','undetermined'),
-                                       to = c('Delta','BA.2','BA.1',NA))
-writeLines(sprintf('We have PCR variant genotyping for %s patients',nrow(var_data)))
+# ### Variant data
+# ## PCR variant data (up until July 2022)
+# fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
+# dat = lapply(fnames_var,read_excel)
+# for(i in 1:length(dat)) dat[[i]] = dat[[i]][, c("SUBJECT ID","Summary")]
+# dat = do.call(what = rbind, dat)
+# dat = dat[!is.na(dat$Summary),]
+# var_data = dat[!duplicated(dat$`SUBJECT ID`), ]
+# colnames(var_data)=c('ID', 'Summary_PCR')
+# 
+# var_data$Summary_PCR = plyr::mapvalues(x = var_data$Summary_PCR,
+#                                        from = c('Delta_B1.617.2','Omicron BA.2_B.1.1.529',
+#                                                 'Omicron_B.1.1.529','undetermined'),
+#                                        to = c('Delta','BA.2','BA.1',NA))
+# writeLines(sprintf('We have PCR variant genotyping for %s patients',nrow(var_data)))
 
 ## Nanopore data
-fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/Nanopore sequencing',full.names = T,pattern = '.csv')
-res_nano = lapply(fnames_var, read.csv)
-for(i in 1:length(res_nano)) res_nano[[i]] = res_nano[[i]][, c('Sequence.name','Scorpio.call','Lineage')]
-res_nano = do.call(rbind, res_nano )
-res_nano$ID = sapply(res_nano$Sequence.name, FUN = function(x) strsplit(x,split = '_')[[1]][1])
-if(any(duplicated(res_nano$ID))) print('warning - some duplicates in the nanopore output - will be removed')
-res = res_nano[!duplicated(res_nano$ID), ]
+source('get_nanopore_data.R')
+variant_data = get_nanopore_data()
+library(ggplot2)
+variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
+ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
+  geom_density(position = "fill")
 
-
-res$Type = 'Nanopore'
-
-table(res$Scorpio.call)
-res$Summary_nanopore = 
-  plyr::mapvalues(x = res$Scorpio.call,
-                  from = c('Delta (B.1.617.2-like)',
-                           'Omicron (BA.1-like)',
-                           'Omicron (BA.2-like)',
-                           'Omicron (BA.3-like)',
-                           'Omicron (BA.4-like)',
-                           'Omicron (BA.5-like)',
-                           'Omicron (Unassigned)'),
-                  to = c('Delta',
-                         'BA.1',
-                         'BA.2',
-                         'BA.3',
-                         'BA.4',
-                         'BA.5',
-                         'Omicron'))
-ind=res$Summary_nanopore=='Omicron'
-res$Summary_nanopore[ind] = res$Lineage[ind]
-res$Summary_nanopore[grep(pattern = 'BA.2',res$Summary_nanopore)]='BA.2'
-res$Summary_nanopore[grep(pattern = 'BA.4',res$Summary_nanopore)]='BA.4'
-res$Summary_nanopore[grep(pattern = 'BA.5',res$Summary_nanopore)]='BA.5'
-table(res$Summary_nanopore)
-
-
-writeLines(sprintf('We have nanopore variant typing for %s patients',nrow(res)))
-
-variant_data = merge(var_data, res[,c('ID','Summary_nanopore')],
-                     by='ID', all = T)
-if(any(!is.na(variant_data$Summary_PCR) & !is.na(variant_data$Summary_nanopore) &
-       variant_data$Summary_nanopore!=variant_data$Summary_PCR)){
-  writeLines('Disagreements between PCR and nanopore')
-}
-
-variant_data = dplyr::arrange(variant_data, ID)
-variant_data$Summary = variant_data$Summary_nanopore
-
-ind = is.na(variant_data$Summary) & !is.na(variant_data$Summary_PCR)
-sum(ind)
-variant_data$Summary[ind] = variant_data$Summary_PCR[ind]
-
-table(variant_data$Summary, useNA = 'ifany')
-####################################################
-
-
-plot_variant_data=merge(x = variant_data,
-                        y = clin_data, by.x = 'ID', by.y = 'Label',all.x = T)
-
-plot_variant_data = dplyr::arrange(plot_variant_data, Rand_date_time)
-par(las=1,cex.axis=1.3,cex.lab=1.3)
-all_levels = c('Delta','BA.1','BA.2','BA.3','BA.4','BA.5')
-plot_variant_data$var=as.numeric(factor(plot_variant_data$Summary,
-                                        levels=all_levels))
-var_cols = RColorBrewer::brewer.pal(n = length(unique(plot_variant_data$var)), name = 'Set2')
-plot(as.POSIXct(plot_variant_data$Rand_date_time), 1:nrow(plot_variant_data),
-     xlab='Randomisation Date', ylab='Genotyped Patient number',
-     panel.first=grid(),col = adjustcolor(var_cols[plot_variant_data$var],.5),
-     pch = 14+plot_variant_data$var,
-     cex=1.5)
-legend('bottomright',pch=15:20,col=var_cols,cex=1.5,
-       legend = all_levels,inset=0.03)
-
-abline(v=as.POSIXct('2022-07-01'))
-table(variant_data$Summary, useNA = 'ifany')
 
 ##******************** Vaccine database *******************
 ##*********************************************************
@@ -491,7 +423,8 @@ Res$Timepoint_ID = as.numeric(Res$Timepoint_ID)
 table(Res$Timepoint_ID, useNA = 'ifany')
 
 include_cols = c('Label','Site','Rand_date_time',
-                 'Trt','Any_dose','N_dose','Age','BMI',
+                 'Trt','Any_dose','N_dose','Time_since_last_dose',
+                 'Age','BMI',
                  'Weight','Sex','Symptom_onset','Fever_Baseline')
 Res = merge(Res, clin_data[,include_cols], all.x = T, by.x = 'ID', by.y = 'Label')
 
@@ -510,10 +443,7 @@ na_sample_times = c()
 # manual corrections
 
 log_data$sl_sampdat[log_data$sl_barc=='20sa069'] = '2022-01-23'
-
-
 log_data$sl_samptim[log_data$sl_barc=='20sa069'] = '09:11:00'
-
 log_data$sl_samptim[log_data$sl_barc=='20ra973'] = '11:03:00'
 log_data$sl_samptim[log_data$sl_barc=='20ra979'] = '11:04:00'
 log_data$sl_samptim[log_data$sl_barc=='20ra976'] = '11:03:00'
@@ -646,12 +576,10 @@ Res = dplyr::arrange(Res, Rand_date_time, ID, Time)
 writeLines(sprintf('there are a total of %s patients in the PCR database',
                    length(unique(Res$`SUBJECT ID`))))
 
-variant_data$Variant = variant_data$Summary
-variant_data = variant_data[, c('ID','Variant')]
 Res = merge(Res, variant_data, by = 'ID', all.x = T)
 
 ## Add genotyping data
-ind_missing_variant = is.na(Res$Variant)
+ind_missing_variant = is.na(Res$Variant) | Res$Variant=='none'
 Res$Variant_Imputed=0 #1: imputed; 0: genotyped
 Res$Variant_Imputed[ind_missing_variant]=1
 
@@ -662,12 +590,15 @@ d3 = as.POSIXct('2022-07-01')
 d4 = as.POSIXct('2022-11-01')
 ind_Delta = Res$Rand_date < d1
 ind_BA1 = Res$Rand_date >= d1 & Res$Rand_date < d2
-ind_BA2 = (Res$Rand_date >= d2 & Res$Rand_date < d3) | (Res$Rand_date>=d4)
+ind_BA2 = (Res$Rand_date >= d2 & Res$Rand_date < d3) 
 ind_BA5 = Res$Rand_date >= d3
+ind_BA2.75 = Res$Rand_date >= d4 
+
 Res$Variant[ind_missing_variant&ind_Delta] = 'Delta'
 Res$Variant[ind_missing_variant&ind_BA1] = 'BA.1'
 Res$Variant[ind_missing_variant&ind_BA2] = 'BA.2'
 Res$Variant[ind_missing_variant&ind_BA5] = 'BA.5'
+Res$Variant[ind_missing_variant&ind_BA2.75] = 'BA.2.75'
 
 
 Res$Epoch = 0
@@ -675,13 +606,14 @@ Res$Epoch[Res$Rand_date > as.POSIXct('2022-04-01')] = 1 # stopped ivermectin
 Res$Epoch[Res$Rand_date > as.POSIXct('2022-04-18')] = 2 # added fluoxetine
 Res$Epoch[Res$Rand_date > as.POSIXct('2022-06-10')] = 3 # stopped remdesivir
 Res$Epoch[Res$Rand_date > as.POSIXct('2022-10-31')] = 4 # stopped favipiravir
+Res$Epoch[Res$Rand_date > as.POSIXct('2023-02-13')] = 5 # stopped molnupiravir
 table(Res$Epoch[!duplicated(Res$`SUBJECT ID`)], useNA = 'ifany')
 
 
 Res$Rand_date = format.Date(x = Res$Rand_date_time, format='%Y-%m-%d')
 ##***********************************************
 cols = c('ID','Time','Trt','Site','Timepoint_ID',
-         'Swab_ID','Rand_date','Any_dose','N_dose',
+         'Swab_ID','Rand_date','Any_dose','N_dose','Time_since_last_dose',
          'Weight','BMI','Plate','Fever_Baseline','BARCODE',
          'Age', 'Sex', 'Symptom_onset','Variant','Variant_Imputed',
          'CT_NS','CT_RNaseP','Epoch', 'Per_protocol_sample','Lab', 'Lot no.')
@@ -813,12 +745,34 @@ Res =
 
 #************************* Fluoxetine Analysis *************************#
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
+#*  Stopped in all sites on 8th May 2023
 Res_Fluoxetine = 
   Res %>% filter(Trt %in% c('Fluoxetine',"No study drug"),
                  (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
-                   (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00")) %>%
+                   (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
+                   (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
+                   (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
+                 Rand_date <= "2023-05-09 00:00:00") %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Fluoxetine, file = '../Analysis_Data/Fluoxetine_analysis.csv', row.names = F, sep=',', quote = F)
+
+
+Res_Fluoxetine_meta = 
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+                            'Molnupiravir',
+                            "No study drug",
+                            'Ivermectin',
+                            'Remdesivir',
+                            'Favipiravir',
+                            'Fluoxetine'),
+                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+                 Rand_date <= "2023-05-09 00:00:00") %>%
+  arrange(Rand_date, ID, Time) 
+
+write.table(x = Res_Fluoxetine_meta, 
+            file = '../Analysis_Data/Fluoxetine_meta_analysis.csv', 
+            row.names = F, sep=',', quote = F)
+
 
 
 #************************* Paxlovid v Molnupiravir Analysis *************************#
@@ -827,14 +781,15 @@ Res_Paxlovid_Molnupiravir =
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir','Molnupiravir',"No study drug"),
                  Rand_date > "2022-06-03 00:00:00",
                  Country %in% c('Thailand','Laos')) %>%
-  arrange(Rand_date, ID, Time) %>% ungroup() %>%
-  mutate(ID_true = ID,
-         ID = as.numeric(as.factor(ID_true)))
-ID_key_Molnupiravir = Res_Paxlovid_Molnupiravir %>% distinct(ID, ID_true)
+  arrange(Rand_date, ID, Time) %>% ungroup() 
+# %>%
+#   mutate(ID_true = ID,
+#          ID = as.numeric(as.factor(ID_true)))
+# ID_key_Molnupiravir = Res_Paxlovid_Molnupiravir %>% distinct(ID, ID_true)
 
-write.table(x = Res_Paxlovid_Molnupiravir[, colnames(Res_Paxlovid_Molnupiravir) !='ID_true'], file = '../Analysis_Data/Paxlovid_Molnupiravir_analysis.csv', row.names = F, sep=',', quote = F)
-write.table(x = ID_key_Molnupiravir, file = '../Analysis_Data/ID_key_Paxlovid_Molnupiravir.csv', 
-            row.names = F, sep=',', quote = F)
+write.table(x = Res_Paxlovid_Molnupiravir, file = '../Analysis_Data/Paxlovid_Molnupiravir_analysis.csv', row.names = F, sep=',', quote = F)
+# write.table(x = ID_key_Molnupiravir, file = '../Analysis_Data/ID_key_Paxlovid_Molnupiravir.csv', 
+            # row.names = F, sep=',', quote = F)
 
 Res_Paxlovid_Molnupiravir_meta = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
@@ -844,12 +799,13 @@ Res_Paxlovid_Molnupiravir_meta =
                             'Remdesivir',
                             'Favipiravir'),
                  Site =='th001') %>%
-  arrange(Rand_date, ID, Time) %>%
-  mutate(ID_true = ID,
-         ID = as.numeric(as.factor(ID_true)))
-ID_key_Molnupiravir_meta = Res_Paxlovid_Molnupiravir_meta %>% distinct(ID, ID_true)
+  arrange(Rand_date, ID, Time) 
+# %>%
+#   mutate(ID_true = ID,
+#          ID = as.numeric(as.factor(ID_true)))
+# ID_key_Molnupiravir_meta = Res_Paxlovid_Molnupiravir_meta %>% distinct(ID, ID_true)
 
-write.table(x = Res_Paxlovid_Molnupiravir_meta[,colnames(Res_Paxlovid_Molnupiravir_meta) !='ID_true'], 
+write.table(x = Res_Paxlovid_Molnupiravir_meta, 
             file = '../Analysis_Data/Paxlovid_Molnupiravir_meta_analysis.csv', 
             row.names = F, sep=',', quote = F)
 

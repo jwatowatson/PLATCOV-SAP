@@ -587,30 +587,29 @@ make_slopes_plot = function(stan_out,
   return(data_summary)
 }
 
-
 get_itt_population = function(){
+  
+  # TH58 and TH57 used envelopes so allocation is not recorded in the data-XXX.csv files
   rand.TH58 <- read.csv("~/Dropbox/PLATCOV/rand-TH58.csv")[0:9, ]
   rand.TH57 <- read.csv("~/Dropbox/PLATCOV/rand-TH57.csv")[0:10, ]
-  
-  data.TH1 <- read.csv("~/Dropbox/PLATCOV/data-TH1.csv")
-  data.TH1$Date = as.POSIXct(data.TH1$Date,format='%a %b %d %H:%M:%S %Y')
-  
-  data.BR3 <- read.csv("~/Dropbox/PLATCOV/data-BR3.csv")
-  data.BR3$Date = as.POSIXct(data.BR3$Date,format='%a %b %d %H:%M:%S %Y')
-  
-  data.LA08 <- read.csv("~/Dropbox/PLATCOV/data-LA08.csv")
-  data.LA08$Date = as.POSIXct(data.LA08$Date,format='%a %b %d %H:%M:%S %Y')
-  
-  data.TH1$ID = paste('PLT-TH1-',data.TH1$randomizationID,sep='')
   rand.TH58$ID = paste('PLT-TH58-',rand.TH58$RandomisationID,sep='')
   rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
-  data.BR3$ID = paste('PLT-BR3-',data.BR3$randomizationID,sep='')
-  data.LA08$ID = paste('PLT-LA08-',data.LA08$randomizationID,sep='')
   
-  xx = rbind(data.TH1[, c('ID', 'Treatment')],
-             rand.TH58[, c('ID', 'Treatment')],
-             rand.TH57[, c('ID', 'Treatment')],
-             data.BR3[, c('ID', 'Treatment')])
+  ff_names = list.files(path = "~/Dropbox/PLATCOV", pattern = 'data',full.names = T)
+  data_list = list()
+  for(i in 1:length(ff_names)){
+    data_list[[i]] = read.csv(ff_names[i])
+    data_list[[i]]$Date = as.POSIXct(data_list[[i]]$Date,format='%a %b %d %H:%M:%S %Y')
+    my_prefix=gsub(x = strsplit(ff_names[i], split = 'data-')[[1]][2], pattern = '.csv',replacement = '')
+    print(my_prefix)
+    
+    data_list[[i]]$ID = paste('PLT-', my_prefix, '-', data_list[[i]]$randomizationID, sep='')
+    data_list[[i]] = data_list[[i]][, c('ID', 'Treatment')]
+  }
+  data_list[[length(ff_names)+1]]=rand.TH57[, c('ID', 'Treatment')]
+  data_list[[length(ff_names)+2]]=rand.TH58[, c('ID', 'Treatment')]
+  
+  xx = bind_rows(data_list)
   
   library(stringr)
   for(i in 1:nrow(xx)){
@@ -620,9 +619,10 @@ get_itt_population = function(){
     xx$ID[i]=id
   }
   
-  
   return(xx)
 }
+
+
 
 
 get_trt_colors = function(plot_cols=F){

@@ -6,7 +6,7 @@ editor: visual
 ---
 
 ```{r preambule}
-knitr::opts_chunk$set(cache = F, cache.comments = FALSE,
+knitr::opts_chunk$set(cache = T, cache.comments = FALSE,
                       echo = F, include = TRUE, 
                       fig.width = 8, fig.height = 8,
                       fig.pos = 'H',dev = 'png', dpi = 300)
@@ -41,7 +41,7 @@ trt_colors = get_trt_colors()
 *Set up analysis*
 
 ```{r load_data}
-intervention = 'interim_all' # prefix of analysis file
+intervention = 'Fluoxetine' # prefix of analysis file
 ref_arm = 'No study drug'
 study_threshold = 1.2 # depending on comparison with no study drug or positive control
 # study_threshold = 0.9
@@ -126,6 +126,26 @@ tab.ff
 # save_kable(tab.ff,file = 'Baseline_characteristics.png')
 ```
 
+plot the no study drug arm
+
+```{r no_study_drug}
+platcov_dat_NSD = platcov_dat %>% filter(Trt=='No study drug') %>% 
+  distinct(ID, Timepoint_ID, .keep_all = T)
+
+par(las=1, family='serif', cex.axis=1.3, cex.lab=1.3)
+plot(platcov_dat_NSD$Time, platcov_dat_NSD$daily_VL, pch='.',
+     xlim = c(0,14), panel.first = grid(),
+     xlab='Days', ylab = 'SARS CoV2 genomes/mL', yaxt='n')
+axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
+                                      expression(10^4),
+                                      expression(10^6),
+                                      expression(10^8)))
+for(id in unique(platcov_dat_NSD$ID)){
+  xx = platcov_dat_NSD%>%filter(ID==id)
+  lines(xx$Time, xx$daily_VL, col = adjustcolor('grey',.3))
+}
+```
+
 ## *Fit models*
 
 ```{r}
@@ -137,9 +157,9 @@ platcov_dat_analysis =
   platcov_dat %>% ungroup() %>%
   filter(Time <= Dmax, mITT) %>%
   arrange(log10_viral_load==log10_cens_vl) %>%
-  mutate(Variant = factor(Variant, levels = c('Delta','BA.1','BA.2','BA.3','BA.4','BA.5')),
+  mutate(Variant = as.factor(Variant),
          Epoch = paste(month(Rand_date), year(Rand_date), sep = '_'),
-         Site = factor(Site, levels = c('th001','th057','th058','br003')),
+         Site = as.factor(Site),
          RnaseP_scaled = scale(40 - CT_RNaseP,scale = F),
          Mean_age = mean(Age[!duplicated(ID)]),
          SD_age = sd(Age[!duplicated(ID)]),
@@ -169,7 +189,7 @@ stan_inputs =
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-model_settings = expand.grid(mod = all_mods[2:5],
+model_settings = expand.grid(mod = all_mods,
                              prior = 1,
                              cov_matrices = 1)
 
