@@ -11,7 +11,10 @@ get_nanopore_data = function(){
   ## run the python script to convert lineage names into a usable set
   
   res_update = read.csv("~/Documents/GitHub/PLATCOV-SAP/Analysis_Data/newlineagelist.txt")
-  res = cbind(res, Variant=res_update$VariantClass)[,c('ID','Variant')]
+  res_update = res_update[!duplicated(res_update$Original), ]
+  print(unique(res_update$Original))
+  res$Variant = plyr::mapvalues(res$Lineage, from = res_update$Original, to = res_update$VariantClass)
+  res = res[,c('ID','Variant')]
   res
 }
 ####################################################

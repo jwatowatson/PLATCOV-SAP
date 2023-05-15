@@ -20,6 +20,7 @@ library(kableExtra)
 library(finalfit)
 library(RColorBrewer)
 library(lubridate)
+library(brms)
 
 ## information on software/hardware used
 version
@@ -41,7 +42,7 @@ trt_colors = get_trt_colors()
 *Set up analysis*
 
 ```{r load_data}
-intervention = 'Fluoxetine' # prefix of analysis file
+intervention = 'Ineffective' # prefix of analysis file
 ref_arm = 'No study drug'
 study_threshold = 1.2 # depending on comparison with no study drug or positive control
 # study_threshold = 0.9
@@ -54,6 +55,7 @@ itt_population_all = get_itt_population()
 
 f_name = paste0('Analysis_Data/',intervention,'_analysis.csv')
 platcov_dat = read.csv(f_name)
+platcov_dat$Trt[platcov_dat$Trt=='Nirmatrelvir + Ritonavir']='Nirmatrelvir'
 platcov_dat$Rand_date = as.POSIXct(platcov_dat$Rand_date)
 trt_intervention = unique(platcov_dat$Trt)
 
@@ -213,6 +215,43 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
+
+## BRMS checks
+
+```{r brms_slopes}
+if(RUN_MODELS){
+mod_naive = brm(log10_viral_load | cens(censor) ~ Time + (1+Time | ID),
+                data = platcov_dat_analysis,
+                prior = c(prior(lkj(2), class = "cor"),
+                          prior(normal(5, 5), class = Intercept),
+                          prior(constant(7), class = 'nu')),
+                family = 'student', cores = 4, chains = 4)
+save(mod_naive, file = 'Rout/naive_mod.RData')
+} else {
+  load('Rout/naive_mod.RData')
+}
+thetas = ranef(mod_naive, summary = F)
+slopes_randef = apply(thetas$ID[,,'Time'], 2, quantile, probs=c(0.1, 0.5, 0.9))
+slopes_dat = merge(data.frame(ID=colnames(slopes_randef),
+                              slope_re = slopes_randef[2, ],
+                              slope_re_lower = slopes_randef[1, ],
+                              slope_re_upper = slopes_randef[3, ]),
+                   platcov_dat_analysis[!duplicated(platcov_dat_analysis$ID),],
+                   by = 'ID')
+par(las=1, family='serif')
+plot(slopes_dat$Rand_date, slopes_dat$slope_re, 
+     ylab='Slope random effect',ylim=c(-1,0.7),col='grey',
+     xlab='Randomisation date', panel.first=grid(), pch=16)
+for(i in 1:nrow(slopes_dat)){
+  lines(rep(slopes_dat$Rand_date[i],2), 
+        c(slopes_dat$slope_re_lower[i], slopes_dat$slope_re_upper[i]),
+        col=adjustcolor('grey',alpha.f = .6))
+}
+abline(MASS::rlm(slopes_dat$slope_re~slopes_dat$Rand_date),col='darkblue',lwd=2,lty=2)
+
+```
+
+
 ```{r}
 if(RUN_MODELS){
   system(paste('Rscript --vanilla run_models_local.R',intervention))
@@ -258,8 +297,8 @@ plot_effect_estimates(effect_ests = effect_ests,
                       mod_cols = model_cols[1:length(ff)],
                       my_pch = 15:16)
 # title(intervention)
-legend('right',pch=15:16,legend = c('Linear','Non-linear'),
-       col = model_cols,inset=0.03, cex=1.5)
+legend('bottomright',pch=15:16,legend = c('Linear','Non-linear'),
+       col = model_cols,inset=0.03, cex=1.2)
 
 for(i in 1:length(ff)){
   load(ff[i])
