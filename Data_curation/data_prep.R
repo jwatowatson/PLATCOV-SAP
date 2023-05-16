@@ -349,6 +349,9 @@ Res = Res[-ind_missing, ]
 writeLines('\nShowing the number of plates and the number of samples per plate:')
 print(table(Res$`Lot no.`))
 range(table(Res$Plate))
+
+range(table(Res$`Lot no.`[grep(pattern = 'std', x = Res$`Sample ID`)]))
+table(Res$`Lot no.`[grep(pattern = 'std', x = Res$`Sample ID`)])
 if(max(table(Res$Plate))>96){
   writeLines('**************XXXXXXXXX MORE THAN 96 samples on a single plate!! XXXXXXXX************')
 }
@@ -576,7 +579,7 @@ Res = dplyr::arrange(Res, Rand_date_time, ID, Time)
 writeLines(sprintf('there are a total of %s patients in the PCR database',
                    length(unique(Res$`SUBJECT ID`))))
 
-Res = merge(Res, variant_data, by = 'ID', all.x = T)
+Res = merge(Res, variant_data[,c('ID','Variant')], by = 'ID', all.x = T)
 
 ## Add genotyping data
 ind_missing_variant = is.na(Res$Variant) | Res$Variant=='none'
@@ -853,3 +856,26 @@ Res_Evusheld =
                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Evusheld, file = '../Analysis_Data/Evusheld_analysis.csv', row.names = F, sep=',', quote = F)
+
+
+#************************* Ensitrelvir Analysis *************************#
+#* Thailand and Laos added 2023-03-17
+
+Res_Ensitrelvir = 
+  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug"),
+                 (Country=='Thailand' & Rand_date >= "2023-03-17 00:00:00") |
+                   (Country=='Laos' & Rand_date >= "2023-03-17 00:00:00")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Ensitrelvir, file = '../Analysis_Data/Ensitrelvir_analysis.csv', row.names = F, sep=',', quote = F)
+
+
+
+#************************* Ineffective Interventions *************************#
+
+Res_ineffective = 
+  Res %>% filter(Trt %in% c('Ivermectin',
+                            "Favipiravir",
+                            "Fluoxetine",
+                            "No study drug")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_ineffective, file = '../Analysis_Data/Ineffective_analysis.csv', row.names = F, sep=',', quote = F)

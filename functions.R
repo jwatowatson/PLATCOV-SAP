@@ -625,8 +625,8 @@ get_itt_population = function(){
 
 
 
-get_trt_colors = function(plot_cols=F){
-  trt_cols = array(dim = 11)
+get_trt_colors = function(){
+  trt_cols = array(dim = 12)
   names(trt_cols) = 
     c("Ivermectin",
       "Regeneron",
@@ -638,7 +638,8 @@ get_trt_colors = function(plot_cols=F){
       "Molnupiravir",
       "Nirmatrelvir + Ritonavir",
       "Evusheld",
-      'Ensitrelvir')
+      'Ensitrelvir',
+      "Nirmatrelvir")
   trt_cols['No study drug'] = viridis::viridis(n = 10)[8]
   trt_cols['Fluoxetine'] = viridis::viridis(n = 10)[5]
   trt_cols['Nitazoxanide'] = viridis::magma(n = 10)[8]
@@ -646,17 +647,12 @@ get_trt_colors = function(plot_cols=F){
   trt_cols['Favipiravir'] = viridis::plasma(n = 100)[92]
   trt_cols['Ivermectin'] = viridis::plasma(n = 10)[4]
   trt_cols['Nirmatrelvir + Ritonavir'] = viridis::plasma(n = 10)[1]
+  trt_cols['Nirmatrelvir'] = viridis::plasma(n = 10)[1]
   trt_cols['Regeneron'] = viridis::inferno(n = 10)[5]
   trt_cols['Molnupiravir'] = viridis::inferno(n = 10)[7]
   trt_cols['Remdesivir'] = RColorBrewer::brewer.pal('Dark2',n=8)[8]
   trt_cols['Ensitrelvir'] = RColorBrewer::brewer.pal('Set1',n=8)[1]
   
-  if(plot_cols){
-    my_labels = gsub(pattern = ' + Ritonavir',replacement = '',fixed = T,x = names(trt_cols))
-    plot(1:length(trt_cols), col=trt_cols, pch=16, cex=5, xlim = c(1,15),
-         xaxt='n',yaxt='n',xlab='',ylab='',bty='n')
-    text(x = 1:length(trt_cols)+2.5, y= 1:length(trt_cols), labels = my_labels)
-  }
   return(trt_cols)
 }
 
