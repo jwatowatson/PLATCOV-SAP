@@ -4,7 +4,6 @@ from pango_aliasor.aliasor import Aliasor
 import pandas as pd
 import sys
 
-
 def Get_Args():
     parser = argparse.ArgumentParser(description="Convert a PANGO lineage into PLATCOV classification")
     parser.add_argument("--input", help="Input file - one variant per line without headers", required=True)
@@ -52,7 +51,7 @@ def Classify_Lineage(original):
         lineage = "BA.1"
     elif uncompressed.startswith("B.1.1.529.4"):
         lineage = "BA.4"
-    elif uncompressed.startswith("XBB.1.5") or uncompressed.startswith("XBB.1.9") or uncompressed.startswith("XBB.1.16") or uncompressed.startswith("XBL"):
+    elif uncompressed.startswith("XBB.1.5") or uncompressed.startswith("XBB.1.9") or uncompressed.startswith("XBB.1.16") or uncompressed.startswith("XBL") or uncompressed.startswith("XBB.2.3"):
         lineage = "XBB.1.5-like"
     elif uncompressed.startswith('XBB'):
         lineage = 'XBB'
