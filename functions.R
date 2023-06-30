@@ -346,18 +346,13 @@ plot_data_model_fits =
            xaxt='n', yaxt='n',
            panel.first=grid(), xlim=c(0,7),
            ylim = range(analysis_data_stan$log_10_vl))
-      if(counter %% sqrt(K_plots) == 1){
-        mtext(text = 'SARS CoV2 genomes/mL',side = 2,
-              line = 3,las = 3)
-      }
+      
       axis(1, at = c(0,3,7))
       axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
                                           expression(10^4),
                                           expression(10^6),
                                           expression(10^8)))
-      if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
-        mtext(text = 'Days',side = 1,line = 2)
-      }
+      
       for(mm in models_to_plot){
         ix = order(analysis_data_stan$obs_day[ind])
         my_xs = analysis_data_stan$obs_day[ind][ix]
@@ -376,9 +371,9 @@ plot_data_model_fits =
              analysis_data_stan$log_10_vl[ind],pch=16)
       
       mtext(text = paste0(ID_map$ID_key[counter],
-                          '\n',
+                          ' ',
                           ID_map$Trt[counter]),
-            side = 3, line = -0.5, cex=0.8)
+            side = 3, line = 0.5, cex=0.7)
       counter=counter+1
     }
     
@@ -395,7 +390,6 @@ plot_individ_curves = function(platcov_dat, IDs, xlims){
   for(id in unique(IDs)){
     
     ind = platcov_dat$ID==id
-    xx = aggregate(log10_viral_load ~ Day, data = platcov_dat[ind,], mean)
     plot(platcov_dat$Time[ind],
          platcov_dat$log10_viral_load[ind],
          pch = as.numeric(platcov_dat$log10_cens_vl[ind]==platcov_dat$log10_viral_load[ind])+1,
@@ -404,7 +398,6 @@ plot_individ_curves = function(platcov_dat, IDs, xlims){
          panel.first=grid(), xlim=xlims,
          ylim = ylims)
     title(id)
-    lines(xx$Day, xx$log10_viral_load, lwd=2, lty=2)
     points(platcov_dat$Time[ind],
            platcov_dat$log10_viral_load[ind],
            pch = as.numeric(platcov_dat$log10_cens_vl[ind]==platcov_dat$log10_viral_load[ind])+16)
@@ -415,7 +408,7 @@ plot_individ_curves = function(platcov_dat, IDs, xlims){
                                         expression(10^8)))
     
   }
-  
+  legend('topright', legend = c('>LLOQ','<LLOQ'), pch = 16:17, inset = 0.03)
 }
 
 
@@ -492,15 +485,15 @@ calculate_fever_clearance = function(temp_dat,
                                      window_clear = 24/24, # look ahead window to define "fever clearance"
                                      threshold=37){
   
-  if(!'temperature_ax' %in% colnames(temp_dat)) stop('needs to contain a temperature_ax column')
+  if(!'ax_temperature' %in% colnames(temp_dat)) stop('needs to contain a ax_temperature column')
   
   temp_dat$clearance_time = NA
   # For interval censored data, the status indicator is 0=right censored, 1=event at time, 2=left censored, 3=interval censored. 
   temp_dat$clearance_time_cens = 1
   
-  temp_dat$fever_binary = temp_dat$temperature_ax>threshold
+  temp_dat$fever_binary = temp_dat$ax_temperature>threshold
   temp_dat = dplyr::arrange(temp_dat, ID, Time) 
-  temp_dat = temp_dat[!is.na(temp_dat$temperature_ax), ]
+  temp_dat = temp_dat[!is.na(temp_dat$ax_temperature), ]
   
   for(id in unique(temp_dat$ID)){
     ind = temp_dat$ID==id
@@ -589,6 +582,7 @@ make_slopes_plot = function(stan_out,
 
 get_itt_population = function(){
   
+  require(tidyverse)
   # TH58 and TH57 used envelopes so allocation is not recorded in the data-XXX.csv files
   rand.TH58 <- read.csv("~/Dropbox/PLATCOV/rand-TH58.csv")[0:9, ]
   rand.TH57 <- read.csv("~/Dropbox/PLATCOV/rand-TH57.csv")[0:10, ]

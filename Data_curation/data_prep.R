@@ -109,6 +109,8 @@ for(i in 1:nrow(clin_data)){
 ####### Age #########
 table(clin_data$rangrp)
 clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
+clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
+
 ind = is.na(clin_data$Treatment) & !is.na(clin_data$rangrp)
 clin_data$Treatment[ind] = clin_data$rangrp[ind]
 
@@ -119,7 +121,9 @@ clin_data$rangrp[ind] = clin_data$Treatment[ind]
 if(any(! clin_data$Treatment == clin_data$rangrp)) {
   writeLines(sprintf('Randomisation inconsistent for %s', 
                      clin_data$Label[clin_data$Treatment != clin_data$rangrp]))
-  View(clin_data[clin_data$Treatment != clin_data$rangrp,c('Label','rangrp','Treatment')])
+  ind_diff = clin_data$Treatment != clin_data$rangrp
+  View(clin_data[ind_diff,c('Label','rangrp','Treatment')])
+  clin_data$rangrp[ind_diff] = clin_data$Treatment[ind_diff]
 }
 
 ####### Age #########
@@ -215,13 +219,16 @@ writeLines(sprintf('No vaccine data for %s',
                    clin_data$Label[!clin_data$Label %in% vacc_data$Label]))
 
 ## Some cleaning
-vacc_data$vc_name = tolower(vacc_data$vc_name)
+# vacc_data$vc_name = tolower(vacc_data$vc_name)
 writeLines('\nVaccine names before cleaning:')
 print(table(vacc_data$vc_name))
 
 clin_data$Any_dose = NA
 clin_data$N_dose = NA
 clin_data$Time_since_last_dose = NA
+clin_data$N_dose_mRNA = NA
+clin_data$Any_dose_mRNA = NA
+
 vacc_date_cols = grep('dos', colnames(vacc_data))
 ## find any bad dates
 all_dates = unlist(unique(vacc_data[, vacc_date_cols]))
@@ -232,11 +239,18 @@ vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(i
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
+  ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer'))
   
   vac_dates = unlist(unique(vacc_data[ind, vacc_date_cols]))
   vac_dates = vac_dates[vac_dates!='']
+  
+  vac_dates_mRNA = unlist(unique(vacc_data[ind_mRNA, vacc_date_cols]))
+  vac_dates_mRNA = vac_dates_mRNA[vac_dates_mRNA != '']
   clin_data$N_dose[i] = length(vac_dates)
   clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
+  
+  clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
+  clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
   
   if(clin_data$Any_dose[i]=='Yes'){
     most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
@@ -337,6 +351,7 @@ Res$Lab[grep(pattern = 'Thailand',x = Res$`Lot no.`)]='Thailand'
 Res$Lab[grep(pattern = 'Brazil',x = Res$`Lot no.`)]='Brazil'
 
 Res$`Lot no.` = tolower(Res$`Lot no.`)
+sort(unique(Res$`Lot no.`))
 Res$Plate = as.numeric(as.factor(Res$`Lot no.`))
 Res$Lab = as.factor(Res$Lab)
 
@@ -347,7 +362,8 @@ Res$`TIME-POINT`[ind_missing]
 Res = Res[-ind_missing, ]
 
 writeLines('\nShowing the number of plates and the number of samples per plate:')
-print(table(Res$`Lot no.`))
+xx = table(Res$`Lot no.`)
+print(sort(xx))
 range(table(Res$Plate))
 
 range(table(Res$`Lot no.`[grep(pattern = 'std', x = Res$`Sample ID`)]))
@@ -355,9 +371,6 @@ table(Res$`Lot no.`[grep(pattern = 'std', x = Res$`Sample ID`)])
 if(max(table(Res$Plate))>96){
   writeLines('**************XXXXXXXXX MORE THAN 96 samples on a single plate!! XXXXXXXX************')
 }
-
-writeLines('\nAre there 96 samples per plate?')
-print(table(table(Res$Plate)==92))
 
 ## Extract standard curve data by plate
 ind = grep('std', Res$`Sample ID`)
@@ -374,7 +387,7 @@ SC = SC[,cols]
 
 ## Extract sample data
 Res = Res[!is.na(Res$`SUBJECT ID`), ]
-
+write_csv(x = Res[, c("SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")])
 # Res = Res[Res$Location != 'Saliva', ]
 table(Res$Location, useNA = 'ifany')
 
@@ -405,12 +418,19 @@ Res$CT_RNaseP = Res$RNaseP
 
 Res$ID = Res$`SUBJECT ID`
 Res$Swab_ID = Res$Location
-Res$Swab_ID = gsub(Res$Swab_ID, pattern = '1',replacement = '')
-Res$Swab_ID = gsub(Res$Swab_ID, pattern = '2',replacement = '')
-Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'SAL',replacement = 'Saliva')
+
+table(Res$Location)
+# Res$Swab_ID = gsub(Res$Swab_ID, pattern = '1',replacement = '')
+# Res$Swab_ID = gsub(Res$Swab_ID, pattern = '2',replacement = '')
+Res$Swab_ID[grep(Res$Swab_ID, pattern = 'SAL')] = 'Saliva'
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'TLS',replacement = 'TSL')
 
+Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'TSL1',replacement = 'Left_tonsil_1')
+Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'TSL2',replacement = 'Left_tonsil_2')
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'TSL',replacement = 'Left_tonsil')
+
+Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS1',replacement = 'Right_tonsil_1')
+Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS2',replacement = 'Right_tonsil_2')
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS',replacement = 'Right_tonsil')
 
 table(Res$Swab_ID, useNA = 'ifany')
@@ -426,9 +446,10 @@ Res$Timepoint_ID = as.numeric(Res$Timepoint_ID)
 table(Res$Timepoint_ID, useNA = 'ifany')
 
 include_cols = c('Label','Site','Rand_date_time',
-                 'Trt','Any_dose','N_dose','Time_since_last_dose',
-                 'Age','BMI',
-                 'Weight','Sex','Symptom_onset','Fever_Baseline')
+                 'Trt','Age','BMI',
+                 'Weight','Sex','Symptom_onset','Fever_Baseline',
+                 'Any_dose','N_dose','Time_since_last_dose',
+                 'Any_dose_mRNA','N_dose_mRNA')
 Res = merge(Res, clin_data[,include_cols], all.x = T, by.x = 'ID', by.y = 'Label')
 
 
@@ -591,17 +612,21 @@ d1 = as.POSIXct('2022-01-01')
 d2 = as.POSIXct('2022-02-20')
 d3 = as.POSIXct('2022-07-01')
 d4 = as.POSIXct('2022-11-01')
+d5 = as.POSIXct('2023-01-01')
+
 ind_Delta = Res$Rand_date < d1
 ind_BA1 = Res$Rand_date >= d1 & Res$Rand_date < d2
 ind_BA2 = (Res$Rand_date >= d2 & Res$Rand_date < d3) 
-ind_BA5 = Res$Rand_date >= d3
-ind_BA2.75 = Res$Rand_date >= d4 
+ind_BA5 = Res$Rand_date >= d3 & Res$Rand_date < d4
+ind_BA2.75 = Res$Rand_date >= d4 & Res$Rand_date <d5
+ind_xbb = Res$Rand_date >= d5 
 
 Res$Variant[ind_missing_variant&ind_Delta] = 'Delta'
 Res$Variant[ind_missing_variant&ind_BA1] = 'BA.1'
 Res$Variant[ind_missing_variant&ind_BA2] = 'BA.2'
 Res$Variant[ind_missing_variant&ind_BA5] = 'BA.5'
 Res$Variant[ind_missing_variant&ind_BA2.75] = 'BA.2.75'
+Res$Variant[ind_missing_variant&ind_xbb] = 'XBB'
 
 
 Res$Epoch = 0
@@ -612,11 +637,16 @@ Res$Epoch[Res$Rand_date > as.POSIXct('2022-10-31')] = 4 # stopped favipiravir
 Res$Epoch[Res$Rand_date > as.POSIXct('2023-02-13')] = 5 # stopped molnupiravir
 table(Res$Epoch[!duplicated(Res$`SUBJECT ID`)], useNA = 'ifany')
 
+# manually correct error
+Res$Swab_ID[Res$BARCODE=='20LH895'] = 'Right_tonsil_1'
+Res$Swab_ID[Res$BARCODE=='20RR176'] = 'Left_tonsil_1'
+
 
 Res$Rand_date = format.Date(x = Res$Rand_date_time, format='%Y-%m-%d')
 ##***********************************************
 cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'Swab_ID','Rand_date','Any_dose','N_dose','Time_since_last_dose',
+         'Any_dose_mRNA','N_dose_mRNA',
          'Weight','BMI','Plate','Fever_Baseline','BARCODE',
          'Age', 'Sex', 'Symptom_onset','Variant','Variant_Imputed',
          'CT_NS','CT_RNaseP','Epoch', 'Per_protocol_sample','Lab', 'Lot no.')
@@ -644,7 +674,8 @@ conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch),
                 control = lmerControl(optimizer ="Nelder_Mead"))
 
 preds = predict(conv_mod)
-plot(control_dat$CT, jitter(control_dat$log10_true_density), xlim=c(20,40))
+plot(control_dat$CT, jitter(control_dat$log10_true_density), xlim=c(20,40),
+     col = control_dat$Lab)
 for(bb in levels(control_dat$batch)){
   ind = control_dat$batch==bb
   lines(control_dat$CT[ind], preds[ind], col = as.numeric(control_dat$Lab[ind]=='Thailand')+1)
@@ -695,6 +726,24 @@ Res =
                             Site == 'br003' ~ 'Brazil',
                             Site == 'la008' ~ 'Laos'))
 
+
+fever_data = read_csv('../Analysis_Data/temperature_data.csv')
+fever_data = fever_data %>% 
+  mutate(ID = Label,
+         ax_temperature = fut_temp)
+write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
+            file = '../Analysis_Data/fever_interim.csv', 
+            row.names = F, sep=',', quote = F)
+
+
+symptom_data = read_csv('../Analysis_Data/symptom_data.csv')
+symptom_data = symptom_data %>% 
+  mutate(ID = Label,
+         Any_symptom = sq_yn)
+write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
+            file = '../Analysis_Data/symptoms_interim.csv', 
+            row.names = F, sep=',', quote = F)
+
 #***********************************************************************#
 #************************ Specific analysis data files *****************#
 
@@ -717,14 +766,34 @@ Res =
 
 
 #************************* Remdesivir Analysis *************************#
-# #* Thailand and Brazil
-# Res_Remdesivir = 
-#   Res %>% filter(Trt %in% c('Remdesivir',"No study drug"),
-#                  Rand_date < '2022-06-11',
-#                  Country %in% c('Thailand','Brazil')) %>%
-#   arrange(Rand_date, ID, Time)
-# write.table(x = Res_Remdesivir, file = '../Analysis_Data/Remdesivir_analysis.csv', row.names = F, sep=',',quote = F)
-# 
+#* Thailand and Brazil
+Res_Remdesivir =
+  Res %>% filter(Trt %in% c('Remdesivir',"No study drug"),
+                 Rand_date < '2022-06-11',
+                 Country %in% c('Thailand','Brazil')) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Remdesivir, file = '../Analysis_Data/Remdesivir_analysis.csv', row.names = F, sep=',',quote = F)
+
+
+fever_data = read_csv('../Analysis_Data/temperature_data.csv')
+fever_data = fever_data %>% 
+  filter(Label %in% unique(Res_Remdesivir$ID)) %>%
+  mutate(ID = Label,
+         ax_temperature = fut_temp)
+write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
+            file = '../Analysis_Data/Remdesivir_fever.csv', 
+            row.names = F, sep=',', quote = F)
+
+
+symptom_data = read_csv('../Analysis_Data/symptom_data.csv')
+symptom_data = symptom_data %>% 
+  filter(Label %in% unique(Res_Remdesivir$ID)) %>%
+  mutate(ID = Label,
+         Any_symptom = sq_yn)
+write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
+            file = '../Analysis_Data/Remdesivir_symptoms.csv', 
+            row.names = F, sep=',', quote = F)
+
 
 #************************* Favipiravir Analysis *************************#
 #* Thailand and Brazil
@@ -755,7 +824,7 @@ Res_Fluoxetine =
                    (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
                    (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
                    (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
-                 Rand_date <= "2023-05-09 00:00:00") %>%
+                 Rand_date < "2023-05-09") %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Fluoxetine, file = '../Analysis_Data/Fluoxetine_analysis.csv', row.names = F, sep=',', quote = F)
 
@@ -783,16 +852,11 @@ write.table(x = Res_Fluoxetine_meta,
 Res_Paxlovid_Molnupiravir = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir','Molnupiravir',"No study drug"),
                  Rand_date > "2022-06-03 00:00:00",
-                 Country %in% c('Thailand','Laos')) %>%
+                 Rand_date < "2023-02-24 00:00:00",
+                 Country %in% c('Thailand')) %>%
   arrange(Rand_date, ID, Time) %>% ungroup() 
-# %>%
-#   mutate(ID_true = ID,
-#          ID = as.numeric(as.factor(ID_true)))
-# ID_key_Molnupiravir = Res_Paxlovid_Molnupiravir %>% distinct(ID, ID_true)
 
 write.table(x = Res_Paxlovid_Molnupiravir, file = '../Analysis_Data/Paxlovid_Molnupiravir_analysis.csv', row.names = F, sep=',', quote = F)
-# write.table(x = ID_key_Molnupiravir, file = '../Analysis_Data/ID_key_Paxlovid_Molnupiravir.csv', 
-            # row.names = F, sep=',', quote = F)
 
 Res_Paxlovid_Molnupiravir_meta = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
@@ -803,10 +867,6 @@ Res_Paxlovid_Molnupiravir_meta =
                             'Favipiravir'),
                  Site =='th001') %>%
   arrange(Rand_date, ID, Time) 
-# %>%
-#   mutate(ID_true = ID,
-#          ID = as.numeric(as.factor(ID_true)))
-# ID_key_Molnupiravir_meta = Res_Paxlovid_Molnupiravir_meta %>% distinct(ID, ID_true)
 
 write.table(x = Res_Paxlovid_Molnupiravir_meta, 
             file = '../Analysis_Data/Paxlovid_Molnupiravir_meta_analysis.csv', 
@@ -855,6 +915,17 @@ Res_Evusheld =
                  (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00") |
                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
+
+evusheld_mutations = read.csv('../Analysis_Data/evusheld_test.csv')
+table(evusheld_mutations$evusheld_resistant, useNA = 'ifany')
+
+Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
+Res_Evusheld$evusheld_resistant =
+  ifelse(is.na(Res_Evusheld$evusheld_resistant),T,
+         Res_Evusheld$evusheld_resistant)
+
+Res_Evusheld$evusheld_resistant[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
+
 write.table(x = Res_Evusheld, file = '../Analysis_Data/Evusheld_analysis.csv', row.names = F, sep=',', quote = F)
 
 
@@ -862,7 +933,7 @@ write.table(x = Res_Evusheld, file = '../Analysis_Data/Evusheld_analysis.csv', r
 #* Thailand and Laos added 2023-03-17
 
 Res_Ensitrelvir = 
-  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug"),
+  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
                  (Country=='Thailand' & Rand_date >= "2023-03-17 00:00:00") |
                    (Country=='Laos' & Rand_date >= "2023-03-17 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
