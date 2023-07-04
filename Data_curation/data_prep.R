@@ -387,8 +387,6 @@ SC = SC[,cols]
 
 ## Extract sample data
 Res = Res[!is.na(Res$`SUBJECT ID`), ]
-write_csv(x = Res[, c("SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")])
-# Res = Res[Res$Location != 'Saliva', ]
 table(Res$Location, useNA = 'ifany')
 
 writeLines('Clinical data from the following patients not in database:\n')
