@@ -10,10 +10,10 @@ library(readr)
 fever_data = read_csv('../Analysis_Data/temperature_data.csv')
 fever_data = fever_data %>% distinct(Label, .keep_all = T)
 
-clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimEnrolment.dta')
+clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimEnrolment.dta')
 clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
-final_status = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimFinalStatus.dta')
-AE_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimAE.dta')
+final_status = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimFinalStatus.dta')
+AE_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimAE.dta')
 
 
 final_status = final_status[!is.na(final_status$fs_compyn), ]
@@ -181,12 +181,12 @@ clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
 
 ## Per protocol for treatment data
 # trt_distcont_data = haven::read_dta('../Data/InterimChangeTreatment.dta')
-trt_distcont_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimDrugRescue.dta') %>% filter(!is.na(dardat))
+trt_distcont_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimDrugRescue.dta') %>% filter(!is.na(dardat))
 
 
 # ### Variant data
 # ## PCR variant data (up until July 2022)
-# fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
+# fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
 # dat = lapply(fnames_var,read_excel)
 # for(i in 1:length(dat)) dat[[i]] = dat[[i]][, c("SUBJECT ID","Summary")]
 # dat = do.call(what = rbind, dat)
@@ -213,7 +213,7 @@ ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill 
 ##*********************************************************
 ##*********************************************************
 
-vacc_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimVaccine.dta')
+vacc_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimVaccine.dta')
 
 writeLines(sprintf('No vaccine data for %s',
                    clin_data$Label[!clin_data$Label %in% vacc_data$Label]))
@@ -268,7 +268,7 @@ for(i in 1:nrow(clin_data)){
 ##*********************************************************
 ##*********************************************************
 
-log_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimSampleLog.dta')
+log_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimSampleLog.dta')
 log_data$sl_barc[log_data$sl_barc=='']=NA
 log_data = log_data[!is.na(log_data$sl_barc), ]
 log_data = log_data[!is.na(log_data$sl_sampdat), ]
@@ -279,7 +279,7 @@ log_data$sl_barc = tolower(log_data$sl_barc)
 ##******************** Virus Density PCR database *********
 ##*********************************************************
 ##********************************** ***********************
-fnames = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/CSV files',full.names = T,recursive = T)
+fnames = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/CSV files',full.names = T,recursive = T)
 
 # column type specification for each csv file
 my_specs = cols(
