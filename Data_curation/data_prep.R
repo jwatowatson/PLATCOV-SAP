@@ -244,7 +244,7 @@ trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRes
 
 ## Nanopore data
 
-source(paste0(prefix_dat_cur, "get_nanopore_data2.R"))
+source(paste0(prefix_dat_cur, "get_nanopore_data.R"))
 variant_data = get_nanopore_data()
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
 ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
