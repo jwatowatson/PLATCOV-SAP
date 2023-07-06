@@ -1,11 +1,50 @@
-library(lubridate)
+##############################################################################################
+# PLATCOV project
+# This script prepares data for further analyses
+##############################################################################################
 library(dplyr)
 library(readxl)
 library(readr)
+library(ggplot2)
+library(lme4)
+library(lubridate)
+##Define user folder path####################################################################
+user <- "Chang" # Change here
 
-# toto 2
+#1 Analysis_data folder
+if(user == "Chang"){
+  prefix_analysis_data <- "PLATCOV_SAP"
+}else{
+    prefix_analysis_data <- ".."}
 
+#2 Dropbox folder (PLATCOV_Analysis)
+if(user == "Chang"){
+  prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
+}else{
+  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV"
+}
 
+#3 Downloads folder
+if(user == "Chang"){
+  prefix_downloads <- "PLATCOV_SAP"
+}else{
+  prefix_downloads <- "~"
+}
+
+#4 Dropbox folder for randomisation
+if(user == "Chang"){
+  prefix_drop_rand <- "C:/Users/Phrutsamon/Dropbox/PLATCOV" 
+}else{
+  prefix_drop_rand <- "~/Dropbox/PLATCOV"
+}
+
+#5 Data_curation folder
+if(user == "Chang"){
+  prefix_dat_cur <- "PLATCOV-SAP/Data_curation/" 
+}else{
+  prefix_dat_cur <- ""
+}
+#############################################################################################
 ##******************** Clinical database *******************
 ##*********************************************************
 ##*********************************************************
