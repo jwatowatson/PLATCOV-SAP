@@ -69,27 +69,27 @@ screen_failure =
               "scrpassed","reason_failure","scrnote")]
 
 screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
-write.csv(x = screen_failure, file = '~/Downloads/screening_failures.csv')
+write.csv(x = screen_failure, file = paste0(prefix_downloads, "/Downloads/screening_failures.csv"))
+# --- Excluding screening failure data ---
 clin_data = clin_data[!ind, ]
 sort(unique(clin_data$Label))
 
-clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
-
+clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp) #Randomisation group labels
 AE_data = merge(AE_data, clin_data[, c('Label','rangrp')])
-
-# check data for missing values
+# --- check data for missing values ---
+#1. Day
 ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
-if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24
-
+if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 #If day is missing >>> divide hours by 24
+#2. Symptomatic day
 ind = is.na(clin_data$cov_sympday)
 if(sum(ind)>0) {
   writeLines(sprintf('Patient %s has missing time since symptom onset', clin_data$Label[ind]))
-  clin_data$cov_sympday[is.na(clin_data$cov_sympday)]=2
+  clin_data$cov_sympday[is.na(clin_data$cov_sympday)]=2 # Assign Symptomatic day = 2 for missing data
 }
-
-clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21
+#3. Age in year
+clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
 ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
-# calculate age at randomisation
+# calculate age at randomisation 
 for(i in which(ind)){
   clin_data$age_yr[i] = trunc((as.POSIXct(clin_data$dob_my[i], format='%d/%m/%Y') %--% as.POSIXct(clin_data$randat[i])) / years(1))
 }
@@ -98,6 +98,7 @@ ind = is.na(clin_data$age_yr)
 if(sum(ind)>0) {
   writeLines(sprintf('Patient %s has missing age', clin_data$Label[ind]))
 }
+#4. BMI
 clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
 clin_data$Weight = clin_data$weight
 
@@ -106,12 +107,11 @@ if(sum(ind)>0) {
   writeLines(sprintf('Patient %s has missing BMI', clin_data$Label[ind]))
 }
 
-
-# Cross check with online randomisation app data
-# Sites TH57 and TH58 did not use app so cannot cross check
-rand_app_data = rbind(read.csv("~/Dropbox/PLATCOV/data-TH1.csv"),
-                      read.csv("~/Dropbox/PLATCOV/data-BR3.csv"),
-                      read.csv("~/Dropbox/PLATCOV/data-LA08.csv"))
+# --- Cross check with online randomisation app data ---
+# NOTE: Sites TH57 and TH58 did not use app so cannot cross check
+rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")))
 rand_app_data$ID = paste0('PLT-', rand_app_data$site,'-',
                           stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
 rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3'),to=c('th001','br003'))
@@ -133,7 +133,7 @@ clin_data = merge(clin_data, rand_app_data,
                   by.x = c('Label','Site'),
                   by.y = c("ID",'Site'), all = T)
 
-# discrepancies between randomisation database and CRFs?
+# --- discrepancies between randomisation database and CRFs? ---
 clin_data$sex_char = sjlabelled::as_character(clin_data$sex.x)
 clin_data$Rand_date_time = NA
 for(i in 1:nrow(clin_data)){
@@ -143,13 +143,6 @@ for(i in 1:nrow(clin_data)){
   }
 }
 
-# variables we need are:
-# * age
-# * sex
-# * time since symptom onset
-# * number of vaccine doses
-
-####### Age #########
 table(clin_data$rangrp)
 clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
 clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
@@ -160,7 +153,7 @@ clin_data$Treatment[ind] = clin_data$rangrp[ind]
 ind = !is.na(clin_data$Treatment) & is.na(clin_data$rangrp)
 clin_data$rangrp[ind] = clin_data$Treatment[ind]
 
-
+# Reporting inconsistency between randomisation database (shiny app; Dropbox) and clinical database (CRF)
 if(any(! clin_data$Treatment == clin_data$rangrp)) {
   writeLines(sprintf('Randomisation inconsistent for %s', 
                      clin_data$Label[clin_data$Treatment != clin_data$rangrp]))
@@ -168,6 +161,13 @@ if(any(! clin_data$Treatment == clin_data$rangrp)) {
   View(clin_data[ind_diff,c('Label','rangrp','Treatment')])
   clin_data$rangrp[ind_diff] = clin_data$Treatment[ind_diff]
 }
+
+#######################
+# variables we need are:
+# * age
+# * sex
+# * time since symptom onset
+# * number of vaccine doses
 
 ####### Age #########
 ind = is.na(clin_data$age_yr) & !is.na(clin_data$age)
@@ -184,7 +184,6 @@ if(any(ind)) {
 }
 print(clin_data[clin_data$age != clin_data$age_yr, c('Label','age','age_yr')])
 colnames(clin_data)[which(names(clin_data) == 'age_yr')] <- 'Age'
-
 
 ####### Sex #########
 ind = is.na(clin_data$sex_char) & !is.na(clin_data$sex.y)
@@ -206,7 +205,7 @@ clin_data$Rand_date_time[ind] = clin_data$Rand_Time_TZ[ind]
 ind = !is.na(clin_data$Rand_date_time) & is.na(clin_data$Rand_Time_TZ)
 clin_data$Rand_Time_TZ[ind] = clin_data$Rand_date_time[ind]
 Rand_diffs = apply(clin_data[,c('Rand_date_time','Rand_Time_TZ')],1,
-                  function(x) difftime(x[1], x[2], units='mins'))
+                   function(x) difftime(x[1], x[2], units='mins'))
 if(any(abs(Rand_diffs)>5)){
   writeLines(sprintf('More than 5 min difference in rand time for %s',
                      clin_data$Label[which(abs(Rand_diffs)>5)]))
@@ -224,7 +223,7 @@ clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
 
 ## Per protocol for treatment data
 # trt_distcont_data = haven::read_dta('../Data/InterimChangeTreatment.dta')
-trt_distcont_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimDrugRescue.dta') %>% filter(!is.na(dardat))
+trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRescue.dta")) %>% filter(!is.na(dardat))
 
 
 # ### Variant data
@@ -244,19 +243,17 @@ trt_distcont_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Anal
 # writeLines(sprintf('We have PCR variant genotyping for %s patients',nrow(var_data)))
 
 ## Nanopore data
-source('get_nanopore_data.R')
+
+source(paste0(prefix_dat_cur, "get_nanopore_data2.R"))
 variant_data = get_nanopore_data()
-library(ggplot2)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
 ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
   geom_density(position = "fill")
 
-
 ##******************** Vaccine database *******************
 ##*********************************************************
 ##*********************************************************
-
-vacc_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimVaccine.dta')
+vacc_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVaccine.dta"))
 
 writeLines(sprintf('No vaccine data for %s',
                    clin_data$Label[!clin_data$Label %in% vacc_data$Label]))
@@ -310,8 +307,7 @@ for(i in 1:nrow(clin_data)){
 ##******************** Log database ***********************
 ##*********************************************************
 ##*********************************************************
-
-log_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimSampleLog.dta')
+log_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimSampleLog.dta"))
 log_data$sl_barc[log_data$sl_barc=='']=NA
 log_data = log_data[!is.na(log_data$sl_barc), ]
 log_data = log_data[!is.na(log_data$sl_sampdat), ]
@@ -322,7 +318,7 @@ log_data$sl_barc = tolower(log_data$sl_barc)
 ##******************** Virus Density PCR database *********
 ##*********************************************************
 ##********************************** ***********************
-fnames = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/CSV files',full.names = T,recursive = T)
+fnames = list.files(paste0(prefix_dropbox, "/Data/CSV files"),full.names = T,recursive = T)
 
 # column type specification for each csv file
 my_specs = cols(
@@ -430,6 +426,8 @@ SC = SC[,cols]
 
 ## Extract sample data
 Res = Res[!is.na(Res$`SUBJECT ID`), ]
+write_csv(x = Res[, c("SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")])
+# Res = Res[Res$Location != 'Saliva', ]
 table(Res$Location, useNA = 'ifany')
 
 writeLines('Clinical data from the following patients not in database:\n')
@@ -610,7 +608,7 @@ for(i in 1:nrow(Res)){
   if(id %in% trt_distcont_data$Label){
     ind_discont=which(trt_distcont_data$Label==id)
     if(sample_time >= as.POSIXct(trt_distcont_data$dardat[ind_discont],
-                                format = '%d/%m/%Y')){
+                                 format = '%d/%m/%Y')){
       Res$Per_protocol_sample[i]=0
     } else {
       Res$Per_protocol_sample[i]=1
@@ -708,7 +706,7 @@ control_dat$CT = control_dat$CT_NS
 control_dat$CT[control_dat$CT_NS==40]=NA
 control_dat$batch = as.factor(control_dat$Plate)
 
-library(lme4)
+
 # random slope and intercept
 conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch),
                 data = control_dat,
@@ -753,12 +751,12 @@ Res = Res[!duplicated(Res$BARCODE), ]
 
 ###### Write csv files
 # Overall data files
-write.table(x = SC, file = '../Analysis_Data/interim_control_dat.csv', row.names = F, sep=',')
+write.table(x = SC, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_control_dat.csv"), row.names = F, sep=',')
 
 Res = dplyr::arrange(Res, Rand_date, ID, Time)
-write.table(x = Res, file = '../Analysis_Data/interim_all_analysis.csv', row.names = F, sep=',')
+write.table(x = Res, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_all_analysis.csv"), row.names = F, sep=',')
 
-write.table(x = screen_failure, file = '../Analysis_Data/interim_screening_dat.csv', row.names = F, sep=',')
+write.table(x = screen_failure, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_screening_dat.csv"), row.names = F, sep=',')
 
 
 Res = 
@@ -767,22 +765,21 @@ Res =
                             Site == 'br003' ~ 'Brazil',
                             Site == 'la008' ~ 'Laos'))
 
-
-fever_data = read_csv('../Analysis_Data/temperature_data.csv')
+fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 fever_data = fever_data %>% 
   mutate(ID = Label,
          ax_temperature = fut_temp)
 write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
-            file = '../Analysis_Data/fever_interim.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/fever_interim.csv"), 
             row.names = F, sep=',', quote = F)
 
 
-symptom_data = read_csv('../Analysis_Data/symptom_data.csv')
+symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
 symptom_data = symptom_data %>% 
   mutate(ID = Label,
          Any_symptom = sq_yn)
 write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
-            file = '../Analysis_Data/symptoms_interim.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
             row.names = F, sep=',', quote = F)
 
 #***********************************************************************#
@@ -813,26 +810,26 @@ Res_Remdesivir =
                  Rand_date < '2022-06-11',
                  Country %in% c('Thailand','Brazil')) %>%
   arrange(Rand_date, ID, Time)
-write.table(x = Res_Remdesivir, file = '../Analysis_Data/Remdesivir_analysis.csv', row.names = F, sep=',',quote = F)
+write.table(x = Res_Remdesivir, file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_analysis.csv"), row.names = F, sep=',',quote = F)
 
 
-fever_data = read_csv('../Analysis_Data/temperature_data.csv')
+fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 fever_data = fever_data %>% 
   filter(Label %in% unique(Res_Remdesivir$ID)) %>%
   mutate(ID = Label,
          ax_temperature = fut_temp)
 write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
-            file = '../Analysis_Data/Remdesivir_fever.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_fever.csv"), 
             row.names = F, sep=',', quote = F)
 
 
-symptom_data = read_csv('../Analysis_Data/symptom_data.csv')
+symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
 symptom_data = symptom_data %>% 
   filter(Label %in% unique(Res_Remdesivir$ID)) %>%
   mutate(ID = Label,
          Any_symptom = sq_yn)
 write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
-            file = '../Analysis_Data/Remdesivir_symptoms.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_symptoms.csv"), 
             row.names = F, sep=',', quote = F)
 
 
@@ -867,7 +864,8 @@ Res_Fluoxetine =
                    (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
                  Rand_date < "2023-05-09") %>%
   arrange(Rand_date, ID, Time)
-write.table(x = Res_Fluoxetine, file = '../Analysis_Data/Fluoxetine_analysis.csv', row.names = F, sep=',', quote = F)
+write.table(x = Res_Fluoxetine, file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_analysis.csv"), row.names = F, sep=',', quote = F)
+
 
 
 Res_Fluoxetine_meta = 
@@ -883,7 +881,7 @@ Res_Fluoxetine_meta =
   arrange(Rand_date, ID, Time) 
 
 write.table(x = Res_Fluoxetine_meta, 
-            file = '../Analysis_Data/Fluoxetine_meta_analysis.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_meta_analysis.csv"), 
             row.names = F, sep=',', quote = F)
 
 
@@ -897,7 +895,7 @@ Res_Paxlovid_Molnupiravir =
                  Country %in% c('Thailand')) %>%
   arrange(Rand_date, ID, Time) %>% ungroup() 
 
-write.table(x = Res_Paxlovid_Molnupiravir, file = '../Analysis_Data/Paxlovid_Molnupiravir_analysis.csv', row.names = F, sep=',', quote = F)
+write.table(x = Res_Paxlovid_Molnupiravir, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_analysis.csv"), row.names = F, sep=',', quote = F)
 
 Res_Paxlovid_Molnupiravir_meta = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
@@ -910,27 +908,29 @@ Res_Paxlovid_Molnupiravir_meta =
   arrange(Rand_date, ID, Time) 
 
 write.table(x = Res_Paxlovid_Molnupiravir_meta, 
-            file = '../Analysis_Data/Paxlovid_Molnupiravir_meta_analysis.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_analysis.csv"), 
             row.names = F, sep=',', quote = F)
 
 
-fever_data = read_csv('../Analysis_Data/temperature_data.csv')
+
+fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 fever_data = fever_data %>% 
   filter(Label %in% unique(Res_Paxlovid_Molnupiravir_meta$ID)) %>%
   mutate(ID = Label,
          ax_temperature = fut_temp)
 write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
-            file = '../Analysis_Data/Paxlovid_Molnupiravir_meta_fever.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_fever.csv"), 
             row.names = F, sep=',', quote = F)
 
 
-symptom_data = read_csv('../Analysis_Data/symptom_data.csv')
+
+symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
 symptom_data = symptom_data %>% 
   filter(Label %in% unique(Res_Paxlovid_Molnupiravir_meta$ID)) %>%
   mutate(ID = Label,
          Any_symptom = sq_yn)
 write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
-            file = '../Analysis_Data/Paxlovid_Molnupiravir_meta_symptoms.csv', 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_symptoms.csv"), 
             row.names = F, sep=',', quote = F)
 
 
@@ -945,8 +945,7 @@ Res_Nitazoxanide =
                             "PLT-BR3-033",
                             "PLT-BR3-043")) %>%
   arrange(Rand_date, ID, Time)
-write.table(x = Res_Nitazoxanide, file = '../Analysis_Data/Nitazoxanide_analysis.csv', row.names = F, sep=',', quote = F)
-
+write.table(x = Res_Nitazoxanide, file = paste0(prefix_analysis_data, "/Analysis_Data/Nitazoxanide_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
 #************************* Evusheld Analysis *************************#
@@ -957,7 +956,7 @@ Res_Evusheld =
                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
 
-evusheld_mutations = read.csv('../Analysis_Data/evusheld_test.csv')
+evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_test.csv"))
 table(evusheld_mutations$evusheld_resistant, useNA = 'ifany')
 
 Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
@@ -967,7 +966,7 @@ Res_Evusheld$evusheld_resistant =
 
 Res_Evusheld$evusheld_resistant[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
 
-write.table(x = Res_Evusheld, file = '../Analysis_Data/Evusheld_analysis.csv', row.names = F, sep=',', quote = F)
+write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
 #************************* Ensitrelvir Analysis *************************#
@@ -978,8 +977,7 @@ Res_Ensitrelvir =
                  (Country=='Thailand' & Rand_date >= "2023-03-17 00:00:00") |
                    (Country=='Laos' & Rand_date >= "2023-03-17 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
-write.table(x = Res_Ensitrelvir, file = '../Analysis_Data/Ensitrelvir_analysis.csv', row.names = F, sep=',', quote = F)
-
+write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
 #************************* Ineffective Interventions *************************#
@@ -990,4 +988,16 @@ Res_ineffective =
                             "Fluoxetine",
                             "No study drug")) %>%
   arrange(Rand_date, ID, Time)
-write.table(x = Res_ineffective, file = '../Analysis_Data/Ineffective_analysis.csv', row.names = F, sep=',', quote = F)
+write.table(x = Res_ineffective, file = paste0(prefix_analysis_data, "/Analysis_Data/Ineffective_analysis.csv"), row.names = F, sep=',', quote = F)
+
+#************************* No Study Drugs *************************#
+Res_noStudyDrugs = 
+  Res %>% filter(Trt %in% c("No study drug")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs.csv"), row.names = F, sep=',', quote = F)
+
+#************************* Site TH01 only *************************#
+Res_TH1 <-  Res %>% filter(Site %in% c("th001")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_TH1.csv"), row.names = F, sep=',', quote = F)
+
