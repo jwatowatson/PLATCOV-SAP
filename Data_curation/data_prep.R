@@ -49,17 +49,18 @@ if(user == "Chang"){
 ##*********************************************************
 ##*********************************************************
 ##*
-fever_data = read_csv('../Analysis_Data/temperature_data.csv')
+# --- Fever ---
+fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv")) #A dropbox folder shared by James
 fever_data = fever_data %>% distinct(Label, .keep_all = T)
-
-clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimEnrolment.dta')
+# --- Clinical data (symptom onsets) ---
+clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
 clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
-final_status = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimFinalStatus.dta')
-AE_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/InterimAE.dta')
-
-
+# --- Final status (completed the trials?) ---
+final_status = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFinalStatus.dta"))
 final_status = final_status[!is.na(final_status$fs_compyn), ]
-# extract screening failure data
+# --- Adverse effects ---
+AE_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimAE.dta"))
+# --- Extract screening failure data ---
 table(clin_data$scrpassed, useNA = 'ifany')
 ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
 screen_failure =
