@@ -9,7 +9,7 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
-user <- "Chang" # Change here
+user <- 'james'#"Chang" # Change here
 
 #1 Analysis_data folder
 if(user == "Chang"){
@@ -21,7 +21,7 @@ if(user == "Chang"){
 if(user == "Chang"){
   prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
 }else{
-  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV"
+  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/"
 }
 
 #3 Downloads folder
@@ -111,7 +111,9 @@ if(sum(ind)>0) {
 # NOTE: Sites TH57 and TH58 did not use app so cannot cross check
 rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")))
+                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv"))) %>%
+  filter(!is.na(Treatment))
+
 rand_app_data$ID = paste0('PLT-', rand_app_data$site,'-',
                           stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
 rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3'),to=c('th001','br003'))
@@ -245,7 +247,7 @@ trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRes
 ## Nanopore data
 
 source(paste0(prefix_dat_cur, "get_nanopore_data.R"))
-variant_data = get_nanopore_data()
+variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
 ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
   geom_density(position = "fill")
@@ -424,9 +426,9 @@ SC$ID = apply(SC[, c('Sample ID','Plate')], 1, function(x) paste(x[1],as.numeric
 cols = c('ID','Plate','CT_NS','log10_true_density','Lab','Lot no.')
 SC = SC[,cols]
 
-## Extract sample data
-Res = Res[!is.na(Res$`SUBJECT ID`), ]
-write_csv(x = Res[, c("SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")])
+## Extract sample data - this was for Liz Batty
+# Res = Res[!is.na(Res$`SUBJECT ID`), ]
+# write_csv(x = Res[, c("SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")])
 # Res = Res[Res$Location != 'Saliva', ]
 table(Res$Location, useNA = 'ifany')
 
@@ -897,6 +899,7 @@ Res_Paxlovid_Molnupiravir =
 
 write.table(x = Res_Paxlovid_Molnupiravir, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_analysis.csv"), row.names = F, sep=',', quote = F)
 
+## Meta-analysis which we report in the publication using unblinded arms from the same site
 Res_Paxlovid_Molnupiravir_meta = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
                             'Molnupiravir',
@@ -904,6 +907,7 @@ Res_Paxlovid_Molnupiravir_meta =
                             'Ivermectin',
                             'Remdesivir',
                             'Favipiravir'),
+                 Rand_date < "2023-02-24 00:00:00",
                  Site =='th001') %>%
   arrange(Rand_date, ID, Time) 
 
