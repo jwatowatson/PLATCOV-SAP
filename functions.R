@@ -584,12 +584,13 @@ get_itt_population = function(){
   
   require(tidyverse)
   # TH58 and TH57 used envelopes so allocation is not recorded in the data-XXX.csv files
-  rand.TH58 <- read.csv("~/Dropbox/PLATCOV/rand-TH58.csv")[0:9, ]
-  rand.TH57 <- read.csv("~/Dropbox/PLATCOV/rand-TH57.csv")[0:10, ]
+  
+  rand.TH58 <- read.csv(paste0(prefix_drop_rand, "/rand-TH58.csv"))[0:9, ]
+  rand.TH57 <- read.csv(paste0(prefix_drop_rand, "/rand-TH57.csv"))[0:10, ]
   rand.TH58$ID = paste('PLT-TH58-',rand.TH58$RandomisationID,sep='')
   rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
   
-  ff_names = list.files(path = "~/Dropbox/PLATCOV", pattern = 'data',full.names = T)
+  ff_names = list.files(path = prefix_drop_rand, pattern = 'data',full.names = T)
   data_list = list()
   for(i in 1:length(ff_names)){
     data_list[[i]] = read.csv(ff_names[i])
