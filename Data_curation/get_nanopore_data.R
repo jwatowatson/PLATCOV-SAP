@@ -1,5 +1,6 @@
 get_nanopore_data = function(){
-  fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Nanopore sequencing',full.names = T,pattern = '.csv')
+  fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Nanopore sequencing',
+                          full.names = T,pattern = '.csv')
   res_nano = lapply(fnames_var, read.csv)
   for(i in 1:length(res_nano)) res_nano[[i]] = res_nano[[i]][, c('Sequence.name','Scorpio.call','Lineage')]
   res_nano = do.call(rbind, res_nano )

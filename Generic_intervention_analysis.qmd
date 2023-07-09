@@ -283,7 +283,7 @@ plot_effect_estimates(effect_ests = effect_ests,
                       plot_models = 1:length(ff),
                       study_threshold = study_threshold,
                       mod_cols = model_cols[1:length(ff)],
-                      my_pch = 15:16)
+                      my_pch = 15:(15+nrow(model_settings)-1))
 # title(intervention)
 legend('right',pch=15:16,legend = c('Linear','Non-linear'),
        col = model_cols,inset=0.03, cex=1.2)
@@ -362,6 +362,11 @@ plot_coef_effects(stan_out = out,cov_mat = coef_to_plot,stan_inputs = stan_input
 ## *Individual patient data*
 
 ```{r}
+
+IDS_slow = which(slope_out$t_12_med>17 & slope_out$Trt=='Ensitrelvir')
+slope_out$ID[IDS_slow]
+par(mfrow=c(2,2))
+plot_individ_curves(platcov_dat = platcov_dat, IDs = slope_out$ID[IDS_slow],xlims = c(0,14))
 # model_list = list()
 # for(i in 1:length(ff)){
 #   load(ff[i])
