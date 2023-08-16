@@ -1,4 +1,4 @@
-SC = read.csv('interim_control_dat.csv')
+SC = read.csv('Analysis_Data/interim_control_dat.csv')
 table(SC$Lab)
 
 control_dat = dplyr::arrange(SC, CT_NS, Plate)

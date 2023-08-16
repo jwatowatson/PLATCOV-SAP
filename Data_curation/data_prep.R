@@ -270,6 +270,7 @@ clin_data$N_dose = NA
 clin_data$Time_since_last_dose = NA
 clin_data$N_dose_mRNA = NA
 clin_data$Any_dose_mRNA = NA
+clin_data$Any_dose_mRNA = NA
 
 vacc_date_cols = grep('dos', colnames(vacc_data))
 ## find any bad dates
@@ -281,7 +282,7 @@ vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(i
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
-  ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer'))
+  ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer','Chula-Cov19'))
   
   vac_dates = unlist(unique(vacc_data[ind, vacc_date_cols]))
   vac_dates = vac_dates[vac_dates!='']
@@ -937,7 +938,12 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')
             file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_symptoms.csv"), 
             row.names = F, sep=',', quote = F)
 
-
+## vaccine data
+# vacc_data_molnupiravir = vacc_data %>% filter(Label %in% Res_Paxlovid_Molnupiravir$ID) %>%
+#   group_by(Label) %>%
+#   mutate(vac_combos = paste(sort(unique(vc_name)), collapse = '/')) %>%
+#   distinct(Label, .keep_all = T)
+# table(vacc_data_molnupiravir$vac_combos)
 #************************* Nitazoxanide Analysis *************************#
 #* Brazil and Laos
 Res_Nitazoxanide = 
