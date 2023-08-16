@@ -9,11 +9,11 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
-user <- 'james'#"Chang" # Change here
+user <- 'Chang'#"Chang" # Change here
 
 #1 Analysis_data folder
 if(user == "Chang"){
-  prefix_analysis_data <- "PLATCOV_SAP"
+  prefix_analysis_data <- "D:/PLATCOV-SAP"
 }else{
     prefix_analysis_data <- ".."}
 
@@ -40,7 +40,7 @@ if(user == "Chang"){
 
 #5 Data_curation folder
 if(user == "Chang"){
-  prefix_dat_cur <- "PLATCOV-SAP/Data_curation/" 
+  prefix_dat_cur <- "D:/PLATCOV-SAP/Data_curation/" 
 }else{
   prefix_dat_cur <- ""
 }
