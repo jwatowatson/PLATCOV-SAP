@@ -9,7 +9,7 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
-user <- 'Chang'#"Chang" # Change here
+user <- 'James'#"Chang" # Change here
 
 #1 Analysis_data folder
 if(user == "Chang"){
@@ -432,9 +432,10 @@ cols = c('ID','Plate','CT_NS','log10_true_density','Lab','Lot no.')
 SC = SC[,cols]
 
 ## Extract sample data - this was for Liz Batty
-# Res = Res[!is.na(Res$`SUBJECT ID`), ]
-# write_csv(x = Res[, c("SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")])
-# Res = Res[Res$Location != 'Saliva', ]
+Res = Res[!is.na(Res$`SUBJECT ID`), ]
+Res$ID_sample = apply(Res, 1, function(x) paste(x[c("SUBJECT ID","Location","TIME-POINT")], collapse = '_'))
+write_csv(x = Res[, c('ID_sample',"SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")],file = '~/Downloads/Liz.csv')
+Res = Res[Res$Location != 'Saliva', ]
 table(Res$Location, useNA = 'ifany')
 
 writeLines('Clinical data from the following patients not in database:\n')

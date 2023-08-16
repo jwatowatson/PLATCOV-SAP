@@ -38,7 +38,7 @@ trt_colors = get_trt_colors()
 ```
 
 ```{r set folder paths for each user}
-user <- "Chang" # Change user here
+user <- 'james'#"Chang" # Change user here
 
 #1 Analysis_data folder
 if(user == "Chang"){
@@ -82,9 +82,9 @@ if(user == "Chang"){
 
 ```{r load_data}
 intervention = 'Ensitrelvir' # prefix of analysis file
-ref_arm = 'No study drug'  #'Nirmatrelvir' #
-study_threshold = 1.2 # depending on comparison with no study drug or positive control
-#study_threshold = 0.9
+ref_arm = 'Nirmatrelvir' #
+# study_threshold = 1.2 # depending on comparison with no study drug or positive control
+study_threshold = 0.9
 ```
 
 ```{r define_population}
@@ -213,12 +213,16 @@ stan_inputs =
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-model_settings = rbind(expand.grid(mod = all_mods,
-                             prior = 1,
-                             cov_matrices = 1),
-                       expand.grid(mod = all_mods[1],
-                             prior = 1,
-                             cov_matrices = 2))
+# model_settings = rbind(expand.grid(mod = all_mods,
+#                              prior = 1,
+#                              cov_matrices = 1),
+#                        expand.grid(mod = all_mods[1],
+#                              prior = 1,
+#                              cov_matrices = 2))
+
+model_settings = expand.grid(mod = 'Stan_models/Linear_model_RNaseP.stan',
+                              prior = 1,
+                              cov_matrices = 1)
 
 model_settings$Niter = 2000
 model_settings$Nwarmup = 1000
