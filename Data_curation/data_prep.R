@@ -21,7 +21,7 @@ if(user == "Chang"){
 if(user == "Chang"){
   prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
 }else{
-  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/"
+  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis"
 }
 
 #3 Downloads folder
@@ -69,7 +69,7 @@ screen_failure =
               "scrpassed","reason_failure","scrnote")]
 
 screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
-write.csv(x = screen_failure, file = paste0(prefix_downloads, "/Downloads/screening_failures.csv"))
+# write.csv(x = screen_failure, file = paste0(prefix_downloads, "/Downloads/screening_failures.csv"))
 # --- Excluding screening failure data ---
 clin_data = clin_data[!ind, ]
 sort(unique(clin_data$Label))
@@ -111,12 +111,13 @@ if(sum(ind)>0) {
 # NOTE: Sites TH57 and TH58 did not use app so cannot cross check
 rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv"))) %>%
+                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-PK01.csv"))) %>%
   filter(!is.na(Treatment))
 
 rand_app_data$ID = paste0('PLT-', rand_app_data$site,'-',
                           stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
-rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3'),to=c('th001','br003'))
+rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3','LA08','PK01'),to=c('th001','br003',"la008","pk001"))
 
 writeLines('The following randomisation database IDs are not in clinical database:\n')
 print(rand_app_data$ID[!rand_app_data$ID %in% clin_data$Label])
@@ -124,8 +125,8 @@ print(rand_app_data$ID[!rand_app_data$ID %in% clin_data$Label])
 # rand_app_data = rand_app_data[rand_app_data$ID%in% clin_data$Label, ]
 rand_app_data$Rand_Time = as.POSIXct(rand_app_data$Date, format = '%a %b %d %H:%M:%S %Y',tz = 'GMT')
 rand_app_data$tzone = plyr::mapvalues(x = rand_app_data$site,
-                                      from = c('TH1','LA08','BR3'),
-                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo'))
+                                      from = c('TH1','LA08','BR3','PK01'),
+                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo','Asia/Karachi'))
 rand_app_data$Rand_Time_TZ=NA
 for(i in 1:nrow(rand_app_data)){
   rand_app_data$Rand_Time_TZ[i] = as.character(with_tz(rand_app_data$Rand_Time[i], tzone = rand_app_data$tzone[i]))
@@ -155,6 +156,7 @@ clin_data$Treatment[ind] = clin_data$rangrp[ind]
 ind = !is.na(clin_data$Treatment) & is.na(clin_data$rangrp)
 clin_data$rangrp[ind] = clin_data$Treatment[ind]
 
+clin_data = clin_data %>% filter(!is.na(rangrp))
 # Reporting inconsistency between randomisation database (shiny app; Dropbox) and clinical database (CRF)
 if(any(! clin_data$Treatment == clin_data$rangrp)) {
   writeLines(sprintf('Randomisation inconsistent for %s', 
@@ -213,12 +215,14 @@ if(any(abs(Rand_diffs)>5)){
                      clin_data$Label[which(abs(Rand_diffs)>5)]))
 }
 print(clin_data[which(abs(Rand_diffs)>5), c('Label','Rand_Time_TZ','Rand_date_time') ])
+# We use the app time as this is more reliable (timestamp is automatic)
 clin_data$Rand_date_time[which(abs(Rand_diffs)>5)] = 
   clin_data$Rand_Time_TZ[which(abs(Rand_diffs)>5)]
 
 clin_data$Symptom_onset = clin_data$cov_sympday
 clin_data$Trt = clin_data$rangrp
 
+# Select variables of interest
 clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
                           "Rand_date_time",'BMI','Weight',
                           'Symptom_onset','Site','Fever_Baseline')]
@@ -890,7 +894,7 @@ write.table(x = Res_Fluoxetine_meta,
 
 
 #************************* Paxlovid v Molnupiravir Analysis *************************#
-#* Thailand only
+#* Thailand only - this is used in the Lancet Infectious Diseases paper 2023
 Res_Paxlovid_Molnupiravir = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir','Molnupiravir',"No study drug"),
                  Rand_date > "2022-06-03 00:00:00",
@@ -937,6 +941,18 @@ symptom_data = symptom_data %>%
 write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
             file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_symptoms.csv"), 
             row.names = F, sep=',', quote = F)
+
+
+#************************* Paxlovid v No study drug - recent data only *************************#
+#* Thailand only - this is used for internal analyses
+Res_Paxlovid_recent = 
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
+                 Rand_date > "2023-02-24 00:00:00",
+                 Country %in% c('Thailand')) %>%
+  arrange(Rand_date, ID, Time) %>% ungroup() 
+
+write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
+
 
 ## vaccine data
 # vacc_data_molnupiravir = vacc_data %>% filter(Label %in% Res_Paxlovid_Molnupiravir$ID) %>%

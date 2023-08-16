@@ -60,3 +60,4 @@ Rout/model_fits.RData
 *.rds
 *.pdf
 Data_curation/Rplots.pdf
+*.pdf
