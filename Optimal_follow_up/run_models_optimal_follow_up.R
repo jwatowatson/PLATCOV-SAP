@@ -131,7 +131,7 @@ out = sampling(mod,
                pars=c('L_Omega'), # we don't save this as it takes up lots of memory!
                include=FALSE)
 
-save(out, file = paste0('output/model_fits_',i,'.RData'))# save output
+save(out, file = paste0('Optimal_follow_up/output/model_fits_',i,'.RData'))# save output
 
 writeLines('Finished job')
 
