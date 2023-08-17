@@ -8,9 +8,9 @@ library(tidyverse)
 ##*********************************************************
 ##*
 
-clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimEnrolment.dta')
-temp_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimFUTemp.dta')
-vita_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimVitalSigns.dta')
+clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimEnrolment.dta')
+temp_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimFUTemp.dta')
+vita_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimVitalSigns.dta')
 # x0 = vita_data[, c('Site', 'Label', 'visit', 'vd_dat', "vs_tim", "vs_temp")]
 x1 = temp_data[, c('Site', 'Label', 'visit', 'fut_amdat', "fut_amtim", "fut_amtemp")]
 x2 = temp_data[, c('Site', 'Label', 'visit', 'fut_pmdat', "fut_pmtim", "fut_pmtemp")]
@@ -65,7 +65,7 @@ sort(names(xx[xx<=20]))
 
 
 ######################### ******* Symptoms *********** ##################################
-symp=haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV/Data/InterimSymptoms.dta')
+symp=haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimSymptoms.dta')
 symp = symp[!is.na(symp$sq_yn),]
 sort(table(symp$Label),decreasing = T)
 ids_symp_data = names(which(table(symp$Label)>4)) ## need at least 4 records to be included

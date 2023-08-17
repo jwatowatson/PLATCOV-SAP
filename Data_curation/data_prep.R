@@ -435,6 +435,8 @@ SC = SC[,cols]
 Res = Res[!is.na(Res$`SUBJECT ID`), ]
 Res$ID_sample = apply(Res, 1, function(x) paste(x[c("SUBJECT ID","Location","TIME-POINT")], collapse = '_'))
 write_csv(x = Res[, c('ID_sample',"SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")],file = '~/Downloads/Liz.csv')
+
+
 Res = Res[Res$Location != 'Saliva', ]
 table(Res$Location, useNA = 'ifany')
 
