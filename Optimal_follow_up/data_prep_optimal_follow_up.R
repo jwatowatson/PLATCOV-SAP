@@ -2,25 +2,25 @@ library(dplyr)
 library(tidyr)
 ############################################################################
 # Setting directories
-user <- "Chang"
+# user <- "Chang"
 
-# Main directory
-if(user == "Chang"){
-  mainDir <- "D:/PLATCOV-SAP"
-}else{
-  mainDir <- ""}
-
-setwd(mainDir)
-
-# Analysis_Data folder
-if(user == "Chang"){
-  prefix_analysis_data <- "C:/Users/Phrutsamon/Dropbox/"
-}else{
-  prefix_analysis_data <- ""}
+# # Main directory
+# if(user == "Chang"){
+#   mainDir <- "D:/PLATCOV-SAP"
+# }else{
+#   mainDir <- ""}
+# 
+# setwd(mainDir)
+# 
+# # Analysis_Data folder
+# if(user == "Chang"){
+#   prefix_analysis_data <- "C:/Users/Phrutsamon/Dropbox/"
+# }else{
+#   prefix_analysis_data <- ""}
 
 ############################################################################
-source('priors.R')
-source('functions.R')
+source('../priors.R')
+source('../functions.R')
 ############################################################################
 mITT <- function(platcov_dat){
   platcov_dat = platcov_dat %>% group_by(ID) %>%
@@ -31,9 +31,9 @@ mITT <- function(platcov_dat){
 
 ############################################################################
 # Loading data
-remdesivir_data = read.csv(paste0(prefix_analysis_data, 'Analysis_Data/Remdesivir_analysis.csv'))
-paxlovid_data = read.csv(paste0(prefix_analysis_data, 'Analysis_Data/Paxlovid_Molnupiravir_analysis.csv'))
-recent_paxlovid_data = read.csv(paste0(prefix_analysis_data, 'Analysis_Data/Paxlovid_recent_analysis.csv'))
+remdesivir_data = read.csv('../Analysis_Data/Remdesivir_analysis.csv')
+paxlovid_data = read.csv( '../Analysis_Data/Paxlovid_Molnupiravir_analysis.csv')
+recent_paxlovid_data = read.csv('../Analysis_Data/Paxlovid_recent_analysis.csv')
 
 remdesivir_data <- mITT(remdesivir_data)
 paxlovid_data <- mITT(paxlovid_data)
@@ -46,9 +46,9 @@ ref_arms_all <- c("No study drug", "No study drug", "Nirmatrelvir + Ritonavir", 
 data_ID <- c(1,2,2,2,3)
 pairs <- paste(interventions_all,ref_arms_all, data_ID, sep = "_")
 
-Dmax_all <- c(2:7, 14)
+Dmax_all <- c(1:7, 14)
 
-model_settings <-  expand.grid(mod = 'Stan_models/Linear_model_RNaseP.stan',
+model_settings <-  expand.grid(mod = '../Stan_models/Linear_model_RNaseP.stan',
                                prior = 1,
                                cov_matrices = 1,
                                Dmax = Dmax_all,
@@ -64,7 +64,7 @@ model_settings$Nchain = 4
 model_settings$data_ID <- as.numeric(model_settings$data_ID)
 
 ############################################################################
-model_setup_f_name = "Optimal_follow_up/model_settings.RData"
+model_setup_f_name = "model_settings.RData"
 
 save(model_settings, 
      data_list,

@@ -9,66 +9,16 @@ library(rstan)
 library(matrixStats)
 library(doParallel)
 library(tidyverse)
-library(kableExtra)
-library(finalfit)
-library(RColorBrewer)
-library(lubridate)
-library(brms)
 
-i <- 35
-############################################################################
-# Setting directories
-user <- "Chang"   # Make it as args[]
 
-# Main directory
-if(user == "Chang"){
-  mainDir <- "D:/PLATCOV-SAP"
-}else{
-  mainDir <- ""}
+############################################################################
+source('../functions.R')
 
-setwd(mainDir)
 ############################################################################
-source('functions.R')
-############################################################################
-prep_study_time <- function(platcov_dat){
-  platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
-    mutate(daily_VL = mean(log10_viral_load)) %>% 
-    ungroup() %>% mutate(Sex = as.factor(ifelse(Sex==1,'Male','Female')),
-                         Site = as.factor(Site),
-                         Trt = factor(Trt, levels=c(ref_arm, trts)),
-                         Vaccinated = as.factor(ifelse(N_dose>0,'Yes','No')),
-                         Variant = as.factor(Variant),
-                         trt_color = 
-                           as.character(plyr::mapvalues(Trt,
-                                                        from = names(trt_colors),
-                                                        to = trt_colors)),
-                         Study_time = as.numeric(difftime(Rand_date,min(Rand_date),units = 'weeks')),
-                         Study_time = scale(Study_time) #normalise
-    )
-  return(as.data.frame(platcov_dat))
-}
+covs_base = c('Variant')
 
-dat_prep_for_analysis <- function(platcov_dat, Dmax){
-  platcov_dat_analysis <- 
-    platcov_dat %>% ungroup() %>%
-    filter(Time <= Dmax+1, mITT) %>%
-    arrange(log10_viral_load==log10_cens_vl) %>%
-    mutate(Variant = as.factor(Variant),
-           Epoch = paste(month(Rand_date), year(Rand_date), sep = '_'),
-           Site = as.factor(Site),
-           RnaseP_scaled = scale(40 - CT_RNaseP,scale = F),
-           Mean_age = mean(Age[!duplicated(ID)]),
-           SD_age = sd(Age[!duplicated(ID)]),
-           Age_scaled = (Age-Mean_age)/SD_age,
-           Symptom_onset = ifelse(is.na(Symptom_onset),2,Symptom_onset)) 
-  return(as.data.frame(platcov_dat_analysis))
-}
 ############################################################################
-covs_base = c('Variant','Site','Study_time')
-covs_full=c(covs_base, 'Age_scaled','Symptom_onset')
-add_epoch = T # if using non-concurrent controls
-############################################################################
-load('Optimal_follow_up/model_settings.RData')
+load('model_settings.RData')
 
 Max_job = nrow(model_settings)
 if(i > Max_job) stop('no model setting corresponding to job ID')
@@ -82,25 +32,31 @@ stopifnot(model_settings$Nchain[i]>getDoParWorkers()) # check worker number assi
 mod = stan_model(file = as.character(model_settings$mod[i])) # compile 
 ############################################################################
 platcov_dat_analysis <- data_list[[model_settings$data_ID[i]]]
-#platcov_dat_analysis$Trt[platcov_dat_analysis$Trt == "Nirmatrelvir + Ritonavir"] <- "Nirmatrelvir"
 Dmax <- model_settings$Dmax[i]
 
 ref_arm <- model_settings$ref_arm[i]
 trts <- model_settings$intervention[i]
-trt_colors <- get_trt_colors()
 
-platcov_dat_analysis <- platcov_dat_analysis[platcov_dat_analysis$Trt %in% c(ref_arm, trts),]
-platcov_dat_analysis <- prep_study_time(platcov_dat_analysis)
-platcov_dat_analysis <- dat_prep_for_analysis(platcov_dat_analysis, Dmax)
+platcov_dat_analysis = platcov_dat_analysis %>%
+  filter(Trt %in% c(ref_arm, trts), Time <= Dmax, mITT) %>%
+  mutate(Trt = factor(Trt, levels=c(ref_arm, trts)),
+         Variant = as.factor(Variant),
+         Site = as.factor(Site),
+         RnaseP_scaled = scale(40 - CT_RNaseP,scale = F),
+         Mean_age = mean(Age[!duplicated(ID)]),
+         SD_age = sd(Age[!duplicated(ID)]),
+         Age_scaled = (Age-Mean_age)/SD_age,
+         Symptom_onset = ifelse(is.na(Symptom_onset),2,Symptom_onset)) %>%
+  arrange(log10_viral_load==log10_cens_vl) 
 
 
-stan_input_job <- make_stan_inputs(input_data_fit = platcov_dat_analysis,
-                   int_covs_base = c(covs_base,'Symptom_onset'),
-                   int_covs_full = covs_full,
+stan_input_job = make_stan_inputs(input_data_fit = platcov_dat_analysis,
+                   int_covs_base = covs_base,
+                   int_covs_full = covs_base,
                    slope_covs_base = covs_base,
-                   slope_covs_full = covs_full,
+                   slope_covs_full = covs_base,
                    trt_frmla = formula('~ Trt'),
-                   epoch = add_epoch,
+                   epoch = F,
                    Dmax = Dmax+1)
 
 analysis_data_stan = stan_input_job$analysis_data_stan
@@ -128,10 +84,10 @@ out = sampling(mod,
                warmup=model_settings$Nwarmup[i],
                save_warmup = FALSE,
                seed=i,
-               pars=c('L_Omega'), # we don't save this as it takes up lots of memory!
-               include=FALSE)
+               pars=c('trt_effect'), # only save trt effect parameter 
+               include=T)
 
-save(out, file = paste0('Optimal_follow_up/output/model_fits_',i,'.RData'))# save output
+save(out, file = paste0('Rout/model_fits_',i,'.RData'))# save output
 
 writeLines('Finished job')
 

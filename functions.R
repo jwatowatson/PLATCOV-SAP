@@ -146,7 +146,7 @@ make_stan_inputs = function(input_data_fit,
   
   # make the covariate matrix
   # check no missing data
-  if(!all(!apply(input_data_fit[, union(int_covs_full,slope_covs_full)], 2, function(x) any(is.na(x))))){
+  if(!all(!apply(input_data_fit[, union(int_covs_full,slope_covs_full), drop=F], 2, function(x) any(is.na(x))))){
     stop('Missing data in covariate matrix!')
   }
   
