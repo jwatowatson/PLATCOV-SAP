@@ -1,22 +1,6 @@
 library(dplyr)
 library(tidyr)
 ############################################################################
-# Setting directories
-# user <- "Chang"
-
-# # Main directory
-# if(user == "Chang"){
-#   mainDir <- "D:/PLATCOV-SAP"
-# }else{
-#   mainDir <- ""}
-# 
-# setwd(mainDir)
-# 
-# # Analysis_Data folder
-# if(user == "Chang"){
-#   prefix_analysis_data <- "C:/Users/Phrutsamon/Dropbox/"
-# }else{
-#   prefix_analysis_data <- ""}
 
 ############################################################################
 source('../priors.R')
