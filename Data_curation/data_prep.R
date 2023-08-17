@@ -9,7 +9,7 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
-user <- 'James'#"Chang" # Change here
+user <- 'Chang'#"Chang" # Change here
 
 #1 Analysis_data folder
 if(user == "Chang"){
