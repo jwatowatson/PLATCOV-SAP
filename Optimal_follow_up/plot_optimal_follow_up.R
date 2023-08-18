@@ -1,11 +1,11 @@
 library(rstan)
 library(ggplot2)
 ############################################################################
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+# setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ############################################################################
 load('model_settings.RData')
 
-model_settings
+# model_settings
 
 Output <- NULL
 tracePLOTs <- list()

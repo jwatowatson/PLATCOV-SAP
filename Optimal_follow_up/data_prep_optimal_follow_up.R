@@ -25,8 +25,8 @@ recent_paxlovid_data <- mITT(recent_paxlovid_data)
 
 data_list <- list(remdesivir_data, paxlovid_data, recent_paxlovid_data)
 ############################################################################
-interventions_all <- c("Remdesivir", "Molnupiravir",  "Molnupiravir", "Nirmatrelvir + Ritonavir", "Nirmatrelvir + Ritonavir")
-ref_arms_all <- c("No study drug", "No study drug", "Nirmatrelvir + Ritonavir", "No study drug",  "No study drug")
+interventions_all = c("Remdesivir", "Molnupiravir",  "Nirmatrelvir + Ritonavir", "Nirmatrelvir + Ritonavir", "Nirmatrelvir + Ritonavir")
+ref_arms_all = c("No study drug",   "No study drug", "Molnupiravir",              "No study drug",            "No study drug")
 data_ID <- c(1,2,2,2,3)
 pairs <- paste(interventions_all,ref_arms_all, data_ID, sep = "_")
 
@@ -42,11 +42,13 @@ model_settings <-  expand.grid(mod = '../Stan_models/Linear_model_RNaseP.stan',
 model_settings <- model_settings %>%
   separate(pairs, c("intervention", "ref_arm", "data_ID"), "_")
 
-model_settings$Niter = 6000
-model_settings$Nwarmup = 3000
-model_settings$Nthin = 10
+model_settings$Niter = 4000
+model_settings$Nwarmup = 2000
+model_settings$Nthin = 8
 model_settings$Nchain = 4
 
+writeLines(sprintf('Numbers of posterior samples in total is %s',
+                   unique((model_settings$Niter-model_settings$Nwarmup)*model_settings$Nchain/model_settings$Nthin)))
 model_settings$data_ID <- as.numeric(model_settings$data_ID)
 
 ############################################################################

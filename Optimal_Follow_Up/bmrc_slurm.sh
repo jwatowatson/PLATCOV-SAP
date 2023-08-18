@@ -7,7 +7,7 @@
 #SBATCH -o /well/moru-batty/users/gka292/PLATCOV-SAP/Optimal_Follow_Up/o_and_e_files/output.o%A_%a.out
 #SBATCH -e /well/moru-batty/users/gka292/PLATCOV-SAP/Optimal_Follow_Up/o_and_e_files/output.e%A_%a.out
 #SBATCH -p short
-#SBATCH --array 1-100
+#SBATCH --array 1-1000
 
 
 echo started=`date`
