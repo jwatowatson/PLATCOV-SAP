@@ -30,13 +30,15 @@ ref_arms_all <- c("No study drug", "No study drug", "Nirmatrelvir + Ritonavir", 
 data_ID <- c(1,2,2,2,3)
 pairs <- paste(interventions_all,ref_arms_all, data_ID, sep = "_")
 
-Dmax_all <- c(1:7, 14)
+Dmax_all <- c(2:7, 14)
 
+bootstrap_rep = 20
 model_settings <-  expand.grid(mod = '../Stan_models/Linear_model_RNaseP.stan',
                                prior = 1,
                                cov_matrices = 1,
                                Dmax = Dmax_all,
-                               pairs = pairs)
+                               pairs = pairs,
+                               boot_rep = 1:bootstrap_rep)
 model_settings <- model_settings %>%
   separate(pairs, c("intervention", "ref_arm", "data_ID"), "_")
 

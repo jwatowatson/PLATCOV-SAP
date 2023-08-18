@@ -32,13 +32,14 @@ stopifnot(model_settings$Nchain[i]>getDoParWorkers()) # check worker number assi
 mod = stan_model(file = as.character(model_settings$mod[i])) # compile 
 ############################################################################
 platcov_dat_analysis <- data_list[[model_settings$data_ID[i]]]
-Dmax <- model_settings$Dmax[i]
+Dmax = model_settings$Dmax[i]
 
-ref_arm <- model_settings$ref_arm[i]
-trts <- model_settings$intervention[i]
+ref_arm = model_settings$ref_arm[i]
+trts = model_settings$intervention[i]
 
+# only going to use data from main thai site (best quality data)
 platcov_dat_analysis = platcov_dat_analysis %>%
-  filter(Trt %in% c(ref_arm, trts), Time <= Dmax, mITT) %>%
+  filter(Trt %in% c(ref_arm, trts), Timepoint_ID <= Dmax, mITT, Site=='th001') %>%
   mutate(Trt = factor(Trt, levels=c(ref_arm, trts)),
          Variant = as.factor(Variant),
          Site = as.factor(Site),
@@ -46,18 +47,31 @@ platcov_dat_analysis = platcov_dat_analysis %>%
          Mean_age = mean(Age[!duplicated(ID)]),
          SD_age = sd(Age[!duplicated(ID)]),
          Age_scaled = (Age-Mean_age)/SD_age,
-         Symptom_onset = ifelse(is.na(Symptom_onset),2,Symptom_onset)) %>%
+         Symptom_onset = ifelse(is.na(Symptom_onset),2,Symptom_onset)) 
+
+
+## Bootstrap data (by bootstrapping patients)
+ids_boot = sort(sample(x = unique(platcov_dat_analysis$ID), 
+                       size = length(unique(platcov_dat_analysis$ID)),
+                       replace = T))
+platcov_dat_analysis  = platcov_dat_analysis %>%
+  filter(ID %in% ids_boot) %>%
+  group_by(ID) %>%
+  mutate(ntimes = sum(ids_boot==ID[1])) %>% ungroup() %>%
+  uncount(weights = ntimes, .id = 'ID_boot')
+platcov_dat_analysis$ID = apply(platcov_dat_analysis[, c('ID','ID_boot')],1,function(x) paste(x,collapse = '_'))
+platcov_dat_analysis = platcov_dat_analysis %>%
+  arrange(ID, Time) %>%
   arrange(log10_viral_load==log10_cens_vl) 
 
-
 stan_input_job = make_stan_inputs(input_data_fit = platcov_dat_analysis,
-                   int_covs_base = covs_base,
-                   int_covs_full = covs_base,
-                   slope_covs_base = covs_base,
-                   slope_covs_full = covs_base,
-                   trt_frmla = formula('~ Trt'),
-                   epoch = F,
-                   Dmax = Dmax+1)
+                                  int_covs_base = covs_base,
+                                  int_covs_full = covs_base,
+                                  slope_covs_base = covs_base,
+                                  slope_covs_full = covs_base,
+                                  trt_frmla = formula('~ Trt'),
+                                  epoch = F,
+                                  Dmax = Dmax+1)
 
 analysis_data_stan = stan_input_job$analysis_data_stan
 analysis_data_stan$trt_mat = stan_input_job$Trt_matrix
