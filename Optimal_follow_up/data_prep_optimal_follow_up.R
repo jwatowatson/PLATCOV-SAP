@@ -1,22 +1,6 @@
 library(dplyr)
 library(tidyr)
 ############################################################################
-# Setting directories
-# user <- "Chang"
-
-# # Main directory
-# if(user == "Chang"){
-#   mainDir <- "D:/PLATCOV-SAP"
-# }else{
-#   mainDir <- ""}
-# 
-# setwd(mainDir)
-# 
-# # Analysis_Data folder
-# if(user == "Chang"){
-#   prefix_analysis_data <- "C:/Users/Phrutsamon/Dropbox/"
-# }else{
-#   prefix_analysis_data <- ""}
 
 ############################################################################
 source('../priors.R')
@@ -56,9 +40,9 @@ model_settings <-  expand.grid(mod = '../Stan_models/Linear_model_RNaseP.stan',
 model_settings <- model_settings %>%
   separate(pairs, c("intervention", "ref_arm", "data_ID"), "_")
 
-model_settings$Niter = 2000
-model_settings$Nwarmup = 1000
-model_settings$Nthin = 4
+model_settings$Niter = 6000
+model_settings$Nwarmup = 3000
+model_settings$Nthin = 10
 model_settings$Nchain = 4
 
 model_settings$data_ID <- as.numeric(model_settings$data_ID)
