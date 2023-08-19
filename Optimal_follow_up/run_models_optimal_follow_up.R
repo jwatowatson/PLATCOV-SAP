@@ -39,7 +39,10 @@ trts = model_settings$intervention[i]
 
 # only going to use data from main thai site (best quality data)
 platcov_dat_analysis = platcov_dat_analysis %>%
-  filter(Trt %in% c(ref_arm, trts), Timepoint_ID <= Dmax, mITT, Site=='th001') %>%
+  filter(Trt %in% c(ref_arm, trts), 
+         Timepoint_ID <= Dmax, # timepoint is the day of follow-up
+         Time < Dmax+1, # sample has to be taken at most 24 hours after last day
+         mITT, Site=='th001') %>%
   mutate(Trt = factor(Trt, levels=c(ref_arm, trts)),
          Variant = as.factor(Variant),
          Site = as.factor(Site),
