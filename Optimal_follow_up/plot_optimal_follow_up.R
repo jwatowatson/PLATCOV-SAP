@@ -35,6 +35,8 @@ for(i in 1:nrow(model_settings)){
 rownames(Output) <- NULL
 ############################################################################
 Output$Dmax <- as.factor(Output$Dmax)
+Output$Dmax <- factor(Output$Dmax, levels = as.character(1:14))
+
 Output$trt[Output$trt == "Nirmatrelvir + Ritonavir"] <- "Paxlovid"
 Output$ref[Output$ref == "Nirmatrelvir + Ritonavir"] <- "Paxlovid"
 Output$trt[model_settings$data_ID == 3 & Output$trt == "Paxlovid"] <- "Recent Paxlovid"
@@ -54,7 +56,9 @@ G1 <- ggplot(Output, aes(x = Dmax, y = eff_med)) +
   xlab("Follow-up day") +
   ylab("Treatment effect size") +
   theme(strip.text = element_text(size = 10, face = "bold"),
-        axis.title = element_text(size = 14, face = "bold"))
+        axis.title = element_text(size = 14, face = "bold"))  +
+  scale_x_discrete(drop=F) 
+
 
 G2 <- ggplot(Output, aes(x = Dmax, y = itv_width)) + 
   geom_point(size = 3, col = "red") +
@@ -66,7 +70,8 @@ G2 <- ggplot(Output, aes(x = Dmax, y = itv_width)) +
   xlab("Follow-up day") +
   ylab("Credible interval width") +
   theme(strip.text = element_text(size = 10, face = "bold"),
-        axis.title = element_text(size = 14, face = "bold"))
+        axis.title = element_text(size = 14, face = "bold")) +
+  scale_x_discrete(drop=F) 
 
 ggarrange(G1, G2, ncol = 1, nrow = 2, align = "v")
 

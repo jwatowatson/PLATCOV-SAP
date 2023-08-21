@@ -3,14 +3,53 @@ library(readxl)
 library(ggplot2)
 library(tidyverse)
 
+##Define user folder path####################################################################
+user <- 'James'#"Chang" # Change here
+
+#1 Analysis_data folder
+if(user == "Chang"){
+  prefix_analysis_data <- "D:/PLATCOV-SAP"
+}else{
+  prefix_analysis_data <- ".."}
+
+#2 Dropbox folder (PLATCOV_Analysis)
+if(user == "Chang"){
+  prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
+}else{
+  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis"
+}
+
+#3 Downloads folder
+if(user == "Chang"){
+  prefix_downloads <- "PLATCOV_SAP"
+}else{
+  prefix_downloads <- "~"
+}
+
+#4 Dropbox folder for randomisation
+if(user == "Chang"){
+  prefix_drop_rand <- "C:/Users/Phrutsamon/Dropbox/PLATCOV" 
+}else{
+  prefix_drop_rand <- "~/Dropbox/PLATCOV"
+}
+
+#5 Data_curation folder
+if(user == "Chang"){
+  prefix_dat_cur <- "D:/PLATCOV-SAP/Data_curation/" 
+}else{
+  prefix_dat_cur <- ""
+}
+#############################################################################################
+
+
+
 ##******************** Clinical database *******************
 ##*********************************************************
 ##*********************************************************
 ##*
-
-clin_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimEnrolment.dta')
-temp_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimFUTemp.dta')
-vita_data = haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimVitalSigns.dta')
+clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
+temp_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFUTemp.dta"))
+vita_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVitalSigns.dta"))
 # x0 = vita_data[, c('Site', 'Label', 'visit', 'vd_dat', "vs_tim", "vs_temp")]
 x1 = temp_data[, c('Site', 'Label', 'visit', 'fut_amdat', "fut_amtim", "fut_amtemp")]
 x2 = temp_data[, c('Site', 'Label', 'visit', 'fut_pmdat', "fut_pmtim", "fut_pmtemp")]
@@ -63,9 +102,8 @@ xx=sort(table(temp_data$Label))
 sort(names(xx[xx<=20]))
 
 
-
 ######################### ******* Symptoms *********** ##################################
-symp=haven::read_dta('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis//Data/InterimSymptoms.dta')
+symp=haven::read_dta(paste0(prefix_dropbox, "/Data/InterimSymptoms.dta"))
 symp = symp[!is.na(symp$sq_yn),]
 sort(table(symp$Label),decreasing = T)
 ids_symp_data = names(which(table(symp$Label)>4)) ## need at least 4 records to be included
