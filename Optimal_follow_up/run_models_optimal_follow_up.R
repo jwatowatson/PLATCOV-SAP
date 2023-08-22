@@ -18,7 +18,7 @@ source('../functions.R')
 covs_base = c('Variant')
 
 ############################################################################
-load('model_settings.RData')
+load('model_settings_ineffective.RData') # change here for ineffective drugs
 
 Max_job = nrow(model_settings)
 if(i > Max_job) stop('no model setting corresponding to job ID')
@@ -104,7 +104,7 @@ out = sampling(mod,
                pars=c('trt_effect'), # only save trt effect parameter 
                include=T)
 
-save(out, file = paste0('Rout/model_fits_',i,'.RData'))# save output
+save(out, file = paste0('Rout/model_fits_ineffective_',i,'.RData'))# save output # change here for ineffective drugs
 
 writeLines('Finished job')
 

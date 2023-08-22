@@ -50,7 +50,7 @@ error_summary <- subset(res_conditions, select = -c(output_len, boot_rep, error_
   summarise_each(list(sum)) %>% 
   as.data.frame() %>%
   arrange(data_ID, intervention, ref_arm, Dmax)
-
+#######################################################################################
 error_summary <- gather(error_summary, error, counts, error_1:error_7, factor_key=TRUE)
 error_summary$Dmax <- as.factor(error_summary$Dmax)
 error_summary$Dmax <- factor(error_summary$Dmax, levels = as.character(1:14))
