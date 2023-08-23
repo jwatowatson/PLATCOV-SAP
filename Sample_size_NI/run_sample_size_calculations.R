@@ -43,6 +43,8 @@ trt_effects = c(sim_settings$trt_control[i],
                 sim_settings$trt_effect_comp[i])
 Trt_vector = c(rep(1, sim_settings$N[i]),
                rep(2, sim_settings$N[i]))
+
+# simulate data
 sim_vl = sim_individuals(thetas = thetas,
                          t_design = rep(0:7,2),
                          N = length(Trt_vector),
@@ -64,8 +66,9 @@ analysis_data=make_stan_inputs(input_data_fit = sim_vl,
 # plot(xx$Time[ind], xx$log10_viral_load[ind],type='l',col='blue',lwd=3,ylim=c(1,6))
 # lines(xx$Time[!ind], xx$log10_viral_load[!ind], col='red', lwd=3)
 
-mod = stan_model(file = 'Linear_model_basic.stan') # compile
 
+# fit model to simulated data
+mod = stan_model(file = 'Linear_model_basic.stan') # compile
 stan_out = sampling(mod,
                     data=c(analysis_data,
                            all_priors[['WIP']]),

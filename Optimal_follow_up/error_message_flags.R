@@ -1,4 +1,4 @@
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+# setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 #######################################################################################
 library(stringr)
 library(dplyr)

@@ -6,7 +6,7 @@ f_sim = function(t_design, # design sampling times for PCR swabs
                  my_slope, # slope
                  sigma_vl, # standard deviation for t-distribution error model
                  t_dof, # degrees of freedom for the t-distribution error model
-                 LOD
+                 LOD # lower limit of quantification/detection
 ){
 
   true_log_vl = my_intercept + my_slope*t_design
@@ -31,6 +31,7 @@ f_sim = function(t_design, # design sampling times for PCR swabs
 
 }
 
+# wrapper function
 sim_individuals = function(thetas, # posterior distribution: a stan object
                            t_design, # design points for the swabs
                            N, # total number of patients
