@@ -1,5 +1,6 @@
 library(rstan)
 library(ggplot2)
+library(ggpubr)
 ############################################################################
 # setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ############################################################################
@@ -8,16 +9,16 @@ load('model_settings.RData')
 # model_settings
 
 Output <- NULL
-tracePLOTs <- list()
+#tracePLOTs <- list()
 for(i in 1:nrow(model_settings)){
-  load(paste0('output/Rout/model_fits_',i, '.RData'))
+  load(paste0('~/Downloads/Rout/model_fits_',i, '.RData'))
   
   trt <- model_settings$intervention[i]
   ref <- model_settings$ref_arm[i]
   
-  tracePLOTs[[i]] <- traceplot(out, par = c("trt_effect")) + 
-    ggtitle(paste0(trt, " vs ", ref, ": ", model_settings$Dmax[i], " days")) +
-    theme(plot.title = element_text(size = 12, face = "bold")) +
+#  tracePLOTs[[i]] <- traceplot(out, par = c("trt_effect")) + 
+#    ggtitle(paste0(trt, " vs ", ref, ": ", model_settings$Dmax[i], " days")) +
+#    theme(plot.title = element_text(size = 12, face = "bold")) +
     ylim(-1.5,1.5)
   
   posterior <- unlist(extract(out, pars = c("trt_effect")))

@@ -1,11 +1,14 @@
 library(rstan)
 
 load('model_settings.RData')
+model_settings_effective<- model_settings
 
-res = array(dim = c(nrow(model_settings), 6))
+load('model_settings_ineffective.RData')
+model_settings_ineffective <- model_settings
 
+res = array(dim = c(nrow(model_settings_effective) + nrow(model_settings_ineffective), 6))
 
-for(i in 1:nrow(model_settings)){
+for(i in 1:nrow(model_settings_effective)){
   load(paste('~/Downloads/Rout/model_fits_',i,'.RData',sep=''))
   thetas_trt = rstan::extract(out, pars='trt_effect')$trt_effect
   res[i, ] = c(quantile(thetas_trt, probs = c(0.025, 0.5, 0.975)),
@@ -15,11 +18,26 @@ for(i in 1:nrow(model_settings)){
                mean(thetas_trt)/sd(thetas_trt))
 }
 
+for(i in (nrow(model_settings_effective)+1):nrow(res)){
+  load(paste('~/Downloads/Ineffective/Rout/model_fits_ineffective_',(i-nrow(model_settings_effective)),'.RData',sep=''))
+  thetas_trt = rstan::extract(out, pars='trt_effect')$trt_effect
+  #model_settings_ineffective[(i-nrow(model_settings_effective)),]
+  #hist(exp(thetas_trt))
+  
+  res[i, ] = c(quantile(thetas_trt, probs = c(0.025, 0.5, 0.975)),
+               quantile(thetas_trt, probs = 0.975)-
+                 quantile(thetas_trt, probs = 0.025),
+               sd(thetas_trt),
+               mean(thetas_trt)/sd(thetas_trt))
+}
+
+model_settings <- rbind(model_settings_effective, model_settings_ineffective)
+
 unique_contrast = unique(model_settings[, c('intervention',
                                             'ref_arm', 
                                             'data_ID')])
 
-par(mfrow=c(2,3), las=1)
+par(mfrow=c(3,3), las=1)
 for(j in 1:nrow(unique_contrast)){
   ind = model_settings$intervention==unique_contrast$intervention[j] &
     model_settings$ref_arm==unique_contrast$ref_arm[j] &
@@ -36,7 +54,7 @@ for(j in 1:nrow(unique_contrast)){
 
 
 
-par(mfrow=c(2,3), las=1)
+par(mfrow=c(3,3), las=1)
 for(j in 1:nrow(unique_contrast)){
   ind = model_settings$intervention==unique_contrast$intervention[j] &
     model_settings$ref_arm==unique_contrast$ref_arm[j] &
@@ -56,7 +74,7 @@ for(j in 1:nrow(unique_contrast)){
 
 
 
-par(mfrow=c(2,3), las=1)
+par(mfrow=c(3,3), las=1)
 for(j in 1:nrow(unique_contrast)){
   ind = model_settings$intervention==unique_contrast$intervention[j] &
     model_settings$ref_arm==unique_contrast$ref_arm[j] &
@@ -67,11 +85,12 @@ for(j in 1:nrow(unique_contrast)){
   xx=aggregate(zscore ~ day_FUP, FUN = mean,data = dat_out)
   
   plot(xx$day_FUP, xx$zscore,
-       panel.first=grid(),ylim=c(0, max(res[,6])),
+       panel.first=grid(),ylim=c(min(res[,6]), max(res[,6])),
        xlab='Days follow-up included',
        ylab = 'Z-score estimate',lwd=3,type='b')
   points(jitter(dat_out$day_FUP), dat_out$zscore,col='grey')
   lines(xx$day_FUP, xx$zscore,type='b',lwd=3,col='red')
   abline(v = xx$day_FUP[which.max(xx$zscore)],lty=2)
+  abline(h = 0,lty=2)
   title(paste(unique_contrast$intervention[j], unique_contrast$ref_arm[j], sep='\n'))
 }
