@@ -23,6 +23,8 @@ def Classify_Lineage(original):
     #BA.4 is BA.4
     #BA.5 is BA.5
     #BQ.1* is BQ.1
+    #XBB is all XBB except XBB.1.5
+    #XBB.1.5-like including XBB1.9*, XBB1.16*. XBB.2.3*, XBB.1.18.1.1* (aka FE.2)
     '''Take lineage names, expand, assign to WHO lineage'''
     try:
         uncompressed = aliasor.uncompress(original)
@@ -51,7 +53,7 @@ def Classify_Lineage(original):
         lineage = "BA.1"
     elif uncompressed.startswith("B.1.1.529.4"):
         lineage = "BA.4"
-    elif uncompressed.startswith("XBB.1.5") or uncompressed.startswith("XBB.1.9") or uncompressed.startswith("XBB.1.16") or uncompressed.startswith("XBL") or uncompressed.startswith("XBB.2.3"):
+    elif uncompressed.startswith("XBB.1.5") or uncompressed.startswith("XBB.1.9") or uncompressed.startswith("XBB.1.16") or uncompressed.startswith("XBL") or uncompressed.startswith("XBB.2.3") or uncompressed.startswith("XBB.1.18.1.1"):
         lineage = "XBB.1.5-like"
     elif uncompressed.startswith('XBB'):
         lineage = 'XBB'
