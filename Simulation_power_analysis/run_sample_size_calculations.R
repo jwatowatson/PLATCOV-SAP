@@ -5,15 +5,14 @@ print(paste0("job(i) = ", i)) # this will print out in the *.o file
 library(rstan)
 library(matrixStats)
 library(doParallel)
-rstan_options(auto_write = TRUE)
 source('sample_size_functions.R')
 source('priors.R')
 
 # use the linear model fits for simplicity
 load('Rout/model_fits1.RData')
-load('model_settings.RData')
+load('Rout/model_settings.RData')
 # get the individual slope estimates
-thetas = extract(out); rm(out)
+thetas = rstan::extract(out); rm(out)
 my_LOD = 1
 ncores = 4
 options(mc.cores = ncores)

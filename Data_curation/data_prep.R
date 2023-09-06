@@ -1009,6 +1009,17 @@ Res_Ensitrelvir =
 write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
+#************************* Nirmatrelvir+Molnupiravir Analysis *************************#
+#* Thailand, Brazil and Laos added 2023-05-29 
+
+Res_MolPax = 
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',"No study drug",'Nirmatrelvir + Ritonavir'),
+                 Country %in% c('Thailand','Laos','Brazil'), 
+                  Rand_date >= "2023-05-29 00:00:00" ) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/MolPax_combination_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
 #************************* Ineffective Interventions *************************#
 
 Res_ineffective = 

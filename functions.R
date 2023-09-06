@@ -580,13 +580,13 @@ make_slopes_plot = function(stan_out,
   return(data_summary)
 }
 
-get_itt_population = function(){
+get_itt_population = function(prefix_drop_rand){
   
   require(tidyverse)
   # TH58 and TH57 used envelopes so allocation is not recorded in the data-XXX.csv files
   
-  rand.TH58 <- read.csv(paste0(prefix_drop_rand, "/rand-TH58.csv"))[0:9, ]
-  rand.TH57 <- read.csv(paste0(prefix_drop_rand, "/rand-TH57.csv"))[0:10, ]
+  rand.TH58 <- read.csv(paste0(prefix_drop_rand, "rand-TH58.csv"))[0:9, ]
+  rand.TH57 <- read.csv(paste0(prefix_drop_rand, "rand-TH57.csv"))[0:10, ]
   rand.TH58$ID = paste('PLT-TH58-',rand.TH58$RandomisationID,sep='')
   rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
   
@@ -596,8 +596,6 @@ get_itt_population = function(){
     data_list[[i]] = read.csv(ff_names[i])
     data_list[[i]]$Date = as.POSIXct(data_list[[i]]$Date,format='%a %b %d %H:%M:%S %Y')
     my_prefix=gsub(x = strsplit(ff_names[i], split = 'data-')[[1]][2], pattern = '.csv',replacement = '')
-    print(my_prefix)
-    
     data_list[[i]]$ID = paste('PLT-', my_prefix, '-', data_list[[i]]$randomizationID, sep='')
     data_list[[i]] = data_list[[i]][, c('ID', 'Treatment')]
   }
@@ -631,7 +629,7 @@ get_trt_colors = function(){
       "Nitazoxanide",           
       "Fluoxetine",
       "Molnupiravir",
-      "Nirmatrelvir + Ritonavir",
+      "Nirmatrelvir+Molnupiravir",
       "Evusheld",
       'Ensitrelvir',
       "Nirmatrelvir")
@@ -641,7 +639,7 @@ get_trt_colors = function(){
   trt_cols['Evusheld'] = viridis::magma(n = 10)[1]
   trt_cols['Favipiravir'] = viridis::plasma(n = 100)[92]
   trt_cols['Ivermectin'] = viridis::plasma(n = 10)[4]
-  trt_cols['Nirmatrelvir + Ritonavir'] = viridis::plasma(n = 10)[1]
+  trt_cols['Nirmatrelvir+Molnupiravir'] = viridis::plasma(n = 10)[3]
   trt_cols['Nirmatrelvir'] = viridis::plasma(n = 10)[1]
   trt_cols['Regeneron'] = viridis::inferno(n = 10)[5]
   trt_cols['Molnupiravir'] = viridis::inferno(n = 10)[7]

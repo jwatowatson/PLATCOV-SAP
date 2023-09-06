@@ -37,51 +37,14 @@ source('functions.R')
 trt_colors = get_trt_colors()
 ```
 
-```{r set folder paths for each user}
-user <- 'james'#"Chang" # Change user here
-
-#1 Analysis_data folder
-if(user == "Chang"){
-  prefix_analysis_data <- "C:/Users/Phrutsamon/Dropbox/"
-}else{
-    prefix_analysis_data <- ""}
-
-#2 Dropbox folder (PLATCOV_Analysis)
-if(user == "Chang"){
-  prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
-}else{
-  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV"
-}
-
-#3 Downloads folder
-if(user == "Chang"){
-  prefix_downloads <- "PLATCOV-SAP"
-}else{
-  prefix_downloads <- "~"
-}
-
-#4 Dropbox folder for randomisation
-if(user == "Chang"){
-  prefix_drop_rand <- "C:/Users/Phrutsamon/Dropbox/PLATCOV" 
-}else{
-  prefix_drop_rand <- "~/Dropbox/PLATCOV"
-}
-
-#5 Data_curation folder
-if(user == "Chang"){
-  prefix_dat_cur <- "PLATCOV-SAP/Data_curation/" 
-}else{
-  prefix_dat_cur <- ""
-}
-
-```
+All paths are local
 
 ## *Load data*
 
 *Set up analysis*
 
 ```{r load_data}
-intervention = 'Ensitrelvir' # prefix of analysis file
+intervention = 'MolPax_combination' # prefix of analysis file
 ref_arm = 'Nirmatrelvir' #
 # study_threshold = 1.2 # depending on comparison with no study drug or positive control
 study_threshold = 0.9
@@ -90,11 +53,12 @@ study_threshold = 0.9
 ```{r define_population}
 #| echo: false
 # set as file with relevant dataset
-itt_population_all = get_itt_population()
+itt_population_all = get_itt_population('~/Dropbox/PLATCOV/')
 
-f_name = paste0(prefix_analysis_data, 'Analysis_Data/',intervention,'_analysis.csv')
+f_name = paste0('Analysis_Data/',intervention,'_analysis.csv')
 platcov_dat = read.csv(f_name)
 platcov_dat$Trt[platcov_dat$Trt=='Nirmatrelvir + Ritonavir']='Nirmatrelvir'
+platcov_dat$Trt[platcov_dat$Trt=='Nirmatrelvir + Ritonavir + Molnupiravir']='Nirmatrelvir+Molnupiravir'
 platcov_dat$Rand_date = as.POSIXct(platcov_dat$Rand_date)
 trt_intervention = unique(platcov_dat$Trt)
 
@@ -236,7 +200,7 @@ writeLines(sprintf('We are running all models with %s chains and %s samples for 
                    unique(model_settings$Nthin), 
                    unique(model_settings$Nchain*(model_settings$Niter-model_settings$Nwarmup)/model_settings$Nthin)))
 
-model_setup_f_name = paste0(prefix_analysis_data, 'Rout/model_run_setup_',intervention,'.RData')
+model_setup_f_name = paste0('Rout/model_run_setup_',intervention,'.RData')
 save(model_settings, 
      platcov_dat_analysis,
      stan_inputs, 
@@ -248,17 +212,17 @@ save(model_settings,
 
 ```{r brms_slopes}
 
-if(RUN_MODELS){
-  mod_naive = brm(log10_viral_load | cens(censor) ~ Time + (1+Time | ID),
-                  data = platcov_dat_analysis,
-                  prior = c(prior(lkj(2), class = "cor"),
-                            prior(normal(5, 5), class = Intercept),
-                            prior(constant(7), class = 'nu')),
-                  family = 'student', cores = 4, chains = 4)
-  save(mod_naive, file = paste0(prefix_analysis_data, 'Rout/naive_mod.RData'))
-} else {
-  load(paste0(prefix_analysis_data, 'Rout/naive_mod.RData'))
-}
+# if(RUN_MODELS){
+#   mod_naive = brm(log10_viral_load | cens(censor) ~ Time + (1+Time | ID),
+#                   data = platcov_dat_analysis,
+#                   prior = c(prior(lkj(2), class = "cor"),
+#                             prior(normal(5, 5), class = Intercept),
+#                             prior(constant(7), class = 'nu')),
+#                   family = 'student', cores = 4, chains = 4)
+#   save(mod_naive, file = paste0('Rout/naive_mod.RData'))
+# } else {
+#   load(paste0('Rout/naive_mod.RData'))
+# }
 # thetas = ranef(mod_naive, summary = F)
 # slopes_randef = apply(thetas$ID[,,'Time'], 2, quantile, probs=c(0.1, 0.5, 0.9))
 # slopes_dat = merge(data.frame(ID=colnames(slopes_randef),

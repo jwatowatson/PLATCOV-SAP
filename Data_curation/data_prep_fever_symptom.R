@@ -4,7 +4,7 @@ library(ggplot2)
 library(tidyverse)
 
 ##Define user folder path####################################################################
-user <- 'Chang'#"Chang" # Change here
+user <- 'James'#"Chang" # Change here
 
 #1 Analysis_data folder
 if(user == "Chang"){
