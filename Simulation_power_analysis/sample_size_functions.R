@@ -34,7 +34,7 @@ f_sim = function(t_design, # design sampling times for PCR swabs
 sim_individuals = function(thetas, # posterior distribution: a stan object
                            t_design, # design points for the swabs
                            N, # total number of patients
-                           #trt_effects, # effects for each arm
+                           trt_effect, # effects for each arm
                            Trt_arm, # vector of length N with treatment arms for each patient
                            LOD = 1, # lower limit of detection for censoring
                            f_sim
@@ -46,7 +46,9 @@ sim_individuals = function(thetas, # posterior distribution: a stan object
   K=length(thetas$t_dof) # number of posterior samples in model fit
   post_i = sample(x = K, size = 1) # choose a random posterior draw on which to base simulation
   
-  trt_effects <- exp(c(0, thetas$trt_effect[post_i]))
+  #trt_effects <- exp(c(0, thetas$trt_effect[post_i]))
+  trt_effects <- c(1, trt_effect)
+  
   
   # make the variance/covariance matrix for the random effects
   L = diag(x = unlist(thetas$sigmasq_u[post_i,]),nrow = 2,ncol = 2)%*%thetas$L_Omega[post_i,,]

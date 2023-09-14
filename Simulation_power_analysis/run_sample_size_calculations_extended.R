@@ -53,6 +53,7 @@ sim_vl = sim_individuals(thetas = thetas,
                          N = sim_settings$N[job_i]*2,
                          Trt_arm = c(rep(1, sim_settings$N[job_i]), 
                                      rep(2,sim_settings$N[job_i])),
+                         trt_effect = sim_settings$trt_effects[job_i],
                          LOD = my_LOD,
                          f_sim = f_sim)
 
