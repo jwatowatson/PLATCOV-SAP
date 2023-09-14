@@ -1,6 +1,6 @@
 args = commandArgs(trailingOnly = FALSE) # comes from the SGE_TASKID in *.sh file
-i = as.numeric(args[6])
-print(paste0("job(i) = ", i)) # this will print out in the *.o file
+job_i = as.numeric(args[6])
+print(paste0("job(i) = ", job_i)) # this will print out in the *.o file
 
 library(rstan)
 library(matrixStats)
@@ -23,9 +23,11 @@ options(mc.cores = ncores)
 Ns = c(25,50,75,100)
 Nsims = 50
 
-day_plans <- c("1,2,3,4,5,6,7", "1,2,3,4,5,6", "1,2,3,4,5", "1,2,3,4", "1,2,3", "1,2",
-               "1,3,5,7", "1,4,7", "1,7", "1,3,5", "1,5")
-
+day_plans <- c(paste(as.character(0:6),collapse = ','), 
+               paste(as.character(c(0,2,4,6)),collapse = ','), 
+               paste(as.character(c(0,3,6)),collapse = ','), 
+               paste(as.character(c(0,6)),collapse = ',')) 
+               
 N_swabs_per_day <- c(2,4)
 
 sim_settings = expand.grid(intervention = model_settings$intervention,
@@ -33,23 +35,24 @@ sim_settings = expand.grid(intervention = model_settings$intervention,
                            N=Ns,
                            sim_k = 1:Nsims,
                            day_plans = day_plans,
-                           N_swabs_per_day = N_swabs_per_day)
+                           N_swabs_per_day = N_swabs_per_day,
+                           trt_effects = c(0.8, 1, 1.2, 1.4, 1.6))
 
 save(sim_settings, file = 'sim_settings_extended.RData')
 
-### set up simulation for the settings i
-print(sim_settings[i, ])
+### set up simulation for the settings job_i
+print(sim_settings[job_i, ])
 
-day_sampling <- as.numeric(unlist(str_split(sim_settings$day_plans[i], ",")))
+day_sampling <- as.numeric(unlist(str_split(sim_settings$day_plans[job_i], ",")))
 
-t_design <- sort(c(rep(0,4), rep(day_sampling,sim_settings$N_swabs_per_day[i])))
+t_design <- sort(rep(day_sampling,sim_settings$N_swabs_per_day[job_i]))
 
 # simulate data
 sim_vl = sim_individuals(thetas = thetas,
                          t_design = t_design,
-                         N = sim_settings$N[i]*2,
-                         Trt_arm = c(rep(1, sim_settings$N[i]), 
-                                     rep(2,sim_settings$N[i])),
+                         N = sim_settings$N[job_i]*2,
+                         Trt_arm = c(rep(1, sim_settings$N[job_i]), 
+                                     rep(2,sim_settings$N[job_i])),
                          LOD = my_LOD,
                          f_sim = f_sim)
 
@@ -76,6 +79,6 @@ stan_out = sampling(mod,
 
 out_trt_effect = as.data.frame(rstan::extract(stan_out, pars='trt_effect'))
 
-f_name = paste0('sims_out/sim_out_extended_',i,'.csv')
+f_name = paste0('sims_out/sim_out_extended_',job_i,'.csv')
 print(f_name)
 write.csv(out_trt_effect, file = f_name,row.names = F)
