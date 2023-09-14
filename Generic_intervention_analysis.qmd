@@ -28,7 +28,7 @@ sessionInfo()
 
 rstan_options(auto_write = TRUE)
 ## parameters for the analysis
-Dmax = 8
+Dmax = 5.5
 RUN_MODELS = F
 add_epoch = T # if using non-concurrent controls
 
@@ -39,12 +39,14 @@ trt_colors = get_trt_colors()
 
 All paths are local
 
-## *Load data*
+## Load data
 
-*Set up analysis*
+Set up analysis
 
 ```{r load_data}
-intervention = 'MolPax_combination' # prefix of analysis file
+#intervention = 'MolPax_combination' # prefix of analysis file
+intervention = 'ensitrelvir' # prefix of analysis file
+
 ref_arm = 'Nirmatrelvir' #
 # study_threshold = 1.2 # depending on comparison with no study drug or positive control
 study_threshold = 0.9
@@ -74,7 +76,7 @@ if(length(trt_intervention)==0) stop('no interventions!')
 trts = trt_intervention[trt_intervention!=ref_arm] # get interventions
 ```
 
-## *Make modified intention to treat population*
+## Make modified intention to treat population
 
 ```{r make_analysis_data}
 #| echo: false
@@ -87,12 +89,13 @@ pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
 ```
 
-## *Baseline characteristics*
+## Baseline characteristics
 
 ```{r}
 #| echo: false
 platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
-  mutate(daily_VL = mean(log10_viral_load)) %>% 
+  mutate(daily_VL = mean(log10_viral_load),
+         daily_CT = mean(CT_NS)) %>% 
   ungroup() %>%
   mutate(Sex = as.factor(ifelse(Sex==1,'Male','Female')),
          Site = as.factor(Site),
@@ -110,7 +113,8 @@ platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
 Baseline_data = platcov_dat %>% ungroup() %>% 
   filter(Timepoint_ID==0) %>% 
   distinct(ID, .keep_all = T) %>%
-  mutate(Baseline.viral.load = daily_VL)
+  mutate(Baseline.viral.load = daily_VL,
+         Baseline.CT = daily_CT)
 
 tab.ff <- Baseline_data %>% filter(mITT) %>%
   summary_factorlist(
@@ -134,7 +138,7 @@ tab.ff
 # save_kable(tab.ff,file = 'Baseline_characteristics.png')
 ```
 
-## *Fit models*
+## Fit models
 
 ```{r}
 #| echo: false
@@ -143,7 +147,7 @@ source('priors.R')
 # Analysis data
 platcov_dat_analysis = 
   platcov_dat %>% ungroup() %>%
-  filter(Time <= Dmax, mITT) %>%
+  filter(Time <= Dmax, mITT, Timepoint_ID < ceiling(Dmax)) %>%
   arrange(log10_viral_load==log10_cens_vl) %>%
   mutate(Variant = as.factor(Variant),
          Epoch = paste(month(Rand_date), year(Rand_date), sep = '_'),
@@ -260,7 +264,7 @@ if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all mo
 ff = paste0('Rout/',ff)
 ```
 
-*main model selection*
+main model selection
 
 ```{r}
 main_mod = which(model_settings$prior==1&
@@ -314,46 +318,46 @@ slope_out=make_slopes_plot(stan_out = out,
                     analysis_data_stan = stan_inputs$analysis_data_stan,
                     ID_map = stan_inputs$ID_map,
                     data_summary = Baseline_data,
-                    my_lims = c(2,50),
-                    my_vals = c(5,15,25,35,45))
+                    my_lims = c(2,30),
+                    my_vals = c(5,10, 15,20,30))
 
-sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
-sero_dat = merge(slope_out, sero_dat, by='ID', all=F)
-
-sero_dat = sero_dat %>% 
-  filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
-  mutate(Day = ifelse(Day<=7, Day, 14),
-         Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
-  group_by(ID, Day) %>%
-  mutate(Delta_IgG = log10_IgG-Baseline_IgG)
-
-par(mfrow=c(3,2))
-for(dd in sort(unique(sero_dat$Day))){
-  sero_dat_dd = sero_dat%>%filter(Day==dd)
-  plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope',
-       ylab='log IgG', main= paste('Day',dd), panel.first=grid(),
-       ylim = range(sero_dat$log10_IgG))
-  cor.test(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG)
-  mod=lm(log10_IgG~slope_median, data= sero_dat_dd)
-  abline(mod, col='red',lwd=3)
-  print(summary(mod))
-  if(dd>0){
-    plot(sero_dat_dd$slope_median, sero_dat_dd$Delta_IgG, xlab='slope',
-       ylab='Delta IgG', main= paste('Day',dd), panel.first=grid(),
-       ylim = range(sero_dat$Delta_IgG,na.rm=T))
-  }
-}
-
-
-sero_wide = 
-  sero_dat %>% pivot_wider(names_from = Day, 
-                                     values_from = c(log10_IgG,Delta_IgG),
-                                     values_fill = NA,
-                                     values_fn = mean)
-
-par(mfrow=c(2,2))
-sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)
-plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
+# sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
+# sero_dat = merge(slope_out, sero_dat, by='ID', all=F)
+# 
+# sero_dat = sero_dat %>% 
+#   filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
+#   mutate(Day = ifelse(Day<=7, Day, 14),
+#          Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
+#   group_by(ID, Day) %>%
+#   mutate(Delta_IgG = log10_IgG-Baseline_IgG)
+# 
+# par(mfrow=c(3,2))
+# for(dd in sort(unique(sero_dat$Day))){
+#   sero_dat_dd = sero_dat%>%filter(Day==dd)
+#   plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope',
+#        ylab='log IgG', main= paste('Day',dd), panel.first=grid(),
+#        ylim = range(sero_dat$log10_IgG))
+#   cor.test(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG)
+#   mod=lm(log10_IgG~slope_median, data= sero_dat_dd)
+#   abline(mod, col='red',lwd=3)
+#   print(summary(mod))
+#   if(dd>0){
+#     plot(sero_dat_dd$slope_median, sero_dat_dd$Delta_IgG, xlab='slope',
+#        ylab='Delta IgG', main= paste('Day',dd), panel.first=grid(),
+#        ylim = range(sero_dat$Delta_IgG,na.rm=T))
+#   }
+# }
+# 
+# 
+# sero_wide = 
+#   sero_dat %>% pivot_wider(names_from = Day, 
+#                                      values_from = c(log10_IgG,Delta_IgG),
+#                                      values_fill = NA,
+#                                      values_fn = mean)
+# 
+# par(mfrow=c(2,2))
+# sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)
+# plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
 ```
 
 ```{r coef_plot}
@@ -366,14 +370,15 @@ par(las=1, mfrow=c(1,2), mar=c(5,7,2,2))
 plot_coef_effects(stan_out = out,cov_mat = coef_to_plot,stan_inputs = stan_inputs)
 ```
 
-## *Individual patient data*
+## Individual patient data
 
 ```{r}
 
-IDS_slow = which(slope_out$t_12_med>17 & slope_out$Trt=='Ensitrelvir')
-slope_out$ID[IDS_slow]
-par(mfrow=c(2,2))
-plot_individ_curves(platcov_dat = platcov_dat, IDs = slope_out$ID[IDS_slow],xlims = c(0,14))
+IDS_slow = slope_out$ID[which(slope_out$t_12_med>13 & slope_out$Trt=='Ensitrelvir')]
+# slope_out$ID[IDS_slow]
+par(mfrow=c(3,3),las=1, mar=c(4,5,2,2))
+plot_individ_curves(platcov_dat = platcov_dat, IDs = IDS_slow,
+                    xlims = c(0,14))
 # model_list = list()
 # for(i in 1:length(ff)){
 #   load(ff[i])

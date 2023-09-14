@@ -31,10 +31,13 @@ summary(conv_mod)
 
 preds = predict(conv_mod)
 par(las=1,cex.lab=1.3, cex.axis=1.3,family='serif')
-my_cols = adjustcolor(c('lightgrey','pink'),.7)
+my_cols = adjustcolor(c('lightgrey','pink','lightgreen'),.2)
+my_cols[2]='red'
+control_dat$Lab_col = my_cols[as.numeric(as.factor(control_dat$Lab))]
 plot(control_dat$CT, jitter(control_dat$log10_true_density), xlim=c(20,40),
-     col = my_cols[as.numeric(control_dat$Lab=='Brazil')+1],
-     xlab = 'CT value', ylab = 'Control density', panel.first=grid(), yaxt='n')
+     col = control_dat$Lab_col,
+     xlab = 'CT value', ylab = 'Control density', 
+     panel.first=grid(), yaxt='n')
 axis(2, at =2:7, labels = c(expression(10^2),
                             expression(10^3),
                             expression(10^4),
@@ -44,12 +47,14 @@ axis(2, at =2:7, labels = c(expression(10^2),
 for(bb in levels(control_dat$batch)){
   ind = control_dat$batch==bb
   lines(control_dat$CT[ind], preds[ind], 
-        col= my_cols[as.numeric(control_dat$Lab[ind]=='Brazil')+1])
+        col= control_dat$Lab_col[ind])
 }
 lines(20:40, predict(conv_mod, re.form=NA,data.frame(CT=20:40,Lab='Thailand',batch= -1)),
-      lwd=3,col='brown')
+      lwd=3,col='darkgreen')
 lines(20:40, predict(conv_mod, re.form=NA,data.frame(CT=20:40,Lab='Brazil',batch= -1)),
-      lwd=3,col='purple')
+      lwd=3,col='black')
+lines(20:40, predict(conv_mod, re.form=NA,data.frame(CT=20:40,Lab='Laos',batch= -1)),
+      lwd=3,col='red')
 
 legend('topright', col=my_cols, legend = c('Thailand','Brazil'),
        cex=2,lwd=3,inset=0.03)

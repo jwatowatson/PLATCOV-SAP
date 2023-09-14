@@ -6,7 +6,7 @@ library(rstan)
 library(matrixStats)
 library(doParallel)
 source('sample_size_functions.R')
-source('priors.R')
+source('../priors.R')
 
 # use the linear model fits for simplicity
 load('Rout/model_fits1.RData')
@@ -27,9 +27,9 @@ N_swabs_per_day <- c(2,4)
 sim_settings = expand.grid(intervention = model_settings$intervention,
                            ref_arm = model_settings$ref_arm,
                            N=Ns,
-                          sim_k = 1:Nsims,
-                          N_days = N_days,
-                          N_swabs_per_day = N_swabs_per_day)
+                           sim_k = 1:Nsims,
+                           N_days = N_days,
+                           N_swabs_per_day = N_swabs_per_day)
 
 save(sim_settings, file = 'sim_settings.RData')
 
@@ -55,7 +55,7 @@ analysis_data=make_stan_inputs(input_data_fit = sim_vl,
                                Dmax = sim_settings$N_days[i]+1)
 
 # fit model to simulated data
-mod = stan_model(file = 'Linear_model_basic.stan') # compile
+mod = stan_model(file = '../Stan_models/Linear_model_basic.stan') # compile
 stan_out = sampling(mod,
                     data=c(analysis_data,
                            all_priors[['WIP']]),

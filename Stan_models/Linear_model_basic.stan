@@ -1,4 +1,9 @@
-
+//   Copyright 2022 James Watson and Phrutsamon Wongnak, Mahidol Oxford Tropical Medicine Research Unit
+//
+//   Licensed under a CC-BY License
+/**
+Model 0 used for the simulation studies with no covariate adjustment and no RNaseP
+**/
 
 
 

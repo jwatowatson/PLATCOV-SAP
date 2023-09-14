@@ -55,6 +55,7 @@ fever_data = fever_data %>% distinct(Label, .keep_all = T)
 # --- Clinical data (symptom onsets) ---
 clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
 clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
+clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
 # --- Final status (completed the trials?) ---
 final_status = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFinalStatus.dta"))
 final_status = final_status[!is.na(final_status$fs_compyn), ]
@@ -115,7 +116,8 @@ rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-PK01.csv"))) %>%
   filter(!is.na(Treatment))
 
-rand_app_data$ID = paste0('PLT-', rand_app_data$site,'-',
+rand_app_data$ID = paste0('PLT-', gsub(x = rand_app_data$site,pattern = '0',replacement = ''),
+                          '-',
                           stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
 rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3','LA08','PK01'),to=c('th001','br003',"la008","pk001"))
 
@@ -365,9 +367,14 @@ for(i in 1:length(fnames)){
   if(length(grep(pattern = 'Brazil', x = fnames[i], ignore.case = F))>0){
     temp$`Lot no.` = apply(temp[, 'Lot no.', drop=F], 1, function(x) paste('Brazil',x,sep='_'))
   }
-  
   if(length(grep(pattern = 'Thailand', x = fnames[i], ignore.case = F))>0){
     temp$`Lot no.` = apply(temp[, 'Lot no.', drop=F], 1, function(x) paste('Thailand',x,sep='_'))
+  }
+  if(length(grep(pattern = 'Laos', x = fnames[i], ignore.case = F))>0){
+    temp$`Lot no.` = apply(temp[, 'Lot no.', drop=F], 1, function(x) paste('Laos',x,sep='_'))
+  }
+  if(length(grep(pattern = 'Pakistan', x = fnames[i], ignore.case = F))>0){
+    temp$`Lot no.` = apply(temp[, 'Lot no.', drop=F], 1, function(x) paste('Pakistan',x,sep='_'))
   }
   if(i==1){
     Res=temp
@@ -393,8 +400,10 @@ Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot2']="Thailand_D10 Lot 2"
 
 # make the plate/lab variables
 Res$Lab = NA
-Res$Lab[grep(pattern = 'Thailand',x = Res$`Lot no.`)]='Thailand'
-Res$Lab[grep(pattern = 'Brazil',x = Res$`Lot no.`)]='Brazil'
+Res$Lab[grep(pattern = 'Thailand',x = Res$`Lot no.`, ignore.case = T)]='Thailand'
+Res$Lab[grep(pattern = 'Brazil',x = Res$`Lot no.`, ignore.case = T)]='Brazil'
+Res$Lab[grep(pattern = 'Lao',x = Res$`Lot no.`, ignore.case = T)]='Laos'
+Res$Lab[grep(pattern = 'Paki',x = Res$`Lot no.`, ignore.case = T)]='Pakistan'
 
 Res$`Lot no.` = tolower(Res$`Lot no.`)
 sort(unique(Res$`Lot no.`))

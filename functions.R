@@ -535,7 +535,8 @@ make_slopes_plot = function(stan_out,
                             ID_map, 
                             data_summary,
                             my_lims = c(5, 72), # hours
-                            my_vals = c(7,24,48,72)){
+                            my_vals = c(7,24,48,72),
+                            qq_show = 0.5){
   
   slopes = rstan::extract(stan_out, pars='slope')$slope
   
@@ -571,7 +572,8 @@ make_slopes_plot = function(stan_out,
                        round(median(data_summary$t_12_med[ind]),1),
                        round(min(data_summary$t_12_med[ind]),1),
                        round(max(data_summary$t_12_med[ind]),1)))
-    abline(v = median(data_summary$t_12_med[ind]), col=data_summary$trt_color[kk],lty=2,lwd=2)
+    abline(v = quantile(data_summary$t_12_med[ind], probs=qq_show), 
+           col=data_summary$trt_color[kk],lty=2,lwd=2)
   }
   
   legend('bottomright', legend = unique(data_summary$Trt),
@@ -595,7 +597,7 @@ get_itt_population = function(prefix_drop_rand){
   for(i in 1:length(ff_names)){
     data_list[[i]] = read.csv(ff_names[i])
     data_list[[i]]$Date = as.POSIXct(data_list[[i]]$Date,format='%a %b %d %H:%M:%S %Y')
-    my_prefix=gsub(x = strsplit(ff_names[i], split = 'data-')[[1]][2], pattern = '.csv',replacement = '')
+    my_prefix=gsub(x = gsub(x = strsplit(ff_names[i], split = 'data-')[[1]][2], pattern = '.csv',replacement = ''),pattern = '0',replacement = '')
     data_list[[i]]$ID = paste('PLT-', my_prefix, '-', data_list[[i]]$randomizationID, sep='')
     data_list[[i]] = data_list[[i]][, c('ID', 'Treatment')]
   }
