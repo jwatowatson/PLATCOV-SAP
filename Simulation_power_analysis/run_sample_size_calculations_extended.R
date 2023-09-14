@@ -7,7 +7,7 @@ library(matrixStats)
 library(doParallel)
 library(stringr)
 source('sample_size_functions.R')
-source('priors.R')
+source('../priors.R')
 
 # use the linear model fits for simplicity
 load('Rout/model_fits1.RData')
@@ -23,7 +23,8 @@ options(mc.cores = ncores)
 Ns = c(25,50,75,100)
 Nsims = 50
 
-day_plans <- c("1,2,3,4,5,6,7", "1,3,5,7", "1,4,7", "1,7", "1,3,5", "1,5")
+day_plans <- c("1,2,3,4,5,6,7", "1,2,3,4,5,6", "1,2,3,4,5", "1,2,3,4", "1,2,3", "1,2",
+               "1,3,5,7", "1,4,7", "1,7", "1,3,5", "1,5")
 
 N_swabs_per_day <- c(2,4)
 
@@ -61,14 +62,14 @@ analysis_data=make_stan_inputs(input_data_fit = sim_vl,
                                Dmax = max(t_design)+1)
 
 # fit model to simulated data
-mod = stan_model(file = 'Linear_model_basic.stan') # compile
+mod = stan_model(file = '../Stan_models/Linear_model_basic.stan') # compile
 stan_out = sampling(mod,
                     data=c(analysis_data,
                            all_priors[['WIP']]),
-                    iter=2000,
-                    chain=4,
-                    thin=4,
-                    warmup=1000,
+                    iter=model_settings$Niter, #4000
+                    chain=model_settings$Nchain, #4
+                    thin=model_settings$Nthin, #8
+                    warmup=model_settings$Nwarmup, #2000
                     save_warmup = FALSE,
                     pars=c('trt_effect'),
                     include=T, verbose=F)
