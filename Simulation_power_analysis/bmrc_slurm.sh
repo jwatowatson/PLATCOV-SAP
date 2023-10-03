@@ -7,7 +7,7 @@
 #SBATCH -o /well/moru-batty/users/gka292/PLATCOV-SAP/Simulation_power_analysis/o_and_e_files/output.o%A_%a.out
 #SBATCH -e /well/moru-batty/users/gka292/PLATCOV-SAP/Simulation_power_analysis/o_and_e_files/output.e%A_%a.out
 #SBATCH -p short
-#SBATCH --array 1-2000
+#SBATCH --array 1-10000
 
 
 echo started=`date`
