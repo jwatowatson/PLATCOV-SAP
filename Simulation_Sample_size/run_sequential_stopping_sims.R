@@ -12,15 +12,14 @@ source('sample_size_functions.R')
 source('priors.R')
 
 # use the linear model fits for simplicity
-load('Rout/linear_fit.RData')
+load('Rout/model_fits1.RData')
 # get the individual slope estimates
-thetas = extract(out); rm(out)
+thetas = rstan::extract(out); rm(out)
 my_LOD = 1
 ncores = 4
 options(mc.cores = ncores)
 
-
-load('sequential_sim_params.RData')
+load('Rout/sequential_sim_params.RData')
 if(i > nrow(sim_settings)){ stop() }
 
 trt_effects = c(sim_settings$Trt_effect_neg_control[i],
@@ -29,8 +28,12 @@ trt_effects = c(sim_settings$Trt_effect_neg_control[i],
 Trt_vector = c(rep(1, sim_settings$Nmin[i]),
                rep(2, sim_settings$Nmin[i]),
                rep(3, sim_settings$Nmin[i]))
+
+day_sampling <- as.numeric(unlist(str_split(sim_settings$day_plans[i], ",")))
+t_design <- sort(rep(day_sampling,sim_settings$N_swabs_per_day[i]))
+
 current_data = sim_individuals(thetas = thetas,
-                               t_design = rep(0:7,2),
+                               t_design = t_design,
                                N = length(Trt_vector),
                                trt_effects = trt_effects,
                                Trt_arm = Trt_vector,
@@ -84,6 +87,9 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
       writeLines(sprintf('Futility with %s patients per group!',Ncurrent))
       N_futility_success=Ncurrent
     }
+    
+    trt_effs <- quantile(extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.025, 0.1, 0.5, 0.9, 0.975))
+    
   }
 
   # comparison with positive control arm
@@ -134,7 +140,7 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
                    rep(2, sim_settings$Nseq[i]),
                    rep(3, sim_settings$Nseq[i]))
     next_data = sim_individuals(thetas = thetas,
-                                t_design = rep(0:7,2),
+                                t_design = t_design,
                                 N = length(Trt_vector),
                                 trt_effects = trt_effects,
                                 Trt_arm = Trt_vector,
@@ -147,10 +153,11 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
 
 out_sim = data.frame(t(unlist(c(sim_settings[i,,drop=F], stop_trial,
                                 futility, success, non_inferiority, inferiority,
-                                N_futility_success,N_inferiority, N_non_inferiority))))
+                                N_futility_success,N_inferiority, N_non_inferiority))), trt_effs)
 colnames(out_sim) = c(colnames(sim_settings),
                       'stop_trial',
                       'futility', 'success', 'non_inferiority', 'inferiority',
-                      'N_futility_success', 'N_inferiority', 'N_non_inferiority')
+                      'N_futility_success', 'N_inferiority', 'N_non_inferiority', 
+                      'trt_l95', "trt_l90", "trt_med", "trt_u90", "trt_u95")
 
-write.csv(x = out_sim, file = paste0('Rout/sim_sequential_',i,'.csv'),row.names = F)
+write.csv(x = out_sim, file = paste0('Sim_out/sim_sequential_',i,'.csv'),row.names = F)
