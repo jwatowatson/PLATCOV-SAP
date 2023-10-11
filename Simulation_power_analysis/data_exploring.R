@@ -38,6 +38,14 @@ G2 <- ggplot() +
   scale_x_discrete(drop=F) +
   xlab("") +
   ylab("Log viral loads") + 
-  theme(axis.title  = element_text(face = "bold"))
-G2 
+  theme(axis.title  = element_text(face = "bold"),
+        plot.title = element_text(face = "bold")) +
+  ggtitle(paste0(intervention, " vs ", ref_arm)) +
+  annotate("text", x = 4.5, y = 8, label = paste(intervention,':', length(unique(dataplot$ID[dataplot$Trt == intervention])), "patients", sep = " "), hjust = 0) +
+  annotate("text", x = 4.5, y = 7.5, label = paste(ref_arm,':', length(unique(dataplot$ID[dataplot$Trt == ref_arm])), "patients", sep = " "), hjust = 0)    
 
+G2    
+############################################################################
+png(paste0("plots/observed_data_", gsub(" \\+.*", "", intervention),"_", gsub(" \\+.*", "", ref_arm), ".png"), width = 9, height = 6, units = "in", res = 350)
+G2
+dev.off()

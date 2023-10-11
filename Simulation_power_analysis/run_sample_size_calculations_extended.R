@@ -48,6 +48,7 @@ day_sampling <- as.numeric(unlist(str_split(sim_settings$day_plans[job_i], ","))
 t_design <- sort(rep(day_sampling,sim_settings$N_swabs_per_day[job_i]))
 
 # simulate data
+set.seed(job_i)
 sim_vl = sim_individuals(thetas = thetas,
                          t_design = t_design,
                          N = sim_settings$N[job_i]*2,
@@ -83,3 +84,5 @@ out_trt_effect = as.data.frame(rstan::extract(stan_out, pars='trt_effect'))
 f_name = paste0('sims_out/sim_out_extended_',job_i,'.csv')
 print(f_name)
 write.csv(out_trt_effect, file = f_name,row.names = F)
+
+write.csv(sim_vl, file = paste0('sims_out/sim_data_extended_',job_i,'.csv'),row.names = F)
