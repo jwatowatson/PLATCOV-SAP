@@ -15,7 +15,7 @@ user <- 'james'#"Chang" # Change here
 if(user == "Chang"){
   prefix_analysis_data <- "D:/PLATCOV-SAP"
 }else{
-    prefix_analysis_data <- ".."}
+  prefix_analysis_data <- ".."}
 
 #2 Dropbox folder (PLATCOV_Analysis)
 if(user == "Chang"){
@@ -255,8 +255,8 @@ trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRes
 source(paste0(prefix_dat_cur, "get_nanopore_data.R"))
 variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
-ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
-  geom_density(position = "fill")
+# ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
+#  geom_density(position = "fill")
 
 ##******************** Vaccine database *******************
 ##*********************************************************
@@ -397,6 +397,11 @@ Res = Res[!ind_rm, ]
 sort(unique(Res$`Lot no.`))
 Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot1']="Thailand_D10 Lot 1"
 Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot2']="Thailand_D10 Lot 2"
+
+
+## 
+Res$`SUBJECT ID` = gsub(pattern = '_', replacement = '-', x = Res$`SUBJECT ID`,fixed = T)
+Res$`SUBJECT ID` = gsub(pattern = 'PK01', replacement = 'PK1', x = Res$`SUBJECT ID`,fixed = T)
 
 # make the plate/lab variables
 Res$Lab = NA
@@ -782,7 +787,8 @@ Res =
   Res %>% filter(Swab_ID != 'Saliva') %>% # remove the saliva samples
   mutate(Country= case_when(Site %in% c('th001','th057','th058') ~ 'Thailand',
                             Site == 'br003' ~ 'Brazil',
-                            Site == 'la008' ~ 'Laos'))
+                            Site == 'la008' ~ 'Laos',
+                            Site == 'pk001' ~ 'Pakistan'))
 
 fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 fever_data = fever_data %>% 
@@ -824,32 +830,32 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')
 
 #************************* Remdesivir Analysis *************************#
 #* Thailand and Brazil
-Res_Remdesivir =
-  Res %>% filter(Trt %in% c('Remdesivir',"No study drug"),
-                 Rand_date < '2022-06-11',
-                 Country %in% c('Thailand','Brazil')) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_Remdesivir, file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_analysis.csv"), row.names = F, sep=',',quote = F)
-
-
-fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
-fever_data = fever_data %>% 
-  filter(Label %in% unique(Res_Remdesivir$ID)) %>%
-  mutate(ID = Label,
-         ax_temperature = fut_temp)
-write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_fever.csv"), 
-            row.names = F, sep=',', quote = F)
-
-
-symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
-symptom_data = symptom_data %>% 
-  filter(Label %in% unique(Res_Remdesivir$ID)) %>%
-  mutate(ID = Label,
-         Any_symptom = sq_yn)
-write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_symptoms.csv"), 
-            row.names = F, sep=',', quote = F)
+# Res_Remdesivir =
+#   Res %>% filter(Trt %in% c('Remdesivir',"No study drug"),
+#                  Rand_date < '2022-06-11',
+#                  Country %in% c('Thailand','Brazil')) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_Remdesivir, file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_analysis.csv"), row.names = F, sep=',',quote = F)
+# 
+# 
+# fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
+# fever_data = fever_data %>% 
+#   filter(Label %in% unique(Res_Remdesivir$ID)) %>%
+#   mutate(ID = Label,
+#          ax_temperature = fut_temp)
+# write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_fever.csv"), 
+#             row.names = F, sep=',', quote = F)
+# 
+# 
+# symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
+# symptom_data = symptom_data %>% 
+#   filter(Label %in% unique(Res_Remdesivir$ID)) %>%
+#   mutate(ID = Label,
+#          Any_symptom = sq_yn)
+# write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Remdesivir_symptoms.csv"), 
+#             row.names = F, sep=',', quote = F)
 
 
 #************************* Favipiravir Analysis *************************#
@@ -1024,7 +1030,7 @@ write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_
 Res_MolPax = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',"No study drug",'Nirmatrelvir + Ritonavir'),
                  Country %in% c('Thailand','Laos','Brazil'), 
-                  Rand_date >= "2023-05-29 00:00:00" ) %>%
+                 Rand_date >= "2023-05-29 00:00:00" ) %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/MolPax_combination_analysis.csv"), row.names = F, sep=',', quote = F)
 
