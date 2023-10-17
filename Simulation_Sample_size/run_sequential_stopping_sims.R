@@ -7,6 +7,7 @@ print(paste0("job(i) = ", i)) # this will print out in the *.o file
 library(rstan)
 library(matrixStats)
 library(doParallel)
+library(stringr)
 rstan_options(auto_write = TRUE)
 source('sample_size_functions.R')
 source('priors.R')
@@ -72,7 +73,7 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
                         save_warmup = FALSE,
                         pars=c('trt_effect'),
                         include=T, verbose=F, refresh= 0)
-    trt_bounds=quantile(extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.1, 0.9))
+    trt_bounds=quantile(rstan::extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.1, 0.9))
     writeLines(sprintf('Trt effect relative to negative control estimated between %s%% and %s%%',
                        round(100*(exp(trt_bounds[1])-1),1),
                        round(100*(exp(trt_bounds[2])-1),1)))
@@ -88,12 +89,12 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
       N_futility_success=Ncurrent
     }
     
-    trt_effs <- quantile(extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.025, 0.1, 0.5, 0.9, 0.975))
+    trt_effs <- quantile(rstan::extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.025, 0.1, 0.5, 0.9, 0.975))
     
   }
 
   # comparison with positive control arm
-  if(success & !non_inferiority & Ncurrent>=sim_settings$Nmin_NI){
+  if(success & !non_inferiority & Ncurrent>=sim_settings$Nmin_NI[i]){
     writeLines(sprintf('Running comparison with positive control with %s patients per group...',Ncurrent))
 
     ind = current_data$Trt_arm %in% c(2,3)
@@ -115,7 +116,7 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
                         save_warmup = FALSE,
                         pars=c('trt_effect'),
                         include=T, verbose=F, refresh= 0)
-    trt_bounds=quantile(extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.1, 0.9))
+    trt_bounds=quantile(rstan::extract(stan_out, pars='trt_effect')$trt_effect, probs = c(0.1, 0.9))
     writeLines(sprintf('Trt effect relative to positive control estimated between %s%% and %s%%',
                        round(100*(exp(trt_bounds[1])-1),1),
                        round(100*(exp(trt_bounds[2])-1),1)))
@@ -153,11 +154,11 @@ while( !stop_trial & Ncurrent<=sim_settings$Nmax[i]){
 
 out_sim = data.frame(t(unlist(c(sim_settings[i,,drop=F], stop_trial,
                                 futility, success, non_inferiority, inferiority,
-                                N_futility_success,N_inferiority, N_non_inferiority))), trt_effs)
+                                N_futility_success,N_inferiority, N_non_inferiority))), t(trt_effs))
 colnames(out_sim) = c(colnames(sim_settings),
                       'stop_trial',
                       'futility', 'success', 'non_inferiority', 'inferiority',
                       'N_futility_success', 'N_inferiority', 'N_non_inferiority', 
                       'trt_l95', "trt_l90", "trt_med", "trt_u90", "trt_u95")
 
-write.csv(x = out_sim, file = paste0('Sim_out/sim_sequential_',i,'.csv'),row.names = F)
+write.csv(x = out_sim, file = paste0('Sim_out/sim_sequential_',i+2000,'.csv'),row.names = F)
