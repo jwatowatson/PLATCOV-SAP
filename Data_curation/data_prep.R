@@ -623,9 +623,10 @@ for(i in 1:nrow(Res)){
   } else {
     if(Res$Time[i] < -.1 &
        !(Res$Site[i] %in% c('th057', 'th058'))){
-      writeLines(sprintf('Negative sample time for patient %s at timepoint %s: %s days',
+      writeLines(sprintf('Negative sample time for patient %s at timepoint %s: %s days, BARCODE is %s',
                          id,Res$Timepoint_ID[i],
-                         round(Res$Time[i],1)))
+                         round(Res$Time[i],1),
+                         barcode_i))
     }
   }
   

@@ -44,12 +44,12 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-intervention = 'interim_all' # prefix of analysis file
+# intervention = 'interim_all' # prefix of analysis file
 #intervention = 'MolPax_combination' # prefix of analysis file
-#intervention = 'ensitrelvir' # prefix of analysis file
+intervention = 'ensitrelvir' # prefix of analysis file
 
-ref_arm = 'No study drug' #
-#ref_arm = 'Nirmatrelvir' #
+# ref_arm = 'No study drug' #
+ref_arm = 'Nirmatrelvir' #
 # study_threshold = 1.2 # depending on comparison with no study drug or positive control
 study_threshold = 0.9
 ```

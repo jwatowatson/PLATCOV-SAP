@@ -10,7 +10,7 @@ get_nanopore_data = function(prefix_dropbox){
   
   ## run the python script to convert lineage names into a usable set
   
-  res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
+  res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/output.csv"))
   res_update = res_update[!duplicated(res_update$Original), ]
   print(unique(res_update$Original))
   res$Variant = plyr::mapvalues(res$Lineage, from = res_update$Original, to = res_update$VariantClass)
