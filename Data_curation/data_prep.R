@@ -9,7 +9,7 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
-user <- 'james'#"Chang" # Change here
+user <- 'Chang'#"Chang" # Change here
 
 #1 Analysis_data folder
 if(user == "Chang"){
@@ -397,7 +397,6 @@ Res = Res[!ind_rm, ]
 sort(unique(Res$`Lot no.`))
 Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot1']="Thailand_D10 Lot 1"
 Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot2']="Thailand_D10 Lot 2"
-
 
 ## 
 Res$`SUBJECT ID` = gsub(pattern = '_', replacement = '-', x = Res$`SUBJECT ID`,fixed = T)

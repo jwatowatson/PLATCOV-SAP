@@ -13,80 +13,158 @@ Reformat_Mutations <- function(nextclade_file, naming_file) {
   nextclade <- nextclade %>% separate_wider_delim(seqName, "/", names=c("hcov","loc","name", "year"))
   joined <- left_join(nextclade, naming)
   
-  #select amino acid changes only and sort names
-  aachanges <- joined %>% select(c(PatientID, aaSubstitutions))
+  #select amino acid changes and missing nucleotide ranges only and sort names
+  aachanges <- joined %>% select(c(PatientID, aaSubstitutions, aaDeletions, aaInsertions, missing))
   aachanges <- aachanges %>% separate_wider_delim(PatientID, "_", names=c("Samplename","Location", "Timepoint"))
   
-  data_split <- aachanges %>%
+  #split up substitutions, insertions, and deletions into separate columns in three separate operations
+  #and change from a CSV of subs/dels/insertions into a wide form TRUE/FALSE for every mutation
+  aasubs <- aachanges %>%
     mutate(items = str_split(aaSubstitutions, ",")) %>%
-    unnest(cols = items, keep_empty = TRUE)
-  
-  # create binary matrix with item names as column headers
-  binary_matrix <- data_split %>%
+    unnest(cols = items, keep_empty = TRUE) %>%
     mutate(value = TRUE) %>%
     spread(key = items, value = value, fill = FALSE)
-  #binary_matrix <- data_split %>%
-  #  mutate(value = TRUE) %>%
-  #  pivot_wider(names_from = items, values_from = value, values_fill=FALSE)
   
-  return(binary_matrix)
+  aadeletions <- aachanges %>%
+    mutate(items = str_split(aaDeletions, ",")) %>%
+    unnest(cols = items, keep_empty = TRUE) %>%
+    mutate(value = TRUE) %>%
+    spread(key = items, value = value, fill = FALSE)
+  
+  aainsertions <- aachanges %>%
+    mutate(items = str_split(aaInsertions, ",")) %>%
+    unnest(cols = items, keep_empty = TRUE) %>%
+    mutate(value = TRUE) %>%
+    spread(key = items, value = value, fill = FALSE)
+  
+  #now merge those three tables back together, removing the redundant columns
+  aa_matrix <- full_join(aasubs, aadeletions, keep=FALSE, by=join_by(Samplename,Location,Timepoint,aaSubstitutions,    aaDeletions,aaInsertions,missing))
+  aa_matrix <- full_join(aa_matrix, aainsertions, keep=FALSE, by=join_by(Samplename,Location,Timepoint,aaSubstitutions,    aaDeletions,aaInsertions,missing))
+  
+
+  return(aa_matrix)
 
 }
 
-Query_Mutations<- function(aa_matrix, querystring) {
+Query_Mutations<- function(aa_matrix, querystring, nucl_positions) {
+  
+  #first, add a column to determine whether the queried amino acid is missing based on the nucleotide missingness
+  positions <- as.numeric(unlist(strsplit(nucl_positions, ',')))
+  #probably a more elegant way to do this, but check if each of the 3 bases is in the missing range and return true/false
+  
+  aa_matrix <- aa_matrix %>%
+    mutate( base1_missing = map_lgl(missing, ~ Check_Missing_Range(positions[1],.x)))
+  aa_matrix <- aa_matrix %>%
+    mutate( base2_missing = map_lgl(missing, ~ Check_Missing_Range(positions[2],.x)))
+  aa_matrix <- aa_matrix %>%
+    mutate( base3_missing = map_lgl(missing, ~ Check_Missing_Range(positions[3],.x)))
+  
+  #then merge into a single column which is TRUE if any of the three positions are missing
+  aa_matrix <- aa_matrix %>%
+    mutate(any_base_missing = rowSums(across(c(base1_missing,base2_missing, base3_missing)) > 0))
+  
+  #rename the column using the queryname
+  colnames(aa_matrix)[colnames(aa_matrix) == "any_base_missing"] =paste0(querystring,"_missing") 
+           
   #extract the mutation columns which match the query string
   #if there is a wildcard and we accept any mutation at the final position
   if (endsWith(querystring, "*")) {
     #knock off the final * for querying
-    querystring <- str_sub(querystring, 1, -2)
+    querystring_short <- str_sub(querystring, 1, -2)
     #select all matching columns
-    aa_matches <- aa_matrix %>% select(c(Samplename, Location, Timepoint,starts_with(querystring)))
+    aa_matches <- aa_matrix %>% select(c(Samplename, Location, Timepoint,starts_with(querystring_short)))
     #merge column if any of the columns are true
     aa_matches <- aa_matches %>%
-      mutate(any_true = rowSums(select(aa_matches, -c(Samplename, Location, Timepoint))) > 0)
+      mutate(any_true = rowSums(select(aa_matches, -c(paste0(querystring,"_missing"),Samplename, Location, Timepoint))) > 0)
     #drop the columns for each individual mutation
-    aa_matches <- aa_matches %>% select(c('Samplename', 'Location','Timepoint','any_true'))
+    aa_matches <- aa_matches %>% select(c('Samplename', 'Location','Timepoint',paste0(querystring,"_missing"),'any_true'))
     #rename the column using the queryname
-    colnames(aa_matches)[colnames(aa_matches) == "any_true"] =paste0(querystring,"_any") 
+    colnames(aa_matches)[colnames(aa_matches) == "any_true"] =paste0(querystring_short,"_any") 
   }
   else {
     aa_matches <- aa_matrix %>% select(c(Samplename, Location, Timepoint,starts_with(querystring)))  
-    
   }
   
   return(aa_matches)
 }
 
+Check_Missing_Range <- function(number, range_string) {
+  range_segments <- strsplit(range_string, ",")[[1]]
+  
+  within_range <- any(map_lgl(range_segments, function(segment) {
+    if (grepl("-", segment)) {
+      range_bounds <- strsplit(segment, "-")[[1]]
+      lower_bound <- as.numeric(range_bounds[1])
+      upper_bound <- as.numeric(range_bounds[2])
+      number >= lower_bound && number <= upper_bound
+    } else {
+      as.numeric(segment) == number
+    }
+  }))
+  return(within_range)
+}
+
+
 #use the TSV file generated by standard Nextclade run
 #eg,  nextclade run --input-dataset nextclade_datasets/ --output-all nextclade all_platcov_20230511.fasta
-nextclade_file <- "nextclade/nextclade.tsv"
-naming_file <- "Accession numbers_GISAID_GENBANK_PLATCOV_10-05-2023.xlsx"
+nextclade_file <- "nextclade/all_20230816.tsv"
+naming_file <- "FASTA_PLATCOV/accessions.xlsx"
 aa_matrix <- Reformat_Mutations(nextclade_file, naming_file)
 #query string should be in the format of gene:mutation, with * as a wildcard matching all mutations
-querystring <- "S:N460*"
-mutations <- Query_Mutations(aa_matrix, querystring)
-
-querystring <- "ORF1a:T170I"
-mutations <- Query_Mutations(aa_matrix, querystring)
-
-#evusheld:
-#any change in 486 
-#OR any change in 346 or 444
-evusheld_346 <- Query_Mutations(aa_matrix,"S:R346*")
-evusheld_444 <- Query_Mutations(aa_matrix,"S:K444*")
-evusheld_486 <- Query_Mutations(aa_matrix,"S:F486*")
-
-#S3 Tixagevimab/cilgavimab
+#Tixagevimab/cilgavimab
 #The tixagevimab/cilgavimab resistant hypothesised subgroup is defined by: 
 # (i) any amino-acid change from wild-type in the 486 residue of the spike protein AND (ii) an amino-acid change in the 346 residue OR the 444 residue.
+#any change in 486 
+#AND any change in 346 or 444
+testmuts<- Query_Mutations(aa_matrix,"E:D72G", "1,17,58")
+
+evusheld_346 <- Query_Mutations(aa_matrix,"S:R346*","22598,22599,22600")
+evusheld_444 <- Query_Mutations(aa_matrix,"S:K444*", "22892,22893,22894")
+evusheld_486 <- Query_Mutations(aa_matrix,"S:F486*", "23018,23019,23020")
+
 
 evusheld_muts <- full_join(evusheld_346, evusheld_444)
 evusheld_muts <- full_join(evusheld_muts, evusheld_486)
 
 evusheld_muts <- evusheld_muts %>% mutate(
   evusheld_test = case_when(
-    (`S:F486_any` == TRUE) & (`S:R346_any` == TRUE |`S:K444_any` == TRUE) ~ TRUE,
+    (`S:F486_any` == TRUE) & 
+   (`S:R346_any` == TRUE |`S:K444_any` == TRUE) & 
+     (`S:F486*_missing` == 0 & `S:R346*_missing` == 0 & `S:K444*_missing` == 0) ~ TRUE,
     TRUE ~ FALSE
   )
 )  
-write_csv(evusheld_muts, "evusheld_test.csv")
+write_csv(evusheld_muts, "evusheld_20230816.csv")
+
+
+ensitrelvir_t21i <- Query_Mutations(aa_matrix,"S:T21I","21623,21624,21625")
+
+ensitrelvir_m49i <- Query_Mutations(aa_matrix,"S:M49I","21707,21708,21709")
+
+ensitrelvir_m49l <- Query_Mutations(aa_matrix,"S:M49L","21707,21708,21709")
+
+ensitrelvir_l50f <- Query_Mutations(aa_matrix,"S:L50F","21710,21711,21712")
+
+ensitrelvir_s144a <- Query_Mutations(aa_matrix,"S:S144A","21992,21993,21994")
+
+ensitrelvir_e166a <- Query_Mutations(aa_matrix,"S:E166A","22058,22059,22060")
+
+ensitrelvir_e166v <- Query_Mutations(aa_matrix,"S:E166V","22058,22059,22060")
+
+ensitrelvir_l167f <- Query_Mutations(aa_matrix,"S:L167F","22061,22062,22063")
+
+ensitrelvir_a173v <- Query_Mutations(aa_matrix,"S:A173V","22079,22080,22081")
+
+ensitrelvir_p252l <- Query_Mutations(aa_matrix,"S:P252L","22316,22317,22318")
+
+ensitrelvir_t304i <- Query_Mutations(aa_matrix,"S:T304I","22472,22473,22474")
+
+ensitrelvir_p168del <- Query_Mutations(aa_matrix,"S:P168-","22064,22065,22066")
+
+
+
+#L50F/E166A
+
+#L50F/E166V
+
+#ΔP168/A173V
