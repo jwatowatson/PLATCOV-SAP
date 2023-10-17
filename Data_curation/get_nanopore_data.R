@@ -7,10 +7,12 @@ get_nanopore_data = function(prefix_dropbox){
   if(any(duplicated(res_nano$ID))) print('warning - some duplicates in the nanopore output - will be removed')
   res = res_nano[!duplicated(res_nano$ID), ]
   write.csv(x = res[, c('ID','Lineage')], file = paste0(prefix_analysis_data, "/Analysis_Data/lineages.csv"),row.names = F)
-  
+
   ## run the python script to convert lineage names into a usable set
+  shell(run_lineage_classifier)
   
-  res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/output.csv"))
+  res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
+  res_update <- res_update[-1,] # Remove header
   res_update = res_update[!duplicated(res_update$Original), ]
   print(unique(res_update$Original))
   res$Variant = plyr::mapvalues(res$Lineage, from = res_update$Original, to = res_update$VariantClass)
@@ -18,6 +20,9 @@ get_nanopore_data = function(prefix_dropbox){
   res
 }
 ####################################################
+
+
+get_nanopore_data(prefix_dropbox)
 
 
 
