@@ -21,7 +21,7 @@ platcov_dat = platcov_dat%>% filter(Timepoint_ID==0) %>%
   ungroup() %>%
   distinct(ID, .keep_all = T)
   
-par(las=1, family='serif')
+par(las=1, family='serif',mfrow=c(1,2))
 plot(platcov_dat$mean_RNaseP, platcov_dat$sd_RNaseP, col=platcov_dat$Lab_col,
      ylim = c(0,3),panel.first = grid(),
      xlab='Mean quartet RNaseP (baseline swabs)',
@@ -29,9 +29,11 @@ plot(platcov_dat$mean_RNaseP, platcov_dat$sd_RNaseP, col=platcov_dat$Lab_col,
      pch = as.numeric(platcov_dat$Lab))
 legend('topright', col=my_cols, legend = levels(platcov_dat$Lab),pch=1:4)
 
-summary(lm(sd_RNaseP ~ Lab + mean_RNaseP, data = platcov_dat))
-cor.test(platcov_dat$mean_RNaseP, platcov_dat$sd_RNaseP)
-boxplot(sd_RNaseP ~ Lab, data = platcov_dat); grid()
+mod = gam(sd_RNaseP ~ s(mean_RNaseP, k=4) + Lab, data = platcov_dat)
+for(ss in levels(platcov_dat$Lab)){
+  lines(15:40, predict(mod, newdata = data.frame(mean_RNaseP=15:40, Lab=ss)), col=my_cols[ss],lwd=2)
+}
+legend('topright', col=my_cols, legend = levels(platcov_dat$Lab),pch=1:4)
 
 
 plot(platcov_dat$mean_viral, platcov_dat$sd_viral, col=platcov_dat$Lab_col,
