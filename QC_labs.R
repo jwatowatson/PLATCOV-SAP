@@ -30,6 +30,7 @@ plot(platcov_dat$mean_RNaseP, platcov_dat$sd_RNaseP, col=platcov_dat$Lab_col,
 legend('topright', col=my_cols, legend = levels(platcov_dat$Lab),pch=1:4)
 
 mod = gam(sd_RNaseP ~ s(mean_RNaseP, k=4) + Lab, data = platcov_dat)
+summary(mod)
 for(ss in levels(platcov_dat$Lab)){
   lines(15:40, predict(mod, newdata = data.frame(mean_RNaseP=15:40, Lab=ss)), col=my_cols[ss],lwd=2)
 }
