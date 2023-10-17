@@ -14,15 +14,12 @@ get_nanopore_data = function(prefix_dropbox){
   res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
   res_update <- res_update[-1,] # Remove header
   res_update = res_update[!duplicated(res_update$Original), ]
+  write.csv(x = res_update, file = paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"),row.names = F)
   print(unique(res_update$Original))
   res$Variant = plyr::mapvalues(res$Lineage, from = res_update$Original, to = res_update$VariantClass)
   res = res[,c('ID','Variant')]
   res
 }
 ####################################################
-
-
-get_nanopore_data(prefix_dropbox)
-
 
 
