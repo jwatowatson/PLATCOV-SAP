@@ -9,41 +9,8 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
-user <- 'Chang'#"Chang" # Change here
+source('user_settings.R')
 
-#1 Analysis_data folder
-if(user == "Chang"){
-  prefix_analysis_data <- "D:/PLATCOV-SAP"
-}else{
-  prefix_analysis_data <- ".."}
-
-#2 Dropbox folder (PLATCOV_Analysis)
-if(user == "Chang"){
-  prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
-}else{
-  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis"
-}
-
-#3 Downloads folder
-if(user == "Chang"){
-  prefix_downloads <- "PLATCOV_SAP"
-}else{
-  prefix_downloads <- "~"
-}
-
-#4 Dropbox folder for randomisation
-if(user == "Chang"){
-  prefix_drop_rand <- "C:/Users/Phrutsamon/Dropbox/PLATCOV" 
-}else{
-  prefix_drop_rand <- "~/Dropbox/PLATCOV"
-}
-
-#5 Data_curation folder
-if(user == "Chang"){
-  prefix_dat_cur <- "D:/PLATCOV-SAP/Data_curation/" 
-}else{
-  prefix_dat_cur <- ""
-}
 #############################################################################################
 ##******************** Clinical database *******************
 ##*********************************************************
@@ -775,7 +742,7 @@ Res = Res[!duplicated(Res$BARCODE), ]
 
 ###### Write csv files
 # Overall data files
-write.table(x = SC, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_control_dat.csv"), row.names = F, sep=',')
+write.table(x = control_dat, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_control_dat.csv"), row.names = F, sep=',')
 
 Res = dplyr::arrange(Res, Rand_date, ID, Time)
 write.table(x = Res, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_all_analysis.csv"), row.names = F, sep=',')

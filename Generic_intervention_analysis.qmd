@@ -6,7 +6,7 @@ editor: visual
 ---
 
 ```{r preambule}
-knitr::opts_chunk$set(cache = T, cache.comments = FALSE,
+knitr::opts_chunk$set(cache = F, cache.comments = FALSE,
                       echo = F, include = TRUE, 
                       fig.width = 8, fig.height = 8,
                       fig.pos = 'H',dev = 'png', dpi = 300)
@@ -34,6 +34,7 @@ add_epoch = T # if using non-concurrent controls
 
 my_probs = c(0.025, 0.1, .5, .9, .975)
 source('functions.R')
+source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
 ```
 
@@ -46,7 +47,7 @@ Set up analysis
 ```{r load_data}
 # intervention = 'interim_all' # prefix of analysis file
 #intervention = 'MolPax_combination' # prefix of analysis file
-intervention = 'ensitrelvir' # prefix of analysis file
+intervention = 'MolPax_combination' # prefix of analysis file
 
 # ref_arm = 'No study drug' #
 ref_arm = 'Nirmatrelvir' #
@@ -57,7 +58,7 @@ study_threshold = 0.9
 ```{r define_population}
 #| echo: false
 # set as file with relevant dataset
-itt_population_all = get_itt_population('~/Dropbox/PLATCOV/')
+itt_population_all = get_itt_population(prefix_drop_rand = prefix_drop_rand)
 
 f_name = paste0('Analysis_Data/',intervention,'_analysis.csv')
 platcov_dat = read.csv(f_name)
@@ -376,12 +377,12 @@ plot_coef_effects(stan_out = out,cov_mat = coef_to_plot,stan_inputs = stan_input
 
 ```{r}
 
-IDS_slow = slope_out$ID[which(slope_out$t_12_med>13 & slope_out$Trt=='Ensitrelvir')]
-# slope_out$ID[IDS_slow]
-par(mfrow=c(3,3),las=1, mar=c(4,5,2,2))
-plot_individ_curves(platcov_dat = platcov_dat, IDs = IDS_slow,
-                    xlims = c(0,14))
-# model_list = list()
+# IDS_slow = slope_out$ID[which(slope_out$t_12_med>13 & slope_out$Trt=='Ensitrelvir')]
+# # slope_out$ID[IDS_slow]
+# par(mfrow=c(3,3),las=1, mar=c(4,5,2,2))
+# plot_individ_curves(platcov_dat = platcov_dat, IDs = IDS_slow,
+#                     xlims = c(0,14))
+# # model_list = list()
 # for(i in 1:length(ff)){
 #   load(ff[i])
 #   model_list[[i]] = out

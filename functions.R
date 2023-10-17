@@ -587,8 +587,8 @@ get_itt_population = function(prefix_drop_rand){
   require(tidyverse)
   # TH58 and TH57 used envelopes so allocation is not recorded in the data-XXX.csv files
   
-  rand.TH58 <- read.csv(paste0(prefix_drop_rand, "rand-TH58.csv"))[0:9, ]
-  rand.TH57 <- read.csv(paste0(prefix_drop_rand, "rand-TH57.csv"))[0:10, ]
+  rand.TH58 <- read.csv(paste0(prefix_drop_rand, "/rand-TH58.csv"))[0:9, ]
+  rand.TH57 <- read.csv(paste0(prefix_drop_rand, "/rand-TH57.csv"))[0:10, ]
   rand.TH58$ID = paste('PLT-TH58-',rand.TH58$RandomisationID,sep='')
   rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
   
