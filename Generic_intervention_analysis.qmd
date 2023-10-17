@@ -28,7 +28,7 @@ sessionInfo()
 
 rstan_options(auto_write = TRUE)
 ## parameters for the analysis
-Dmax = 8
+Dmax = 5.5
 RUN_MODELS = F
 add_epoch = T # if using non-concurrent controls
 
@@ -37,25 +37,32 @@ source('functions.R')
 trt_colors = get_trt_colors()
 ```
 
-## *Load data*
+All paths are local
 
-*Set up analysis*
+## Load data
+
+Set up analysis
 
 ```{r load_data}
-intervention = 'Ineffective' # prefix of analysis file
-ref_arm = 'No study drug'
-study_threshold = 1.2 # depending on comparison with no study drug or positive control
-# study_threshold = 0.9
+intervention = 'interim_all' # prefix of analysis file
+#intervention = 'MolPax_combination' # prefix of analysis file
+#intervention = 'ensitrelvir' # prefix of analysis file
+
+ref_arm = 'No study drug' #
+#ref_arm = 'Nirmatrelvir' #
+# study_threshold = 1.2 # depending on comparison with no study drug or positive control
+study_threshold = 0.9
 ```
 
 ```{r define_population}
 #| echo: false
 # set as file with relevant dataset
-itt_population_all = get_itt_population()
+itt_population_all = get_itt_population('~/Dropbox/PLATCOV/')
 
 f_name = paste0('Analysis_Data/',intervention,'_analysis.csv')
 platcov_dat = read.csv(f_name)
 platcov_dat$Trt[platcov_dat$Trt=='Nirmatrelvir + Ritonavir']='Nirmatrelvir'
+platcov_dat$Trt[platcov_dat$Trt=='Nirmatrelvir + Ritonavir + Molnupiravir']='Nirmatrelvir+Molnupiravir'
 platcov_dat$Rand_date = as.POSIXct(platcov_dat$Rand_date)
 trt_intervention = unique(platcov_dat$Trt)
 
@@ -71,7 +78,7 @@ if(length(trt_intervention)==0) stop('no interventions!')
 trts = trt_intervention[trt_intervention!=ref_arm] # get interventions
 ```
 
-## *Make modified intention to treat population*
+## Make modified intention to treat population
 
 ```{r make_analysis_data}
 #| echo: false
@@ -84,27 +91,32 @@ pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
 ```
 
-## *Baseline characteristics*
+## Baseline characteristics
 
 ```{r}
 #| echo: false
 platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
   mutate(daily_VL = mean(log10_viral_load),
-         Sex = as.factor(ifelse(Sex==1,'Male','Female')),
+         daily_CT = mean(CT_NS)) %>% 
+  ungroup() %>%
+  mutate(Sex = as.factor(ifelse(Sex==1,'Male','Female')),
          Site = as.factor(Site),
          Trt = factor(Trt, levels=c(ref_arm, trts)),
          Vaccinated = as.factor(ifelse(N_dose>0,'Yes','No')),
-         Variant = as.factor(Variant)) %>% 
-  ungroup() %>%
-  mutate(trt_color = 
+         Variant = as.factor(Variant),
+         trt_color = 
            as.character(plyr::mapvalues(Trt,
                                    from = names(trt_colors),
-                                   to = trt_colors)))
+                                   to = trt_colors)),
+         Study_time = as.numeric(difftime(Rand_date,min(Rand_date),units = 'weeks')),
+         Study_time = scale(Study_time) #normalise
+         )
 
 Baseline_data = platcov_dat %>% ungroup() %>% 
-  distinct(ID, .keep_all = T) %>%
   filter(Timepoint_ID==0) %>% 
-  mutate(Baseline.viral.load = daily_VL)
+  distinct(ID, .keep_all = T) %>%
+  mutate(Baseline.viral.load = daily_VL,
+         Baseline.CT = daily_CT)
 
 tab.ff <- Baseline_data %>% filter(mITT) %>%
   summary_factorlist(
@@ -128,27 +140,7 @@ tab.ff
 # save_kable(tab.ff,file = 'Baseline_characteristics.png')
 ```
 
-plot the no study drug arm
-
-```{r no_study_drug}
-platcov_dat_NSD = platcov_dat %>% filter(Trt=='No study drug') %>% 
-  distinct(ID, Timepoint_ID, .keep_all = T)
-
-par(las=1, family='serif', cex.axis=1.3, cex.lab=1.3)
-plot(platcov_dat_NSD$Time, platcov_dat_NSD$daily_VL, pch='.',
-     xlim = c(0,14), panel.first = grid(),
-     xlab='Days', ylab = 'SARS CoV2 genomes/mL', yaxt='n')
-axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
-                                      expression(10^4),
-                                      expression(10^6),
-                                      expression(10^8)))
-for(id in unique(platcov_dat_NSD$ID)){
-  xx = platcov_dat_NSD%>%filter(ID==id)
-  lines(xx$Time, xx$daily_VL, col = adjustcolor('grey',.3))
-}
-```
-
-## *Fit models*
+## Fit models
 
 ```{r}
 #| echo: false
@@ -157,7 +149,7 @@ source('priors.R')
 # Analysis data
 platcov_dat_analysis = 
   platcov_dat %>% ungroup() %>%
-  filter(Time <= Dmax, mITT) %>%
+  filter(Time <= Dmax, mITT, Timepoint_ID < ceiling(Dmax)) %>%
   arrange(log10_viral_load==log10_cens_vl) %>%
   mutate(Variant = as.factor(Variant),
          Epoch = paste(month(Rand_date), year(Rand_date), sep = '_'),
@@ -175,11 +167,11 @@ writeLines(sprintf('Analysis dataset contains %s patients and %s datapoints (%s 
                    sum(platcov_dat_analysis$CT_NS<40),
                    round(100*mean(platcov_dat_analysis$CT_NS<40))))
 
-covs_base = c('Variant','Site')
+covs_base = c('Variant','Site','Study_time')
 covs_full=c(covs_base, 'Age_scaled','Symptom_onset')
 stan_inputs = 
   make_stan_inputs(input_data_fit = platcov_dat_analysis,
-                   int_covs_base = covs_base,
+                   int_covs_base = c(covs_base,'Symptom_onset'),
                    int_covs_full = covs_full,
                    slope_covs_base = covs_base,
                    slope_covs_full = covs_full,
@@ -191,9 +183,16 @@ stan_inputs =
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-model_settings = expand.grid(mod = all_mods,
-                             prior = 1,
-                             cov_matrices = 1)
+# model_settings = rbind(expand.grid(mod = all_mods,
+#                              prior = 1,
+#                              cov_matrices = 1),
+#                        expand.grid(mod = all_mods[1],
+#                              prior = 1,
+#                              cov_matrices = 2))
+
+model_settings = expand.grid(mod = 'Stan_models/Linear_model_RNaseP.stan',
+                              prior = 1,
+                              cov_matrices = 1)
 
 model_settings$Niter = 2000
 model_settings$Nwarmup = 1000
@@ -215,42 +214,44 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
-
 ## BRMS checks
 
 ```{r brms_slopes}
-if(RUN_MODELS){
-mod_naive = brm(log10_viral_load | cens(censor) ~ Time + (1+Time | ID),
-                data = platcov_dat_analysis,
-                prior = c(prior(lkj(2), class = "cor"),
-                          prior(normal(5, 5), class = Intercept),
-                          prior(constant(7), class = 'nu')),
-                family = 'student', cores = 4, chains = 4)
-save(mod_naive, file = 'Rout/naive_mod.RData')
-} else {
-  load('Rout/naive_mod.RData')
-}
-thetas = ranef(mod_naive, summary = F)
-slopes_randef = apply(thetas$ID[,,'Time'], 2, quantile, probs=c(0.1, 0.5, 0.9))
-slopes_dat = merge(data.frame(ID=colnames(slopes_randef),
-                              slope_re = slopes_randef[2, ],
-                              slope_re_lower = slopes_randef[1, ],
-                              slope_re_upper = slopes_randef[3, ]),
-                   platcov_dat_analysis[!duplicated(platcov_dat_analysis$ID),],
-                   by = 'ID')
-par(las=1, family='serif')
-plot(slopes_dat$Rand_date, slopes_dat$slope_re, 
-     ylab='Slope random effect',ylim=c(-1,0.7),col='grey',
-     xlab='Randomisation date', panel.first=grid(), pch=16)
-for(i in 1:nrow(slopes_dat)){
-  lines(rep(slopes_dat$Rand_date[i],2), 
-        c(slopes_dat$slope_re_lower[i], slopes_dat$slope_re_upper[i]),
-        col=adjustcolor('grey',alpha.f = .6))
-}
-abline(MASS::rlm(slopes_dat$slope_re~slopes_dat$Rand_date),col='darkblue',lwd=2,lty=2)
 
+# if(RUN_MODELS){
+#   mod_naive = brm(log10_viral_load | cens(censor) ~ Time + (1+Time | ID),
+#                   data = platcov_dat_analysis,
+#                   prior = c(prior(lkj(2), class = "cor"),
+#                             prior(normal(5, 5), class = Intercept),
+#                             prior(constant(7), class = 'nu')),
+#                   family = 'student', cores = 4, chains = 4)
+#   save(mod_naive, file = paste0('Rout/naive_mod.RData'))
+# } else {
+#   load(paste0('Rout/naive_mod.RData'))
+# }
+# thetas = ranef(mod_naive, summary = F)
+# slopes_randef = apply(thetas$ID[,,'Time'], 2, quantile, probs=c(0.1, 0.5, 0.9))
+# slopes_dat = merge(data.frame(ID=colnames(slopes_randef),
+#                               slope_re = slopes_randef[2, ],
+#                               slope_re_lower = slopes_randef[1, ],
+#                               slope_re_upper = slopes_randef[3, ]),
+#                    platcov_dat_analysis[!duplicated(platcov_dat_analysis$ID),],
+#                    by = 'ID')
+# par(las=1, family='serif')
+# plot(slopes_dat$Rand_date, slopes_dat$slope_re, 
+#      ylab='Slope random effect',ylim=c(-1,0.7),col='grey',
+#      xlab='Randomisation date', panel.first=grid(), pch=16)
+# for(i in 1:nrow(slopes_dat)){
+#   lines(rep(slopes_dat$Rand_date[i],2), 
+#         c(slopes_dat$slope_re_lower[i], slopes_dat$slope_re_upper[i]),
+#         col=adjustcolor('grey',alpha.f = .6))
+# }
+# abline(MASS::rlm(slopes_dat$slope_re~slopes_dat$Rand_date),col='darkblue',lwd=2,lty=2)
+# 
+# 
+# mod = lm(slope_re~Rand_date + Trt + Site, data = slopes_dat)
+# summary(mod)
 ```
-
 
 ```{r}
 if(RUN_MODELS){
@@ -259,18 +260,18 @@ if(RUN_MODELS){
 ```
 
 ```{r}
-ff = list.files('Rout/', pattern = intervention)
+ff = list.files('Rout/', pattern = paste0(intervention,'.RData'),)
 ff = ff[grep(pattern = 'model_fits_',x = ff)]
 if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all model settings')
 ff = paste0('Rout/',ff)
 ```
 
-*main model selection*
+main model selection
 
 ```{r}
 main_mod = which(model_settings$prior==1&
                    model_settings$cov_matrices==1&
-                   model_settings$mod==all_mods[2])
+                   model_settings$mod==all_mods[1])
 
 model_cols = brewer.pal(n = 8, name = 'Dark2')[1:nrow(model_settings)]
 names(model_cols) = paste('model', 1:nrow(model_settings))
@@ -295,9 +296,9 @@ plot_effect_estimates(effect_ests = effect_ests,
                       plot_models = 1:length(ff),
                       study_threshold = study_threshold,
                       mod_cols = model_cols[1:length(ff)],
-                      my_pch = 15:16)
+                      my_pch = 15:(15+nrow(model_settings)-1))
 # title(intervention)
-legend('bottomright',pch=15:16,legend = c('Linear','Non-linear'),
+legend('right',pch=15:16,legend = c('Linear','Non-linear'),
        col = model_cols,inset=0.03, cex=1.2)
 
 for(i in 1:length(ff)){
@@ -319,46 +320,46 @@ slope_out=make_slopes_plot(stan_out = out,
                     analysis_data_stan = stan_inputs$analysis_data_stan,
                     ID_map = stan_inputs$ID_map,
                     data_summary = Baseline_data,
-                    my_lims = c(2,50),
-                    my_vals = c(5,15,25,35,45))
+                    my_lims = c(2,30),
+                    my_vals = c(5,10, 15,20,30))
 
-sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
-sero_dat = merge(slope_out, sero_dat, by='ID', all=F)
-
-sero_dat = sero_dat %>% 
-  filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
-  mutate(Day = ifelse(Day<=7, Day, 14),
-         Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
-  group_by(ID, Day) %>%
-  mutate(Delta_IgG = log10_IgG-Baseline_IgG)
-
-par(mfrow=c(3,2))
-for(dd in sort(unique(sero_dat$Day))){
-  sero_dat_dd = sero_dat%>%filter(Day==dd)
-  plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope',
-       ylab='log IgG', main= paste('Day',dd), panel.first=grid(),
-       ylim = range(sero_dat$log10_IgG))
-  cor.test(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG)
-  mod=lm(log10_IgG~slope_median, data= sero_dat_dd)
-  abline(mod, col='red',lwd=3)
-  print(summary(mod))
-  if(dd>0){
-    plot(sero_dat_dd$slope_median, sero_dat_dd$Delta_IgG, xlab='slope',
-       ylab='Delta IgG', main= paste('Day',dd), panel.first=grid(),
-       ylim = range(sero_dat$Delta_IgG,na.rm=T))
-  }
-}
-
-
-sero_wide = 
-  sero_dat %>% pivot_wider(names_from = Day, 
-                                     values_from = c(log10_IgG,Delta_IgG),
-                                     values_fill = NA,
-                                     values_fn = mean)
-
-par(mfrow=c(2,2))
-sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)
-plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
+# sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
+# sero_dat = merge(slope_out, sero_dat, by='ID', all=F)
+# 
+# sero_dat = sero_dat %>% 
+#   filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
+#   mutate(Day = ifelse(Day<=7, Day, 14),
+#          Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
+#   group_by(ID, Day) %>%
+#   mutate(Delta_IgG = log10_IgG-Baseline_IgG)
+# 
+# par(mfrow=c(3,2))
+# for(dd in sort(unique(sero_dat$Day))){
+#   sero_dat_dd = sero_dat%>%filter(Day==dd)
+#   plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope',
+#        ylab='log IgG', main= paste('Day',dd), panel.first=grid(),
+#        ylim = range(sero_dat$log10_IgG))
+#   cor.test(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG)
+#   mod=lm(log10_IgG~slope_median, data= sero_dat_dd)
+#   abline(mod, col='red',lwd=3)
+#   print(summary(mod))
+#   if(dd>0){
+#     plot(sero_dat_dd$slope_median, sero_dat_dd$Delta_IgG, xlab='slope',
+#        ylab='Delta IgG', main= paste('Day',dd), panel.first=grid(),
+#        ylim = range(sero_dat$Delta_IgG,na.rm=T))
+#   }
+# }
+# 
+# 
+# sero_wide = 
+#   sero_dat %>% pivot_wider(names_from = Day, 
+#                                      values_from = c(log10_IgG,Delta_IgG),
+#                                      values_fill = NA,
+#                                      values_fn = mean)
+# 
+# par(mfrow=c(2,2))
+# sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)
+# plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
 ```
 
 ```{r coef_plot}
@@ -371,20 +372,26 @@ par(las=1, mfrow=c(1,2), mar=c(5,7,2,2))
 plot_coef_effects(stan_out = out,cov_mat = coef_to_plot,stan_inputs = stan_inputs)
 ```
 
-## *Individual patient data*
+## Individual patient data
 
 ```{r}
-model_list = list()
-for(i in 1:length(ff)){
-  load(ff[i])
-  model_list[[i]] = out
-}
 
-ID_map = merge(stan_inputs$ID_map, Baseline_data, by.x = 'ID_key',by.y = 'ID')
-par(mfrow=c(4,4), mar=c(2,2,2,2),las=1)
-plot_data_model_fits(model_list = model_list, 
-                     models_to_plot = 1:2,
-                     K_plots = 16,mod_cols = model_cols,
-                     ID_map = ID_map,
-                     analysis_data_stan = stan_inputs$analysis_data_stan)
+IDS_slow = slope_out$ID[which(slope_out$t_12_med>13 & slope_out$Trt=='Ensitrelvir')]
+# slope_out$ID[IDS_slow]
+par(mfrow=c(3,3),las=1, mar=c(4,5,2,2))
+plot_individ_curves(platcov_dat = platcov_dat, IDs = IDS_slow,
+                    xlims = c(0,14))
+# model_list = list()
+# for(i in 1:length(ff)){
+#   load(ff[i])
+#   model_list[[i]] = out
+# }
+# 
+# ID_map = merge(stan_inputs$ID_map, Baseline_data, by.x = 'ID_key',by.y = 'ID')
+# par(mfrow=c(4,4), mar=c(4,4,2,2),las=1)
+# plot_data_model_fits(model_list = model_list, 
+#                      models_to_plot = 1:2,
+#                      K_plots = 16,mod_cols = model_cols,
+#                      ID_map = ID_map,
+#                      analysis_data_stan = stan_inputs$analysis_data_stan)
 ```

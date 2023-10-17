@@ -146,7 +146,7 @@ make_stan_inputs = function(input_data_fit,
   
   # make the covariate matrix
   # check no missing data
-  if(!all(!apply(input_data_fit[, union(int_covs_full,slope_covs_full)], 2, function(x) any(is.na(x))))){
+  if(!all(!apply(input_data_fit[, union(int_covs_full,slope_covs_full), drop=F], 2, function(x) any(is.na(x))))){
     stop('Missing data in covariate matrix!')
   }
   
@@ -346,18 +346,13 @@ plot_data_model_fits =
            xaxt='n', yaxt='n',
            panel.first=grid(), xlim=c(0,7),
            ylim = range(analysis_data_stan$log_10_vl))
-      if(counter %% sqrt(K_plots) == 1){
-        mtext(text = 'SARS CoV2 genomes/mL',side = 2,
-              line = 3,las = 3)
-      }
+      
       axis(1, at = c(0,3,7))
       axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
                                           expression(10^4),
                                           expression(10^6),
                                           expression(10^8)))
-      if((counter%%K_plots) >= K_plots - sqrt(K_plots)){
-        mtext(text = 'Days',side = 1,line = 2)
-      }
+      
       for(mm in models_to_plot){
         ix = order(analysis_data_stan$obs_day[ind])
         my_xs = analysis_data_stan$obs_day[ind][ix]
@@ -376,9 +371,9 @@ plot_data_model_fits =
              analysis_data_stan$log_10_vl[ind],pch=16)
       
       mtext(text = paste0(ID_map$ID_key[counter],
-                          '\n',
+                          ' ',
                           ID_map$Trt[counter]),
-            side = 3, line = -0.5, cex=0.8)
+            side = 3, line = 0.5, cex=0.7)
       counter=counter+1
     }
     
@@ -395,7 +390,6 @@ plot_individ_curves = function(platcov_dat, IDs, xlims){
   for(id in unique(IDs)){
     
     ind = platcov_dat$ID==id
-    xx = aggregate(log10_viral_load ~ Day, data = platcov_dat[ind,], mean)
     plot(platcov_dat$Time[ind],
          platcov_dat$log10_viral_load[ind],
          pch = as.numeric(platcov_dat$log10_cens_vl[ind]==platcov_dat$log10_viral_load[ind])+1,
@@ -404,7 +398,6 @@ plot_individ_curves = function(platcov_dat, IDs, xlims){
          panel.first=grid(), xlim=xlims,
          ylim = ylims)
     title(id)
-    lines(xx$Day, xx$log10_viral_load, lwd=2, lty=2)
     points(platcov_dat$Time[ind],
            platcov_dat$log10_viral_load[ind],
            pch = as.numeric(platcov_dat$log10_cens_vl[ind]==platcov_dat$log10_viral_load[ind])+16)
@@ -415,7 +408,7 @@ plot_individ_curves = function(platcov_dat, IDs, xlims){
                                         expression(10^8)))
     
   }
-  
+  legend('topright', legend = c('>LLOQ','<LLOQ'), pch = 16:17, inset = 0.03)
 }
 
 
@@ -492,15 +485,15 @@ calculate_fever_clearance = function(temp_dat,
                                      window_clear = 24/24, # look ahead window to define "fever clearance"
                                      threshold=37){
   
-  if(!'temperature_ax' %in% colnames(temp_dat)) stop('needs to contain a temperature_ax column')
+  if(!'ax_temperature' %in% colnames(temp_dat)) stop('needs to contain a ax_temperature column')
   
   temp_dat$clearance_time = NA
   # For interval censored data, the status indicator is 0=right censored, 1=event at time, 2=left censored, 3=interval censored. 
   temp_dat$clearance_time_cens = 1
   
-  temp_dat$fever_binary = temp_dat$temperature_ax>threshold
+  temp_dat$fever_binary = temp_dat$ax_temperature>threshold
   temp_dat = dplyr::arrange(temp_dat, ID, Time) 
-  temp_dat = temp_dat[!is.na(temp_dat$temperature_ax), ]
+  temp_dat = temp_dat[!is.na(temp_dat$ax_temperature), ]
   
   for(id in unique(temp_dat$ID)){
     ind = temp_dat$ID==id
@@ -542,7 +535,8 @@ make_slopes_plot = function(stan_out,
                             ID_map, 
                             data_summary,
                             my_lims = c(5, 72), # hours
-                            my_vals = c(7,24,48,72)){
+                            my_vals = c(7,24,48,72),
+                            qq_show = 0.5){
   
   slopes = rstan::extract(stan_out, pars='slope')$slope
   
@@ -578,7 +572,8 @@ make_slopes_plot = function(stan_out,
                        round(median(data_summary$t_12_med[ind]),1),
                        round(min(data_summary$t_12_med[ind]),1),
                        round(max(data_summary$t_12_med[ind]),1)))
-    abline(v = median(data_summary$t_12_med[ind]), col=data_summary$trt_color[kk],lty=2,lwd=2)
+    abline(v = quantile(data_summary$t_12_med[ind], probs=qq_show), 
+           col=data_summary$trt_color[kk],lty=2,lwd=2)
   }
   
   legend('bottomright', legend = unique(data_summary$Trt),
@@ -587,22 +582,22 @@ make_slopes_plot = function(stan_out,
   return(data_summary)
 }
 
-get_itt_population = function(){
+get_itt_population = function(prefix_drop_rand){
   
+  require(tidyverse)
   # TH58 and TH57 used envelopes so allocation is not recorded in the data-XXX.csv files
-  rand.TH58 <- read.csv("~/Dropbox/PLATCOV/rand-TH58.csv")[0:9, ]
-  rand.TH57 <- read.csv("~/Dropbox/PLATCOV/rand-TH57.csv")[0:10, ]
+  
+  rand.TH58 <- read.csv(paste0(prefix_drop_rand, "rand-TH58.csv"))[0:9, ]
+  rand.TH57 <- read.csv(paste0(prefix_drop_rand, "rand-TH57.csv"))[0:10, ]
   rand.TH58$ID = paste('PLT-TH58-',rand.TH58$RandomisationID,sep='')
   rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
   
-  ff_names = list.files(path = "~/Dropbox/PLATCOV", pattern = 'data',full.names = T)
+  ff_names = list.files(path = prefix_drop_rand, pattern = 'data',full.names = T)
   data_list = list()
   for(i in 1:length(ff_names)){
     data_list[[i]] = read.csv(ff_names[i])
     data_list[[i]]$Date = as.POSIXct(data_list[[i]]$Date,format='%a %b %d %H:%M:%S %Y')
-    my_prefix=gsub(x = strsplit(ff_names[i], split = 'data-')[[1]][2], pattern = '.csv',replacement = '')
-    print(my_prefix)
-    
+    my_prefix=gsub(x = gsub(x = strsplit(ff_names[i], split = 'data-')[[1]][2], pattern = '.csv',replacement = ''),pattern = '0',replacement = '')
     data_list[[i]]$ID = paste('PLT-', my_prefix, '-', data_list[[i]]$randomizationID, sep='')
     data_list[[i]] = data_list[[i]][, c('ID', 'Treatment')]
   }
@@ -636,7 +631,7 @@ get_trt_colors = function(){
       "Nitazoxanide",           
       "Fluoxetine",
       "Molnupiravir",
-      "Nirmatrelvir + Ritonavir",
+      "Nirmatrelvir+Molnupiravir",
       "Evusheld",
       'Ensitrelvir',
       "Nirmatrelvir")
@@ -646,7 +641,7 @@ get_trt_colors = function(){
   trt_cols['Evusheld'] = viridis::magma(n = 10)[1]
   trt_cols['Favipiravir'] = viridis::plasma(n = 100)[92]
   trt_cols['Ivermectin'] = viridis::plasma(n = 10)[4]
-  trt_cols['Nirmatrelvir + Ritonavir'] = viridis::plasma(n = 10)[1]
+  trt_cols['Nirmatrelvir+Molnupiravir'] = viridis::plasma(n = 10)[3]
   trt_cols['Nirmatrelvir'] = viridis::plasma(n = 10)[1]
   trt_cols['Regeneron'] = viridis::inferno(n = 10)[5]
   trt_cols['Molnupiravir'] = viridis::inferno(n = 10)[7]

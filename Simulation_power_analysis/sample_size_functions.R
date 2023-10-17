@@ -31,29 +31,32 @@ f_sim = function(t_design, # design sampling times for PCR swabs
 
 }
 
-# wrapper function
 sim_individuals = function(thetas, # posterior distribution: a stan object
                            t_design, # design points for the swabs
                            N, # total number of patients
-                           trt_effects, # effects for each arm
+                           trt_effect, # effects for each arm
                            Trt_arm, # vector of length N with treatment arms for each patient
                            LOD = 1, # lower limit of detection for censoring
                            f_sim
 ){
-
+  
   if(!(N == length(Trt_arm))) stop('Trt_arm has to be of length=N')
-  if(!(length(unique(Trt_arm)) == length(trt_effects))) stop('trt_effects has to be of length number of unique Trt_Arm')
+  #if(!(length(unique(Trt_arm)) == length(trt_effects))) stop('trt_effects has to be of length number of unique Trt_Arm')
   
   K=length(thetas$t_dof) # number of posterior samples in model fit
   post_i = sample(x = K, size = 1) # choose a random posterior draw on which to base simulation
-
+  
+  #trt_effects <- exp(c(0, thetas$trt_effect[post_i]))
+  trt_effects <- c(1, trt_effect)
+  
+  
   # make the variance/covariance matrix for the random effects
   L = diag(x = unlist(thetas$sigmasq_u[post_i,]),nrow = 2,ncol = 2)%*%thetas$L_Omega[post_i,,]
   Epsilon = L%*%t(L)
-
+  
   # generate random effects matrix for the N patients
   thetas_rand = mvtnorm::rmvnorm(n = N, sigma = Epsilon)
-
+  
   # make sim data matrix
   Log_VL = array(dim = c(length(t_design)*N, 7))
   Log_VL = as.data.frame(Log_VL)
@@ -69,7 +72,7 @@ sim_individuals = function(thetas, # posterior distribution: a stan object
   # make sure the t_design points are sorted in increasing order
   t_design = sort(t_design)
   for(n in 1:N){
-
+    
     ind_patient = which(Log_VL$ID==n)
     xs = f_sim(t_design = t_design,
                my_intercept = thetas$alpha_0[post_i]+thetas_rand[n,1],
@@ -77,12 +80,12 @@ sim_individuals = function(thetas, # posterior distribution: a stan object
                sigma_vl = thetas$sigma_logvl[post_i],
                t_dof = thetas$t_dof[post_i],
                LOD=LOD)
-
-
-
+    
+    
+    
     Log_VL[ind_patient, 'log10_viral_load'] = xs$log_vl_sim
     Log_VL[ind_patient, 'True_Log_VL'] = xs$true_log_vl
-
+    
     Log_VL[ind_patient, 'Time'] = t_design
     Log_VL[ind_patient, 'Trt_effect'] = trt_effects[Trt_arm[n]]
     Log_VL[ind_patient, 'Trt_arm'] = Trt_arm[n]
@@ -90,7 +93,6 @@ sim_individuals = function(thetas, # posterior distribution: a stan object
   }
   return(Log_VL)
 }
-
 
 make_stan_inputs = function(input_data_fit,
                             trt_frmla,

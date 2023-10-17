@@ -1,0 +1,101 @@
+############################################################################
+## Packages needed
+library(rstan)
+library(matrixStats)
+library(doParallel)
+library(tidyverse)
+############################################################################
+source('../functions.R')
+############################################################################
+covs_base = c('Variant')
+############################################################################
+load('Rout/model_settings.RData') # change here for ineffective drugs
+
+i <- 1
+Max_job = nrow(model_settings)
+if(i > Max_job) stop('no model setting corresponding to job ID')
+
+writeLines('Doing the following job:')
+print(model_settings[i, ])
+
+options(mc.cores = model_settings$Nchain[i])
+stopifnot(model_settings$Nchain[i]>getDoParWorkers()) # check worker number assigned
+
+mod = stan_model(file = as.character(model_settings$mod[i])) # compile 
+############################################################################
+platcov_dat_analysis <- data_list[[model_settings$data_ID[i]]]
+Dmax = model_settings$Dmax[i]
+
+ref_arm = model_settings$ref_arm[i]
+trts = model_settings$intervention[i]
+
+# only going to use data from main thai site (best quality data)
+platcov_dat_analysis = platcov_dat_analysis %>%
+  filter(Trt %in% c(ref_arm, trts), 
+         Timepoint_ID <= Dmax, # timepoint is the day of follow-up
+         Time < Dmax+1, # sample has to be taken at most 24 hours after last day
+         mITT, Site=='th001') %>%
+  mutate(Trt = factor(Trt, levels=c(ref_arm, trts)),
+         Variant = as.factor(Variant),
+         Site = as.factor(Site),
+         RnaseP_scaled = scale(40 - CT_RNaseP,scale = F),
+         Mean_age = mean(Age[!duplicated(ID)]),
+         SD_age = sd(Age[!duplicated(ID)]),
+         Age_scaled = (Age-Mean_age)/SD_age,
+         Symptom_onset = ifelse(is.na(Symptom_onset),2,Symptom_onset))  %>%
+  arrange(ID, Time) %>%
+  arrange(log10_viral_load==log10_cens_vl) 
+
+
+stan_input_job = make_stan_inputs(input_data_fit = platcov_dat_analysis,
+                                  int_covs_base = covs_base,
+                                  int_covs_full = covs_base,
+                                  slope_covs_base = covs_base,
+                                  slope_covs_full = covs_base,
+                                  trt_frmla = formula('~ Trt'),
+                                  epoch = F,
+                                  Dmax = Dmax+1)
+
+analysis_data_stan = stan_input_job$analysis_data_stan
+analysis_data_stan$trt_mat = stan_input_job$Trt_matrix
+analysis_data_stan$K_trt = ncol(analysis_data_stan$trt_mat)
+
+# #x_intercept = stan_input_job$cov_matrices$X_int[[model_settings$cov_matrices[i]]]
+# #if(ncol(x_intercept)==0) x_intercept = array(0, dim=c(nrow(x_intercept),1))
+# x_intercept = NULL
+# analysis_data_stan$x_intercept = x_intercept
+# analysis_data_stan$K_cov_intercept = 0 #ncol(x_intercept)
+
+# #x_slope = stan_input_job$cov_matrices$X_slope[[model_settings$cov_matrices[i]]]
+# #if(ncol(x_slope)==0) x_slope = array(0, dim=c(nrow(x_slope),1))
+# x_slope = NULL
+# analysis_data_stan$x_slope = x_slope
+# analysis_data_stan$K_cov_slope= 0 #ncol(x_slope)
+
+# sample posterior
+out = sampling(mod, 
+               data=c(analysis_data_stan,
+                      all_priors[[model_settings$prior[i]]]),
+               iter=model_settings$Niter[i],
+               chain=model_settings$Nchain[i],
+               thin=model_settings$Nthin[i],
+               warmup=model_settings$Nwarmup[i],
+               save_warmup = FALSE,
+               seed=i,
+               pars=c('trt_effect', 'alpha_0', 'beta_0', 't_dof',
+                      'sigma_logvl', 'sigmasq_u', 'L_Omega'), # only save trt effect parameter 
+               include=T)
+
+save(out, file = paste0('Rout/model_fits',i,'.RData'))# save output # change here for ineffective drugs
+
+writeLines('Finished job')
+
+
+
+
+
+
+
+
+
+
