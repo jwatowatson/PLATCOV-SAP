@@ -14,23 +14,35 @@ Reformat_Mutations <- function(nextclade_file, naming_file) {
   joined <- left_join(nextclade, naming)
   
   #select amino acid changes and missing nucleotide ranges only and sort names
-  aachanges <- joined %>% select(c(PatientID, aaSubstitutions, missing))
+  aachanges <- joined %>% select(c(PatientID, aaSubstitutions, aaDeletions, aaInsertions, missing))
   aachanges <- aachanges %>% separate_wider_delim(PatientID, "_", names=c("Samplename","Location", "Timepoint"))
   
-  data_split <- aachanges %>%
+  #split up substitutions, insertions, and deletions into separate columns in three separate operations
+  #and change from a CSV of subs/dels/insertions into a wide form TRUE/FALSE for every mutation
+  aasubs <- aachanges %>%
     mutate(items = str_split(aaSubstitutions, ",")) %>%
-    unnest(cols = items, keep_empty = TRUE)
-  
-  # create binary matrix with item names as column headers
-  binary_matrix <- data_split %>%
+    unnest(cols = items, keep_empty = TRUE) %>%
     mutate(value = TRUE) %>%
     spread(key = items, value = value, fill = FALSE)
-  #binary_matrix <- data_split %>%
-  #  mutate(value = TRUE) %>%
-  #  pivot_wider(names_from = items, values_from = value, values_fill=FALSE)
   
+  aadeletions <- aachanges %>%
+    mutate(items = str_split(aaDeletions, ",")) %>%
+    unnest(cols = items, keep_empty = TRUE) %>%
+    mutate(value = TRUE) %>%
+    spread(key = items, value = value, fill = FALSE)
   
-  return(binary_matrix)
+  aainsertions <- aachanges %>%
+    mutate(items = str_split(aaInsertions, ",")) %>%
+    unnest(cols = items, keep_empty = TRUE) %>%
+    mutate(value = TRUE) %>%
+    spread(key = items, value = value, fill = FALSE)
+  
+  #now merge those three tables back together, removing the redundant columns
+  aa_matrix <- full_join(aasubs, aadeletions, keep=FALSE, by=join_by(Samplename,Location,Timepoint,aaSubstitutions,    aaDeletions,aaInsertions,missing))
+  aa_matrix <- full_join(aa_matrix, aainsertions, keep=FALSE, by=join_by(Samplename,Location,Timepoint,aaSubstitutions,    aaDeletions,aaInsertions,missing))
+  
+
+  return(aa_matrix)
 
 }
 
@@ -123,3 +135,36 @@ evusheld_muts <- evusheld_muts %>% mutate(
   )
 )  
 write_csv(evusheld_muts, "evusheld_20230816.csv")
+
+
+ensitrelvir_t21i <- Query_Mutations(aa_matrix,"S:T21I","21623,21624,21625")
+
+ensitrelvir_m49i <- Query_Mutations(aa_matrix,"S:M49I","21707,21708,21709")
+
+ensitrelvir_m49l <- Query_Mutations(aa_matrix,"S:M49L","21707,21708,21709")
+
+ensitrelvir_l50f <- Query_Mutations(aa_matrix,"S:L50F","21710,21711,21712")
+
+ensitrelvir_s144a <- Query_Mutations(aa_matrix,"S:S144A","21992,21993,21994")
+
+ensitrelvir_e166a <- Query_Mutations(aa_matrix,"S:E166A","22058,22059,22060")
+
+ensitrelvir_e166v <- Query_Mutations(aa_matrix,"S:E166V","22058,22059,22060")
+
+ensitrelvir_l167f <- Query_Mutations(aa_matrix,"S:L167F","22061,22062,22063")
+
+ensitrelvir_a173v <- Query_Mutations(aa_matrix,"S:A173V","22079,22080,22081")
+
+ensitrelvir_p252l <- Query_Mutations(aa_matrix,"S:P252L","22316,22317,22318")
+
+ensitrelvir_t304i <- Query_Mutations(aa_matrix,"S:T304I","22472,22473,22474")
+
+ensitrelvir_p168del <- Query_Mutations(aa_matrix,"S:P168-","22064,22065,22066")
+
+
+
+#L50F/E166A
+
+#L50F/E166V
+
+#ΔP168/A173V

@@ -13,7 +13,8 @@ def Get_Args():
     return args
     
 def Classify_Lineage(original):
-    #current classes of variants:
+    #current classes of variants, based on updates to ECDC variants of concern:
+    #https://www.ecdc.europa.eu/en/covid-19/variants-concern
     #B.1.1.7 is Alpha
     #B.1.351 is Beta
     #B.1.617.2* is Delta (inc all AY lineages)
@@ -23,8 +24,9 @@ def Classify_Lineage(original):
     #BA.4 is BA.4
     #BA.5 is BA.5
     #BQ.1* is BQ.1
-    #XBB is all XBB except XBB.1.5
-    #XBB.1.5-like including XBB1.9*, XBB1.16*. XBB.2.3*, XBB.1.18.1.1* (aka FE.2)
+    #XBB is all XBB except XBB.1.5-like noted below
+    #XBB.1.5-like including XBB1.9*, XBB1.16*. XBB.2.3*, XBB.1.18.1.1* (aka FE.2) excluding those below
+    #XBB11.5-like+F456L is EG.5, FL.1.5.1, XBB.1.16.6, and FE.1
     '''Take lineage names, expand, assign to WHO lineage'''
     try:
         uncompressed = aliasor.uncompress(original)
@@ -53,6 +55,8 @@ def Classify_Lineage(original):
         lineage = "BA.1"
     elif uncompressed.startswith("B.1.1.529.4"):
         lineage = "BA.4"
+    elif original.startswith("EG.5") or original.startswith("FL.1.5.1") or original.startswith("XBB.1.16.6") or original.startswith("FE.1"):
+        lineage = "XBB1.5-like with F456L"
     elif uncompressed.startswith("XBB.1.5") or uncompressed.startswith("XBB.1.9") or uncompressed.startswith("XBB.1.16") or uncompressed.startswith("XBL") or uncompressed.startswith("XBB.2.3") or uncompressed.startswith("XBB.1.18.1.1"):
         lineage = "XBB.1.5-like"
     elif uncompressed.startswith('XBB'):
