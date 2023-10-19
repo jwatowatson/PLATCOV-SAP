@@ -37,7 +37,7 @@ screen_failure =
               "scrpassed","reason_failure","scrnote")]
 
 screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
-# write.csv(x = screen_failure, file = paste0(prefix_downloads, "/Downloads/screening_failures.csv"))
+write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
 # --- Excluding screening failure data ---
 clin_data = clin_data[!ind, ]
 sort(unique(clin_data$Label))
