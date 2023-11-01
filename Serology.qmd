@@ -1,5 +1,5 @@
 ---
-title: "Generic arm analysis"
+title: "Serology data analysis"
 author: "James Watson"
 format: html
 editor: visual
@@ -21,6 +21,7 @@ library(finalfit)
 library(RColorBrewer)
 library(lubridate)
 library(brms)
+library(gridExtra)
 
 ## information on software/hardware used
 version
@@ -45,15 +46,9 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-# intervention = 'interim_all' # prefix of analysis file
-# intervention = 'MolPax_combination' # prefix of analysis file
-# intervention = 'MolPax_combination' # prefix of analysis file
-intervention = 'ensitrelvir' # prefix of analysis file
-
-# ref_arm = 'No study drug' #
-ref_arm = 'Nirmatrelvir' #
-# study_threshold = 1.2 # depending on comparison with no study drug or positive control
-study_threshold = 0.9
+intervention = 'interim_all' # prefix of analysis file
+ref_arm = 'No study drug' #
+study_threshold = 1.2 # depending on comparison with no study drug or positive control
 ```
 
 ```{r define_population}
@@ -208,7 +203,7 @@ writeLines(sprintf('We are running all models with %s chains and %s samples for 
                    unique(model_settings$Nthin), 
                    unique(model_settings$Nchain*(model_settings$Niter-model_settings$Nwarmup)/model_settings$Nthin)))
 
-model_setup_f_name = paste0('Rout/model_run_setup_',intervention,'.RData')
+model_setup_f_name = paste0('Rout/model_run_setup_serology',intervention,'.RData')
 save(model_settings, 
      platcov_dat_analysis,
      stan_inputs, 
@@ -216,62 +211,7 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
-## BRMS checks
 
-```{r brms_slopes}
-platcov_dat_no_effect = platcov_dat_analysis %>% 
-  filter(Trt %in% c('No study drug', 'Ivermectin',
-                    'Favipiravir', 'Fluoxetine',
-                    'Nitazoxanide'))
-# nl_bf_form = 
-#   bf(formula = log10_viral_load | cens(censor) ~ alpha0*Time*exp(alpha) + beta0,
-#      alpha ~ (1|ID),
-#      alpha0 ~ 1,
-#      beta0 ~ 1 + (1|ID),
-#      nl = T)
-# mod_naive = brm(formula = nl_bf_form,
-#                 data = platcov_dat_no_effect,
-#                 prior = c(prior(normal(-0.5, 0.5), nlpar='alpha0'),
-#                           prior(normal(5,2), nlpar=beta0)),
-#                 family = 'student', cores = 4, chains = 4)
-# mod_naive = brm(log10_viral_load | cens(censor) ~ Time + Site + s(Study_time,k=6) + (1+Time | ID),
-#                 data = platcov_dat_no_effect,
-#                 prior = c(prior(lkj(2), class = "cor"),
-#                           prior(normal(5, 5), class = Intercept),
-#                           prior(constant(7), class = 'nu')),
-#                 family = 'student', cores = 4, chains = 4)
-# thetas = ranef(mod_naive, summary = F)
-# mean_slopes = fixef(mod_naive, summary = F)
-# slopes_randef = apply(thetas$ID[,,'Time']+mean_slopes[,'Time'], 2,
-#                       quantile, probs=c(0.1, 0.5, 0.9))
-# slopes_dat = merge(data.frame(ID=colnames(slopes_randef),
-#                               slope_re = slopes_randef[2, ],
-#                               slope_re_lower = slopes_randef[1, ],
-#                               slope_re_upper = slopes_randef[3, ]),
-#                    platcov_dat[!duplicated(platcov_dat$ID),],
-#                    by = 'ID') %>%
-#   arrange(Rand_date)
-# mod_gam = mgcv::gam(slope_re ~ s(Study_time,k=5), data=slopes_dat)
-# summary(mod_gam)
-# par(las=1, family='serif')
-# plot(slopes_dat$Rand_date, slopes_dat$slope_re,
-#      ylab='Slope random effect',
-#      ylim=c(min(slopes_dat$slope_re_lower),
-#             max(slopes_dat$slope_re_upper)),
-#      col=slopes_dat$trt_color,
-#      xlab='Randomisation date', panel.first=grid(), pch=16)
-# for(i in 1:nrow(slopes_dat)){
-#   lines(rep(slopes_dat$Rand_date[i],2),
-#         c(slopes_dat$slope_re_lower[i], slopes_dat$slope_re_upper[i]),
-#         col=adjustcolor(slopes_dat$trt_color[i],alpha.f = .4))
-# }
-# legend('bottomleft',legend = unique(slopes_dat$Trt), col = unique(slopes_dat$trt_color),pch=16,lwd=2,inset=0.02)
-# abline(MASS::rlm(slopes_dat$slope_re~slopes_dat$Rand_date),
-#        col='darkblue',lwd=3,lty=2)
-# lines(slopes_dat$Rand_date, predict(mod_gam),lwd=3)
-# 
-# summary(lm(slope_re~Rand_date+Trt, data = slopes_dat))
-```
 
 ```{r}
 if(RUN_MODELS){
@@ -280,7 +220,7 @@ if(RUN_MODELS){
 ```
 
 ```{r}
-ff = list.files('Rout/', pattern = paste0(intervention,'.RData'),)
+ff = list.files('Rout/', pattern = paste0('serology', intervention,'.RData'),)
 ff = ff[grep(pattern = 'model_fits_',x = ff)]
 if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all model settings')
 ff = paste0('Rout/',ff)
@@ -333,25 +273,89 @@ for(i in 1:length(ff)){
 }
 ```
 
-```{r slopes_plot}
-load(ff[1])
-par(las=1, cex.lab=1.5, cex.axis=1.5)
-slope_out=make_slopes_plot(stan_out = out, 
-                           analysis_data_stan = stan_inputs$analysis_data_stan,
-                           ID_map = stan_inputs$ID_map,
-                           data_summary = Baseline_data,
-                           my_lims = c(2,30),
-                           my_vals = c(5,10, 15,20,30))
 
-# sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
-# sero_dat = merge(slope_out, sero_dat, by='ID', all=F)
-# 
-# sero_dat = sero_dat %>% 
-#   filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
-#   mutate(Day = ifelse(Day<=7, Day, 14),
-#          Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
-#   group_by(ID, Day) %>%
-#   mutate(Delta_IgG = log10_IgG-Baseline_IgG)
+compute slopes
+```{r}
+slopes_out=make_slopes_plot(stan_out = out,
+                            analysis_data_stan = stan_inputs$analysis_data_stan,
+                            ID_map = stan_inputs$ID_map,
+                            data_summary = Baseline_data,
+                            my_lims = c(2,30),
+                            my_vals = c(5,10, 15,20,30))
+```
+
+
+```{r serolgy_plots}
+sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
+sero_dat = sero_dat %>%
+  filter(!is.na(log10_IgG)) %>% group_by(ID) %>%
+  mutate(Day = ifelse(Day<=7, Day, 14),
+         Baseline_IgG = ifelse(sum(Day==0)>0,log10_IgG[Day==0],NA)) %>%
+  group_by(ID, Day) %>%
+  mutate(Delta_IgG = log10_IgG-Baseline_IgG)
+sero_wide =
+  sero_dat %>% pivot_wider(names_from = Day,
+                           values_from = c(log10_IgG,Delta_IgG),
+                           values_fill = NA,
+                           values_fn = mean)
+sero_wide = merge(slopes_out, sero_wide, by='ID', all.y = F)
+sero_wide = sero_wide %>% filter(!Trt %in% c('Evusheld','Regeneron'), log10_IgG_3>2)
+
+g1=sero_wide %>% ggplot(aes(x=Rand_date,
+                            y=log10_IgG_0,
+                            col=Trt)) +
+  theme_classic()+
+  geom_point() + scale_color_manual(values = trt_colors)+
+  labs(x = "Randomisation date", y = 'Log10 IgG on day 0')+
+  geom_smooth(method = mgcv::gam, formula = y~s(x),
+              se = T, color = "black")
+
+g11 = sero_wide %>% ggplot(aes(x=Rand_date, y=slope_median, col=Trt)) + geom_point()+ scale_color_manual(values = trt_colors)+
+  theme_classic()+
+  labs(x = "Randomisation date", y = 'Slope')+
+  geom_smooth(data = subset(sero_wide,Trt=='No study drug'),
+              method = mgcv::gam, formula = y~s(x),
+              se = T, color = trt_colors['No study drug']) +
+  geom_smooth(data = subset(sero_wide,Trt=='Nirmatrelvir'),
+              method = mgcv::gam, formula = y~s(x),
+              se = T, color =  trt_colors['Nirmatrelvir'])+
+  ylim(-2.5, 0)+
+  theme(legend.position="none")
+grid.arrange(g1, g11)
+
+g2=sero_wide %>% filter(Rand_date < '2022-02-01') %>%
+  ggplot(aes(x=log10_IgG_3,
+             y=slope_median)) +
+  geom_point() + 
+  labs(x = "Log10 IgG on day 3", 
+       y = 'Slope', 
+       title = 'Before Feb 2022')+
+  geom_smooth(method = mgcv::gam, formula = y~s(x),
+              se = T, color = "black")
+
+g3=sero_wide %>% filter(Rand_date >= '2022-02-01',
+                        Rand_date < '2023-02-01') %>%
+  ggplot(aes(x=log10_IgG_3,
+             y=slope_median)) +
+  geom_point() + 
+  labs(x = "Log10 IgG on day 3", 
+       y = 'Slope', 
+       title = 'Feb 2022 to Feb 2023')+
+  geom_smooth(method = mgcv::gam, formula = y~s(x),
+              se = T, color = "black")
+
+g4=sero_wide %>% filter(Rand_date >= '2023-02-01') %>%
+  ggplot(aes(x=log10_IgG_3,
+             y=slope_median)) +
+  geom_point() + 
+  labs(x = "Log10 IgG on day 3", 
+       y = 'Slope', 
+       title = 'After Feb 2023')+
+  geom_smooth(method = mgcv::gam, formula = y~s(x),
+              se = T, color = "black")
+
+gridExtra::grid.arrange(g2, g3, g4)
+
 # 
 # par(mfrow=c(3,2))
 # for(dd in sort(unique(sero_dat$Day))){
@@ -371,47 +375,45 @@ slope_out=make_slopes_plot(stan_out = out,
 # }
 # 
 # 
-# sero_wide = 
-#   sero_dat %>% pivot_wider(names_from = Day, 
-#                                      values_from = c(log10_IgG,Delta_IgG),
-#                                      values_fill = NA,
-#                                      values_fn = mean)
+
 # 
 # par(mfrow=c(2,2))
 # sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)
 # plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
 ```
 
-```{r coef_plot}
-coef_to_plot=1
-coef_model = which(model_settings$prior==1&
-                     model_settings$cov_matrices==coef_to_plot&
-                     model_settings$mod==all_mods[2])
-load(ff[coef_model])
-par(las=1, mfrow=c(1,2), mar=c(5,7,2,2))
-plot_coef_effects(stan_out = out,cov_mat = coef_to_plot,stan_inputs = stan_inputs)
-```
 
-## Individual patient data
+
+Fever
 
 ```{r}
+platcov_temp = read_csv(file = 'Analysis_Data/fever_interim.csv')
 
-# IDS_slow = slope_out$ID[which(slope_out$t_12_med>13 & slope_out$Trt=='Ensitrelvir')]
-# # slope_out$ID[IDS_slow]
-# par(mfrow=c(3,3),las=1, mar=c(4,5,2,2))
-# plot_individ_curves(platcov_dat = platcov_dat, IDs = IDS_slow,
-#                     xlims = c(0,14))
-# # model_list = list()
-# for(i in 1:length(ff)){
-#   load(ff[i])
-#   model_list[[i]] = out
-# }
-# 
-# ID_map = merge(stan_inputs$ID_map, Baseline_data, by.x = 'ID_key',by.y = 'ID')
-# par(mfrow=c(4,4), mar=c(4,4,2,2),las=1)
-# plot_data_model_fits(model_list = model_list, 
-#                      models_to_plot = 1:2,
-#                      K_plots = 16,mod_cols = model_cols,
-#                      ID_map = ID_map,
-#                      analysis_data_stan = stan_inputs$analysis_data_stan)
+platcov_temp = platcov_temp %>% filter(ID %in% platcov_dat_analysis$ID) %>%
+  ungroup() %>%
+  arrange(ID, Time) %>% 
+  group_by(ID) %>%
+  mutate(include_analysis = any(Time>=2),
+         Fever_Baseline = any(ax_temperature>37 & Time<=1)) %>%
+  ungroup() %>% filter(include_analysis, Fever_Baseline, Time>=0)
+
+length(unique(platcov_temp$ID))
+temp_clearance = calculate_fever_clearance(temp_dat = platcov_temp,
+                                           window_clear = 24/24)
+temp_clearance = merge(temp_clearance, platcov_dat_analysis[!duplicated(platcov_dat_analysis$ID),c('ID','Trt')],
+                       by = 'ID')
+fit <- survfit(Surv(clearance_time, clearance_time_cens) ~ Trt, data = temp_clearance) 
+diff=survdiff(Surv(clearance_time, clearance_time_cens) ~ Trt, data = temp_clearance) 
+pchisq(diff$chisq, length(diff$n)-1, lower.tail = FALSE)
+
+summary(mod)
+ggsurvplot(fit = fit, data = temp_clearance,risk.table = T,
+           # legend.labs =c("Nirmatrelvir + Ritonavir", 
+           #                "Molnupiravir",
+           #                "No study drug"),
+           xlab = 'Time (days)', ylab = 'Proportion with fever',
+           ggtheme = theme_light(),
+           risk.table.y.text.col = T,
+           risk.table.y.text=F,cex.lab=1.5,cex.axis=1.5)
 ```
+
