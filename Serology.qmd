@@ -417,3 +417,39 @@ ggsurvplot(fit = fit, data = temp_clearance,risk.table = T,
            risk.table.y.text=F,cex.lab=1.5,cex.axis=1.5)
 ```
 
+
+
+symptoms
+
+```{r symptoms}
+symp_dat = read.csv('Analysis_Data/symptoms_interim.csv')
+
+symp_dat = symp_dat %>% filter(ID %in% platcov_dat_analysis$ID) %>%
+  ungroup() %>%
+  arrange(ID, Timepoint_ID)
+symp_dat = merge(symp_dat, Baseline_data[, c('ID', 'Trt')], by='ID', all.x=T)
+
+symp_dat = symp_dat %>%
+  group_by(ID) %>%
+  mutate(symp_censored = as.numeric(any(Any_symptom==0)),
+         Symptom_resolution = ifelse(symp_censored==1,Timepoint_ID[which(Any_symptom==0)[1]],
+                                     max(Timepoint_ID))) %>% ungroup() 
+platcov_symp = symp_dat %>% distinct(ID, .keep_all = T)
+
+fit <- survfit(Surv(Symptom_resolution, symp_censored) ~ Trt, data = platcov_symp) 
+survdiff(Surv(Symptom_resolution, symp_censored) ~ Trt, data = platcov_symp) 
+ggsurvplot(fit = fit, data = platcov_symp,risk.table = T,
+           xlab = 'Time (days)', ylab = 'Proportion with symptoms',
+           ggtheme = theme_light(),
+           risk.table.y.text.col = T,
+           risk.table.y.text=F,cex.lab=1.5,cex.axis=1.5)
+
+
+symp_rebound = symp_dat %>% group_by(ID) %>%
+  mutate(rebound = case_when(
+    symp_censored==0 ~ NA,
+    symp_censored==1 ~ any(Any_symptom[Timepoint_ID>Symptom_resolution+1]==1)
+  )) %>% distinct(ID, .keep_all = T)
+table(symp_rebound$rebound, useNA = 'ifany')
+```
+
