@@ -9,7 +9,7 @@ model_settings_ineffective <- model_settings
 res = array(dim = c(nrow(model_settings_effective) + nrow(model_settings_ineffective), 6))
 
 for(i in 1:nrow(model_settings_effective)){
-  load(paste('~/Downloads/Rout/model_fits_',i,'.RData',sep=''))
+  load(paste('output/Rout_effective/model_fits_',i,'.RData',sep=''))
   thetas_trt = rstan::extract(out, pars='trt_effect')$trt_effect
   res[i, ] = c(quantile(thetas_trt, probs = c(0.025, 0.5, 0.975)),
                quantile(thetas_trt, probs = 0.975)-
@@ -19,7 +19,7 @@ for(i in 1:nrow(model_settings_effective)){
 }
 
 for(i in (nrow(model_settings_effective)+1):nrow(res)){
-  load(paste('~/Downloads/Ineffective/Rout/model_fits_ineffective_',(i-nrow(model_settings_effective)),'.RData',sep=''))
+  load(paste('output/Rout_ineffective/model_fits_ineffective_',(i-nrow(model_settings_effective)),'.RData',sep=''))
   thetas_trt = rstan::extract(out, pars='trt_effect')$trt_effect
   #model_settings_ineffective[(i-nrow(model_settings_effective)),]
   #hist(exp(thetas_trt))
@@ -72,10 +72,12 @@ for(j in 1:nrow(unique_contrast)){
 }
 
 
-
-
-par(mfrow=c(3,3), las=1)
-for(j in 1:nrow(unique_contrast)){
+png("plots/z_scores.png", width = 8, height = 6, units = "in", res = 350)
+labs <- c("A", "B", "C", "D", "E")
+notes <- c("", "", "", "Before Feb 2023", "After Feb 2023")
+par(mfrow=c(2,3), las=1)
+for(j in 1:5){#nrow(unique_contrast)){
+  
   ind = model_settings$intervention==unique_contrast$intervention[j] &
     model_settings$ref_arm==unique_contrast$ref_arm[j] &
     model_settings$data_ID==unique_contrast$data_ID[j]
@@ -93,4 +95,8 @@ for(j in 1:nrow(unique_contrast)){
   abline(v = xx$day_FUP[which.max(xx$zscore)],lty=2)
   abline(h = 0,lty=2)
   title(paste(unique_contrast$intervention[j], unique_contrast$ref_arm[j], sep='\n'))
+  mtext(labs[j], 2, adj=3, las=1, padj = -10)
+  mtext(notes[j], 2, adj=-0.25, las=1, padj = 6)
+  
 }
+dev.off()
