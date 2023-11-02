@@ -22,6 +22,7 @@ library(RColorBrewer)
 library(lubridate)
 library(brms)
 library(gridExtra)
+library(survminer)
 
 ## information on software/hardware used
 version
@@ -211,8 +212,6 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
-
-
 ```{r}
 if(RUN_MODELS){
   system(paste('Rscript --vanilla run_models_local.R',intervention))
@@ -273,8 +272,8 @@ for(i in 1:length(ff)){
 }
 ```
 
-
 compute slopes
+
 ```{r}
 slopes_out=make_slopes_plot(stan_out = out,
                             analysis_data_stan = stan_inputs$analysis_data_stan,
@@ -283,7 +282,6 @@ slopes_out=make_slopes_plot(stan_out = out,
                             my_lims = c(2,30),
                             my_vals = c(5,10, 15,20,30))
 ```
-
 
 ```{r serolgy_plots}
 sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
@@ -382,8 +380,6 @@ gridExtra::grid.arrange(g2, g3, g4)
 # plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
 ```
 
-
-
 Fever
 
 ```{r}
@@ -416,8 +412,6 @@ ggsurvplot(fit = fit, data = temp_clearance,risk.table = T,
            risk.table.y.text.col = T,
            risk.table.y.text=F,cex.lab=1.5,cex.axis=1.5)
 ```
-
-
 
 symptoms
 
@@ -452,4 +446,3 @@ symp_rebound = symp_dat %>% group_by(ID) %>%
   )) %>% distinct(ID, .keep_all = T)
 table(symp_rebound$rebound, useNA = 'ifany')
 ```
-
