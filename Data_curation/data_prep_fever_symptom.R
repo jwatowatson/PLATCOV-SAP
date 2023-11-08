@@ -4,43 +4,7 @@ library(ggplot2)
 library(tidyverse)
 
 ##Define user folder path####################################################################
-user <- 'James'#"Chang" # Change here
-
-#1 Analysis_data folder
-if(user == "Chang"){
-  prefix_analysis_data <- "D:/PLATCOV-SAP"
-}else{
-  prefix_analysis_data <- ".."}
-
-#2 Dropbox folder (PLATCOV_Analysis)
-if(user == "Chang"){
-  prefix_dropbox <- "C:/Users/Phrutsamon/Dropbox/PLATCOV_Analysis"
-}else{
-  prefix_dropbox <- "~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis"
-}
-
-#3 Downloads folder
-if(user == "Chang"){
-  prefix_downloads <- "PLATCOV_SAP"
-}else{
-  prefix_downloads <- "~"
-}
-
-#4 Dropbox folder for randomisation
-if(user == "Chang"){
-  prefix_drop_rand <- "C:/Users/Phrutsamon/Dropbox/PLATCOV" 
-}else{
-  prefix_drop_rand <- "~/Dropbox/PLATCOV"
-}
-
-#5 Data_curation folder
-if(user == "Chang"){
-  prefix_dat_cur <- "D:/PLATCOV-SAP/Data_curation/" 
-}else{
-  prefix_dat_cur <- ""
-}
-#############################################################################################
-
+source('user_settings.R')
 
 
 ##******************** Clinical database *******************
@@ -63,13 +27,13 @@ temp_data = temp_data[(!is.na(temp_data$fut_dat) &
 # ggplot(temp_data, aes(x=visit, y=fut_temp, fill=Site)) + 
 # geom_boxplot()
 
-ind_low = temp_data$fut_temp<36
-sum(ind_low)
-temp_data$fut_temp[ind_low]=36
+# ind_low = temp_data$fut_temp<36
+# sum(ind_low)
+# temp_data$fut_temp[ind_low]=36
 
-ind_high = temp_data$fut_temp>42
-sum(ind_high)
-temp_data$fut_temp[ind_high]=42
+# ind_high = temp_data$fut_temp>42
+# sum(ind_high)
+# temp_data$fut_temp[ind_high]=42
 
 temp_data$temp_time = 
   as.character(as.POSIXct(apply(temp_data[, c('fut_dat','fut_tim')],
