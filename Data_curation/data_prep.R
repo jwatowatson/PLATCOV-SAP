@@ -752,9 +752,6 @@ library(ggpubr)
 ggarrange(G1, G2, ncol = 1, nrow = 2, common.legend = T, align = "hv", labels = "AUTO", legend = "right")
 
 ############################################################################
-
-
-
 preds_all =
   predict(conv_mod,
           newdata = data.frame(CT=Res$CT_NS,
@@ -994,7 +991,7 @@ write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analy
 Res_Nitazoxanide = 
   Res %>% filter(Trt %in% c('Nitazoxanide',"No study drug"),
                  Rand_date > "2022-06-03 00:00:00",
-                 Country %in% c('Brazil','Laos'),
+                 Country %in% c('Brazil','Laos', 'Pakistan'),
                  !ID %in% c("PLT-BR3-006",
                             "PLT-BR3-018",
                             "PLT-BR3-033",

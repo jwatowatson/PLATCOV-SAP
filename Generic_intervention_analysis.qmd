@@ -47,12 +47,12 @@ Set up analysis
 ```{r load_data}
 # intervention = 'interim_all' # prefix of analysis file
 # intervention = 'MolPax_combination' # prefix of analysis file
-intervention = 'MolPax_combination' # prefix of analysis file
-#intervention = 'ensitrelvir' # prefix of analysis file
+# intervention = 'MolPax_combination' # prefix of analysis file
+intervention = 'Nitazoxanide' # prefix of analysis file
 
-# ref_arm = 'No study drug' #
-ref_arm = 'Nirmatrelvir' #
-study_threshold = 1.2 # depending on comparison with no study drug or positive control
+ ref_arm = 'No study drug' #
+#ref_arm = 'Nirmatrelvir' #
+ study_threshold = 1.2 # depending on comparison with no study drug or positive control
 #study_threshold = 0.9
 ```
 
@@ -169,7 +169,7 @@ writeLines(sprintf('Analysis dataset contains %s patients and %s datapoints (%s 
                    sum(platcov_dat_analysis$CT_NS<40),
                    round(100*mean(platcov_dat_analysis$CT_NS<40))))
 
-covs_base = c('Site','Study_time')
+covs_base = c('Variant','Site','Study_time')
 covs_full=c(covs_base, 'Age_scaled','Symptom_onset')
 stan_inputs = 
   make_stan_inputs(input_data_fit = platcov_dat_analysis,
@@ -219,10 +219,10 @@ save(model_settings,
 ## BRMS checks
 
 ```{r brms_slopes}
-# platcov_dat_no_effect = platcov_dat_analysis %>% 
-#   filter(Trt %in% c('No study drug', 'Ivermectin',
-#                     'Favipiravir', 'Fluoxetine',
-#                     'Nitazoxanide'))
+platcov_dat_no_effect = platcov_dat_analysis %>% 
+  filter(Trt %in% c('No study drug', 'Ivermectin',
+                    'Favipiravir', 'Fluoxetine',
+                    'Nitazoxanide'))
 # nl_bf_form = 
 #   bf(formula = log10_viral_load | cens(censor) ~ alpha0*Time*exp(alpha) + beta0,
 #      alpha ~ (1|ID),
