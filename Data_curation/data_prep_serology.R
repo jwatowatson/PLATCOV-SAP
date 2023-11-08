@@ -17,11 +17,13 @@ dat = dat[, c('SUBJECT\nNO','Time Point',
     IgG_ngml_400 = `Spike IgG - Original (ng/mL) 1/400 Dilution`,
     IgG_ngml_3200 = `Spike IgG - Original (ng/mL) 1/3200 Dilution`,
     IgG_ngml_12800 = `Spike IgG - Original (ng/mL) 1/12800 Dilution Repeat`,
-    IgG_ngml = case_when(IgG_ngml_400 <= 60000 & IgG_ngml_400 > 20000 ~ IgG_ngml_400,
-                         IgG_ngml_400 <= 20000 ~ IgG_ngml_50,
-                         (IgG_ngml_400 > 60000 & IgG_ngml_3200 < 450000) | (is.na(IgG_ngml_12800) & IgG_ngml_3200 < 600000) ~ IgG_ngml_3200,
+    IgG_ngml = case_when(IgG_ngml_400 <= 60000 & IgG_ngml_400 > 7500 ~ IgG_ngml_400,
+                         IgG_ngml_400 <= 7500 ~ IgG_ngml_50,
+                         IgG_ngml_400 >= 50000 & !is.na(IgG_ngml_3200) ~  IgG_ngml_3200,
+                         (IgG_ngml_400 > 50000 & IgG_ngml_3200 < 450000) | (is.na(IgG_ngml_12800) & IgG_ngml_3200 < 600000) ~ IgG_ngml_3200,
                          T ~ IgG_ngml_12800),
     IgG_ngml = ifelse(IgG_ngml<1, 1, IgG_ngml))
+hist(log10(dat$IgG_ngml), breaks = 200)
 
 dat = merge(clin_data, dat[, c('SUBJECT\nNO','Time Point','IgG_ngml')],
             all.y=T, by.y = 'SUBJECT\nNO', by.x = 'Label')

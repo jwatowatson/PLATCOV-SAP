@@ -22,6 +22,8 @@ library(RColorBrewer)
 library(lubridate)
 library(brms)
 library(gridExtra)
+library(survival)
+library(survminer)
 
 ## information on software/hardware used
 version
@@ -248,7 +250,7 @@ for(i in 1:length(ff)){
 ```
 
 ```{r Figure_main, fig.height=6, fig.width=9}
-par(las=1, mar=c(5,5,2,2),cex.lab=1.3, cex.axis=1.3, mfrow=c(1,2))
+#par(las=1, mar=c(5,5,2,2),cex.lab=1.3, cex.axis=1.3, mfrow=c(1,2))
 plot_serial_data(xx = platcov_dat_analysis,xlims = c(0,7))
 
 par(las=1, mar=c(5,8,2,2))
@@ -298,6 +300,7 @@ sero_wide =
                            values_from = c(log10_IgG,Delta_IgG),
                            values_fill = NA,
                            values_fn = mean)
+sero_dat = merge(slopes_out, sero_dat, by='ID', all.y = F)
 sero_wide = merge(slopes_out, sero_wide, by='ID', all.y = F)
 sero_wide = sero_wide %>% filter(!Trt %in% c('Evusheld','Regeneron'), log10_IgG_3>2)
 
@@ -326,7 +329,7 @@ grid.arrange(g1, g11)
 g2=sero_wide %>% filter(Rand_date < '2022-02-01') %>%
   ggplot(aes(x=log10_IgG_3,
              y=slope_median)) +
-  geom_point() + 
+  geom_point() +   ylim(-2.5, 0)+
   labs(x = "Log10 IgG on day 3", 
        y = 'Slope', 
        title = 'Before Feb 2022')+
@@ -337,7 +340,7 @@ g3=sero_wide %>% filter(Rand_date >= '2022-02-01',
                         Rand_date < '2023-02-01') %>%
   ggplot(aes(x=log10_IgG_3,
              y=slope_median)) +
-  geom_point() + 
+  geom_point() +   ylim(-2.5, 0)+
   labs(x = "Log10 IgG on day 3", 
        y = 'Slope', 
        title = 'Feb 2022 to Feb 2023')+
@@ -347,42 +350,155 @@ g3=sero_wide %>% filter(Rand_date >= '2022-02-01',
 g4=sero_wide %>% filter(Rand_date >= '2023-02-01') %>%
   ggplot(aes(x=log10_IgG_3,
              y=slope_median)) +
-  geom_point() + 
+  geom_point() +   ylim(-2.5, 0)+
   labs(x = "Log10 IgG on day 3", 
        y = 'Slope', 
        title = 'After Feb 2023')+
   geom_smooth(method = mgcv::gam, formula = y~s(x),
               se = T, color = "black")
 
+g2
+g3
+g4
 gridExtra::grid.arrange(g2, g3, g4)
 
-# 
-# par(mfrow=c(3,2))
-# for(dd in sort(unique(sero_dat$Day))){
-#   sero_dat_dd = sero_dat%>%filter(Day==dd)
-#   plot(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG, xlab='slope',
-#        ylab='log IgG', main= paste('Day',dd), panel.first=grid(),
-#        ylim = range(sero_dat$log10_IgG))
-#   cor.test(sero_dat_dd$slope_median, sero_dat_dd$log10_IgG)
-#   mod=lm(log10_IgG~slope_median, data= sero_dat_dd)
-#   abline(mod, col='red',lwd=3)
-#   print(summary(mod))
-#   if(dd>0){
-#     plot(sero_dat_dd$slope_median, sero_dat_dd$Delta_IgG, xlab='slope',
-#        ylab='Delta IgG', main= paste('Day',dd), panel.first=grid(),
-#        ylim = range(sero_dat$Delta_IgG,na.rm=T))
-#   }
-# }
-# 
-# 
 
-# 
-# par(mfrow=c(2,2))
-# sero_no_increase = sero_dat%>% filter(Day>=7 & log10_IgG<=4)
-# plot_individ_curves(platcov_dat = platcov_dat, IDs = unique(sero_no_increase$ID),xlims = c(0,14))
+mod_all =
+  lm(slope_median ~ Baseline_IgG + log10_IgG_3 + log10_IgG_7 + log10_IgG_14,
+     data = sero_wide %>% filter(log10_IgG_14 >2))
+summary(mod_all)
+
+
+sero_wide  %>% filter(log10_IgG_14 >2) %>%
+  ggplot(aes(x=log10_IgG_14,
+             y=slope_median)) +
+  geom_point() +   ylim(-2.5, 0)+
+  labs(x = "Log10 IgG on day 14", 
+       y = 'Slope', 
+       title = 'All')+
+  geom_smooth(method = lm, formula = y~x,
+              se = T, color = "black")
+
+
+par(las=1, cex.lab=1.4, cex.axis=1.4)
+boxplot(log10_IgG ~ Day, xlab = 'Day', ylab = 'Log 10 IgG levels',
+        data = sero_dat )
+grid()
+
+boxplot(log10_IgG ~ Day, xlab = 'Day', ylab = 'Log 10 IgG levels',
+        data = sero_dat %>% filter(Rand_date<'2022-02-01'))
+grid()
+
+boxplot(log10_IgG ~ Day, xlab = 'Day', ylab = 'Log 10 IgG levels',
+        data = sero_dat %>% filter(Rand_date>'2023-02-01'))
+grid()
 ```
 
 
+day 14 sero values
+
+```{r day14_sero}
+sero_wide %>% ggplot(aes(x=Rand_date,
+                         y=log10_IgG_0,
+                         col=Trt)) +
+  theme_classic()+
+  geom_point() + scale_color_manual(values = trt_colors)+
+  labs(x = "Randomisation date", y = 'Log10 IgG on day 0')+
+  geom_smooth(method = mgcv::gam, formula = y~s(x),
+              se = T, color = "black")
+
+g2=sero_wide %>% filter(Rand_date < '2022-02-01') %>%
+  ggplot(aes(x=log10_IgG_14,
+             y=slope_median)) +
+  geom_point() +   ylim(-2.5, 0)+
+  labs(x = "Log10 IgG on day 14", 
+       y = 'Slope', 
+       title = 'Before Feb 2022')+
+  geom_smooth(method = lm, formula = y~x,
+              se = T, color = "black")
+
+g3=sero_wide %>% filter(Rand_date >= '2022-02-01',
+                        Rand_date < '2023-02-01',
+                        log10_IgG_14>2) %>%
+  ggplot(aes(x=log10_IgG_14,
+             y=slope_median)) +
+  geom_point() +   ylim(-2.5, 0)+
+  labs(x = "Log10 IgG on day 3", 
+       y = 'Slope', 
+       title = 'Feb 2022 to Feb 2023')+
+  geom_smooth(method = lm, formula = y~x,
+              se = T, color = "black")
+
+g4=sero_wide %>% filter(Rand_date >= '2023-02-01') %>%
+  ggplot(aes(x=log10_IgG_14,
+             y=slope_median)) +
+  geom_point() +   ylim(-2.5, 0)+
+  labs(x = "Log10 IgG on day 14", 
+       y = 'Slope', 
+       title = 'After Feb 2023')+
+  geom_smooth(method = lm, formula = y~x,
+              se = T, color = "black")
+
+g2
+g3
+g4
+
+summary(lm(slope_median~log10_IgG_14, data = sero_wide %>% filter(Rand_date < '2022-02-01')))
+
+summary(lm(slope_median~log10_IgG_14, data = sero_wide %>% filter(Rand_date >= '2022-02-01', Rand_date<'2023-02-01', log10_IgG_14>2)))
+
+summary(lm(slope_median~log10_IgG_14, data = sero_wide %>% filter(Rand_date >= '2023-02-01')))
+```
+
+
+Delta IgG
+
+```{r delta_igg}
+sero_wide %>% ggplot(aes(x=Rand_date,
+                         y=Delta_IgG_14,
+                         col=Trt)) +
+  theme_classic()+
+  geom_point() + scale_color_manual(values = trt_colors)+
+  labs(x = "Randomisation date", y = 'Log10 IgG on day 0')+
+  geom_smooth(method = mgcv::gam, formula = y~s(x),
+              se = T, color = "black")+
+  ylim(-1, 2.5)
+
+summary(mgcv::gam(Delta_IgG_14 ~ Trt + log10_IgG_0,
+                  data = sero_wide %>% 
+                    filter(Site=='th001',
+                           Rand_date>'2022-06-06',
+                           Trt %in% c('No study drug', 'Nirmatrelvir')
+                    )))
+
+summary(mgcv::gam(Delta_IgG_7 ~  Trt + log10_IgG_0,
+                  data = sero_wide))
+
+sero_wide %>% ggplot(aes(x=Baseline.viral.load,
+                         y=log10_IgG_0,
+                         col=Trt)) +
+  theme_classic()+
+  geom_point() + scale_color_manual(values = trt_colors)+
+  labs(x = "Baseline viral load", y = 'Log10 IgG on day 0')+
+  geom_smooth(method = lm, formula = y~x,
+              se = T, color = "black")+
+  ylim(2,6)
+
+
+
+sero_wide %>%
+  filter(Site=='th001',
+         Rand_date>'2022-06-06',
+         Trt %in% c('No study drug', 'Nirmatrelvir')) %>%
+  ggplot(aes(x=log10_IgG_0,
+             y=Delta_IgG_14,
+             col=Trt)) +
+  theme_classic()+
+  geom_point() + scale_color_manual(values = trt_colors)+
+  labs(x = "Day 0 IgG", y = 'Delta IgG (day 14)')+
+  geom_smooth(method = lm, formula = y~x,
+              se = T, color = "black")
+```
 
 Fever
 
@@ -401,12 +517,14 @@ length(unique(platcov_temp$ID))
 temp_clearance = calculate_fever_clearance(temp_dat = platcov_temp,
                                            window_clear = 24/24)
 temp_clearance = merge(temp_clearance, platcov_dat_analysis[!duplicated(platcov_dat_analysis$ID),c('ID','Trt')],
-                       by = 'ID')
+                       by = 'ID') %>% 
+  filter(Trt %in% c('No study drug','Ivermectin','Regeneron','Remdesivir',
+                    'Favipiravir','Fluoxetine','Nirmatrelvir',
+                    'Molnupiravir'))
 fit <- survfit(Surv(clearance_time, clearance_time_cens) ~ Trt, data = temp_clearance) 
 diff=survdiff(Surv(clearance_time, clearance_time_cens) ~ Trt, data = temp_clearance) 
 pchisq(diff$chisq, length(diff$n)-1, lower.tail = FALSE)
 
-summary(mod)
 ggsurvplot(fit = fit, data = temp_clearance,risk.table = T,
            # legend.labs =c("Nirmatrelvir + Ritonavir", 
            #                "Molnupiravir",
@@ -415,8 +533,18 @@ ggsurvplot(fit = fit, data = temp_clearance,risk.table = T,
            ggtheme = theme_light(),
            risk.table.y.text.col = T,
            risk.table.y.text=F,cex.lab=1.5,cex.axis=1.5)
+
+temp_clearance = merge(temp_clearance[, c('ID','clearance_time','clearance_time_cens')], slopes_out, by = 'ID')
+
 ```
 
+
+
+cox model
+```{r}
+coxph(formula = Surv(clearance_time, clearance_time_cens) ~ Trt + slope_median ,
+      data = temp_clearance)
+```
 
 
 symptoms
@@ -427,8 +555,9 @@ symp_dat = read.csv('Analysis_Data/symptoms_interim.csv')
 symp_dat = symp_dat %>% filter(ID %in% platcov_dat_analysis$ID) %>%
   ungroup() %>%
   arrange(ID, Timepoint_ID)
-symp_dat = merge(symp_dat, Baseline_data[, c('ID', 'Trt')], by='ID', all.x=T)
-
+symp_dat = merge(symp_dat, Baseline_data[, c('ID', 'Trt','Fever_Baseline')], by='ID', all.x=T)%>% filter(Trt %in% c('No study drug','Ivermectin','Regeneron','Remdesivir',
+                    'Favipiravir','Fluoxetine','Nirmatrelvir',
+                    'Molnupiravir')) 
 symp_dat = symp_dat %>%
   group_by(ID) %>%
   mutate(symp_censored = as.numeric(any(Any_symptom==0)),
@@ -443,7 +572,7 @@ ggsurvplot(fit = fit, data = platcov_symp,risk.table = T,
            ggtheme = theme_light(),
            risk.table.y.text.col = T,
            risk.table.y.text=F,cex.lab=1.5,cex.axis=1.5)
-
+coxph(Surv(Symptom_resolution, symp_censored) ~ Trt+Fever_Baseline, data = platcov_symp)
 
 symp_rebound = symp_dat %>% group_by(ID) %>%
   mutate(rebound = case_when(
