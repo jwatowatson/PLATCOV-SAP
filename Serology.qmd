@@ -213,8 +213,6 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
-
-
 ```{r}
 if(RUN_MODELS){
   system(paste('Rscript --vanilla run_models_local.R',intervention))
@@ -275,8 +273,8 @@ for(i in 1:length(ff)){
 }
 ```
 
-
 compute slopes
+
 ```{r}
 slopes_out=make_slopes_plot(stan_out = out,
                             analysis_data_stan = stan_inputs$analysis_data_stan,
@@ -285,7 +283,6 @@ slopes_out=make_slopes_plot(stan_out = out,
                             my_lims = c(2,30),
                             my_vals = c(5,10, 15,20,30))
 ```
-
 
 ```{r serolgy_plots}
 sero_dat = read_csv('Analysis_Data/Serology_IgG.csv')
@@ -500,6 +497,7 @@ sero_wide %>%
               se = T, color = "black")
 ```
 
+
 Fever
 
 ```{r}
@@ -581,4 +579,3 @@ symp_rebound = symp_dat %>% group_by(ID) %>%
   )) %>% distinct(ID, .keep_all = T)
 table(symp_rebound$rebound, useNA = 'ifany')
 ```
-

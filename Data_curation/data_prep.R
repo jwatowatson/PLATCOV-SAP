@@ -398,7 +398,7 @@ if(max(table(Res$Plate))>96){
   writeLines('**************XXXXXXXXX MORE THAN 96 samples on a single plate!! XXXXXXXX************')
 }
 
-## Extract standard curve data by plate
+## Extract standard curve data by plate ############
 ind = grep('std', Res$`Sample ID`)
 SC = Res[ind, c('Sample ID','N/S Gene','Target conc. c/mL','Plate','Lab','Lot no.')]
 
@@ -704,12 +704,56 @@ conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch),
                 control = lmerControl(optimizer ="Nelder_Mead"))
 
 preds = predict(conv_mod)
-plot(control_dat$CT, jitter(control_dat$log10_true_density), xlim=c(20,40),
+
+#Plot standard curve############################################################################
+plot(control_dat$CT, jitter(control_dat$log10_true_density), xlim=c(18,40),
      col = control_dat$Lab)
 for(bb in levels(control_dat$batch)){
   ind = control_dat$batch==bb
   lines(control_dat$CT[ind], preds[ind], col = as.numeric(control_dat$Lab[ind]=='Thailand')+1)
 }
+#Plot standard curve (ggplot) ############################################################################
+control_dat2 <- control_dat[1:length(preds),]
+control_dat2$preds <- preds
+
+G1 <- ggplot(control_dat2, aes(x = CT, y = log10_true_density, col = Lab)) +
+  theme_bw() +
+  geom_line(aes(x = CT, y = preds, group = batch), alpha = 0.1, linewidth = 1) +
+  scale_color_manual(values = (c("red", "black", "blue", "#CF4DCE")), name = "") +
+  geom_point(width  = 0, height = 0.05, shape = 1, alpha = 1, size = 3.5) +
+  xlab("CT values") +
+  ylab("Standard viral loads") +
+  theme(axis.title = element_text(size = 12, face = "bold"),
+        plot.title = element_text(size = 14, face = "bold")
+        ) +
+  facet_wrap(Lab~., ncol = 4)
+G1
+
+control_dat2$resid <- resid(conv_mod)
+
+var <- aggregate(list("resid" = control_dat2$resid), list("Lab" = control_dat2$Lab), var)
+var$Labels <- paste0("var = ", sprintf("%.3f", round(var$resid,3)))
+
+
+G2 <- ggplot(control_dat2, aes(x =resid)) + 
+  geom_histogram(aes(y=after_stat(density)), bins = 20) +
+  facet_wrap(Lab~., ncol = 4) +
+  theme_bw() +
+  xlab("Residues of standard curve") +
+  ylab("Density") +
+  theme(axis.title = element_text(size = 12, face = "bold"),
+        plot.title = element_text(size = 14, face = "bold")
+  )  +
+  geom_vline(xintercept = 0, col = "red", linetype = "dashed", linewidth = 0.75) +
+  geom_text(data = var, aes(x = 0.25, y = 6, label = Labels))
+
+
+library(ggpubr)
+ggarrange(G1, G2, ncol = 1, nrow = 2, common.legend = T, align = "hv", labels = "AUTO", legend = "right")
+
+############################################################################
+
+
 
 preds_all =
   predict(conv_mod,
