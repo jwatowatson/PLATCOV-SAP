@@ -48,7 +48,7 @@ Set up analysis
 # intervention = 'interim_all' # prefix of analysis file
 # intervention = 'MolPax_combination' # prefix of analysis file
 # intervention = 'MolPax_combination' # prefix of analysis file
-intervention = 'Nitazoxanide' # prefix of analysis file
+intervention = 'Fluoxetine' # prefix of analysis file
 
  ref_arm = 'No study drug' #
 #ref_arm = 'Nirmatrelvir' #
@@ -93,9 +93,27 @@ pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
 ```
 
+## Grouping variants
+
+To reduce the number of variant groups, as suggested by Liz.
+
+```{r}
+
+platcov_dat$Variant2 <- as.character(platcov_dat$Variant)
+
+platcov_dat$Variant2[platcov_dat$Variant2 %in% c("BA.5.2", "BA.5.5", "BQ.1")] <- "BA.5"
+platcov_dat$Variant2[platcov_dat$Variant2 %in% c("BN.1.2", "BN.1.3", "CH.1.1")] <- "BA.2.75"
+platcov_dat$Variant2[platcov_dat$Variant2 %in% c("XBB1.5-like with F456L")] <- "XBB.1.5-like"
+
+platcov_dat$Variant2 <- as.factor(platcov_dat$Variant2)
+```
+
 ## Baseline characteristics
 
 ```{r}
+
+#platcov_dat$Variant <- platcov_dat$Variant2
+
 #| echo: false
 platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
   mutate(daily_VL = mean(log10_viral_load),

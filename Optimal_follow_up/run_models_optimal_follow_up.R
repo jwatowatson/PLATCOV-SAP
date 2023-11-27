@@ -1,8 +1,8 @@
 # script for running all the stan models with all settings on the BMRC cluster
 
 args = commandArgs(trailingOnly = FALSE) # comes from the SGE_TASKID in *.sh file
-i = as.numeric(args[6])
-print(paste0("job(i) = ", i)) # this will print out in the *.o file
+job_i = as.numeric(args[6])
+print(paste0("job(i) = ", job_i)) # this will print out in the *.o file
 ############################################################################
 ## Packages needed
 library(rstan)
@@ -18,24 +18,24 @@ source('../functions.R')
 covs_base = c('Variant')
 
 ############################################################################
-load('model_settings_ineffective.RData') # change here for ineffective drugs
+load('model_settings_bootstraps.RData') # change here for ineffective drugs
 
 Max_job = nrow(model_settings)
-if(i > Max_job) stop('no model setting corresponding to job ID')
+if(job_i > Max_job) stop('no model setting corresponding to job ID')
 
 writeLines('Doing the following job:')
-print(model_settings[i, ])
+print(model_settings[job_i, ])
 
-options(mc.cores = model_settings$Nchain[i])
-stopifnot(model_settings$Nchain[i]>getDoParWorkers()) # check worker number assigned
+options(mc.cores = model_settings$Nchain[job_i])
+stopifnot(model_settings$Nchain[job_i]>getDoParWorkers()) # check worker number assigned
 
-mod = stan_model(file = as.character(model_settings$mod[i])) # compile 
+mod = stan_model(file = as.character(model_settings$mod[job_i])) # compile 
 ############################################################################
-platcov_dat_analysis <- data_list[[model_settings$data_ID[i]]]
-Dmax = model_settings$Dmax[i]
+platcov_dat_analysis <- data_list[[model_settings$data_ID[job_i]]]
+Dmax = model_settings$Dmax[job_i]
 
-ref_arm = model_settings$ref_arm[i]
-trts = model_settings$intervention[i]
+ref_arm = model_settings$ref_arm[job_i]
+trts = model_settings$intervention[job_i]
 
 # only going to use data from main thai site (best quality data)
 platcov_dat_analysis = platcov_dat_analysis %>%
@@ -80,13 +80,13 @@ analysis_data_stan = stan_input_job$analysis_data_stan
 analysis_data_stan$trt_mat = stan_input_job$Trt_matrix
 analysis_data_stan$K_trt = ncol(analysis_data_stan$trt_mat)
 
-x_intercept = stan_input_job$cov_matrices$X_int[[model_settings$cov_matrices[i]]]
+x_intercept = stan_input_job$cov_matrices$X_int[[model_settings$cov_matrices[job_i]]]
 if(ncol(x_intercept)==0) x_intercept = array(0, dim=c(nrow(x_intercept),1))
 analysis_data_stan$x_intercept = x_intercept
 analysis_data_stan$K_cov_intercept= ncol(x_intercept)
 
 
-x_slope = stan_input_job$cov_matrices$X_slope[[model_settings$cov_matrices[i]]]
+x_slope = stan_input_job$cov_matrices$X_slope[[model_settings$cov_matrices[job_i]]]
 if(ncol(x_slope)==0) x_slope = array(0, dim=c(nrow(x_slope),1))
 analysis_data_stan$x_slope = x_slope
 analysis_data_stan$K_cov_slope=ncol(x_slope)
@@ -94,17 +94,17 @@ analysis_data_stan$K_cov_slope=ncol(x_slope)
 # sample posterior
 out = sampling(mod, 
                data=c(analysis_data_stan,
-                      all_priors[[model_settings$prior[i]]]),
-               iter=model_settings$Niter[i],
-               chain=model_settings$Nchain[i],
-               thin=model_settings$Nthin[i],
-               warmup=model_settings$Nwarmup[i],
+                      all_priors[[model_settings$prior[job_i]]]),
+               iter=model_settings$Niter[job_i],
+               chain=model_settings$Nchain[job_i],
+               thin=model_settings$Nthin[job_i],
+               warmup=model_settings$Nwarmup[job_i],
                save_warmup = FALSE,
-               seed=i,
+               seed=job_i,
                pars=c('trt_effect'), # only save trt effect parameter 
                include=T)
 
-save(out, file = paste0('Rout/model_fits_ineffective_',i,'.RData'))# save output # change here for ineffective drugs
+save(out, file = paste0('Rout/model_fits_bootstraps_',job_i,'.RData'))# save output # change here for ineffective drugs
 
 writeLines('Finished job')
 
