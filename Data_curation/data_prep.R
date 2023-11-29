@@ -898,7 +898,7 @@ write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
 #*  Stopped in all sites on 8th May 2023
 Res_Fluoxetine = 
-  Res %>% filter(Trt %in% c('Fluoxetine',"No study drug"),
+  Res %>% filter(Trt %in% c('Fluoxetine',"No study drug", "Nirmatrelvir + Ritonavir"),
                  (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
                    (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
                    (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |

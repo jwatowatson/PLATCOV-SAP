@@ -9,7 +9,7 @@ get_nanopore_data = function(prefix_dropbox){
   write.csv(x = res[, c('ID','Lineage')], file = paste0(prefix_analysis_data, "/Analysis_Data/lineages.csv"),row.names = F)
 
   ## run the python script to convert lineage names into a usable set
-  shell(run_lineage_classifier)
+  # shell(run_lineage_classifier)
   
   res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
   res_update <- res_update[-1,] # Remove header

@@ -49,7 +49,7 @@ for(i in 1:nrow(model_settings)){
                  warmup=model_settings$Nwarmup[i],
                  save_warmup = FALSE,
                  seed=i,
-                 pars=c('L_Omega'), # we don't save this as it takes up lots of memory!
+                 pars=c('L_Omega','theta_rand','g_controls','tau_controls','g_unk','tau_unk'), # we don't save this as it takes up lots of memory!
                  include=FALSE)
   
   

@@ -391,7 +391,6 @@ boxplot(log10_IgG ~ Day, xlab = 'Day', ylab = 'Log 10 IgG levels',
 grid()
 ```
 
-
 day 14 sero values
 
 ```{r day14_sero}
@@ -447,7 +446,6 @@ summary(lm(slope_median~log10_IgG_14, data = sero_wide %>% filter(Rand_date >= '
 summary(lm(slope_median~log10_IgG_14, data = sero_wide %>% filter(Rand_date >= '2023-02-01')))
 ```
 
-
 Delta IgG
 
 ```{r delta_igg}
@@ -497,7 +495,6 @@ sero_wide %>%
               se = T, color = "black")
 ```
 
-
 Fever
 
 ```{r}
@@ -536,14 +533,12 @@ temp_clearance = merge(temp_clearance[, c('ID','clearance_time','clearance_time_
 
 ```
 
-
-
 cox model
+
 ```{r}
 coxph(formula = Surv(clearance_time, clearance_time_cens) ~ Trt + slope_median ,
       data = temp_clearance)
 ```
-
 
 symptoms
 
