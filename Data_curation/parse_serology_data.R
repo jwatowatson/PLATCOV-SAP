@@ -46,7 +46,8 @@ if(RERUN){
     plate_ID = (strsplit(f_names[i], "\\_|\\."))[[1]][1]
     plate_data <- read_csv(paste(path, f_names[i], sep=""), col_names = TRUE, skip = 9)
     plate_data$plate_ID = paste('plate', 
-                                as.numeric(gsub(pattern = 'PLATCOV Plate ', replacement = '',x = plate_ID)),
+                                as.numeric(gsub(pattern = 'PLATCOV Plate ',
+                                                replacement = '',x = plate_ID)),
                                 sep='_')
     plate_data_list[[i]] = plate_data
   }
@@ -110,9 +111,12 @@ stan_data = data = list(N_controls=nrow(std_data),
                         absorb_obs = output_df_unk$Abs,
                         ind_plate_obs = output_df_unk$plate_ID_int)
 sero_all_fit = sampling(mod, stan_data, iter=2000, chain=4, thin=1,
-                        pars=c('L_Omega','g_controls','tau_controls','g_unk','tau_unk','theta_rand'), # we don't save this as it takes up lots of memory!
+                        pars=c('L_Omega','g_controls','tau_controls',
+                               'g_unk','tau_unk','theta_rand'), # we don't save this as it takes up lots of memory!
                         include=FALSE)
 save(sero_all_fit, file = '../Rout/sero_fit.RData')
+
+load(file = '../Rout/sero_fit.RData')
 
 traceplot(sero_all_fit, pars = c('beta','sigmasq_u','sigma'))
 summary(sero_all_fit, pars='beta')$summary
