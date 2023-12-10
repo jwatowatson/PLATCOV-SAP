@@ -806,7 +806,7 @@ Res =
                             Site == 'la008' ~ 'Laos',
                             Site == 'pk001' ~ 'Pakistan'))
 
-fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
+fever_data = read_csv(file = paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 fever_data = fever_data %>% 
   mutate(ID = Label,
          ax_temperature = fut_temp)
@@ -886,96 +886,95 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')
 
 #************************* Regeneron Analysis *************************#
 #* Thailand only
-Res_REGN =
-  Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
-               #  Country == 'Thailand',
-                 Rand_date < '2022-10-20') %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
-
+# Res_REGN =
+#   Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
+#                #  Country == 'Thailand',
+#                  Rand_date < '2022-10-20') %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
+# 
 
 #************************* Fluoxetine Analysis *************************#
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
 #*  Stopped in all sites on 8th May 2023
-Res_Fluoxetine = 
-  Res %>% filter(Trt %in% c('Fluoxetine',"No study drug", "Nirmatrelvir + Ritonavir"),
-                 (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
-                   (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
-                   (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
-                   (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
-                 Rand_date < "2023-05-09") %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_Fluoxetine, file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_analysis.csv"), row.names = F, sep=',', quote = F)
-
-
-
-Res_Fluoxetine_meta = 
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-                            'Molnupiravir',
-                            "No study drug",
-                            'Ivermectin',
-                            'Remdesivir',
-                            'Favipiravir',
-                            'Fluoxetine'),
-                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-                 Rand_date <= "2023-05-09 00:00:00") %>%
-  arrange(Rand_date, ID, Time) 
-
-write.table(x = Res_Fluoxetine_meta, 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_meta_analysis.csv"), 
-            row.names = F, sep=',', quote = F)
-
-
+# Res_Fluoxetine = 
+#   Res %>% filter(Trt %in% c('Fluoxetine',"No study drug", "Nirmatrelvir + Ritonavir"),
+#                  (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
+#                    (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
+#                    (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
+#                    (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
+#                  Rand_date < "2023-05-09") %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_Fluoxetine, file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
+# 
+# 
+# Res_Fluoxetine_meta = 
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+#                             'Molnupiravir',
+#                             "No study drug",
+#                             'Ivermectin',
+#                             'Remdesivir',
+#                             'Favipiravir',
+#                             'Fluoxetine'),
+#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+#                  Rand_date <= "2023-05-09 00:00:00") %>%
+#   arrange(Rand_date, ID, Time) 
+# 
+# write.table(x = Res_Fluoxetine_meta, 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_meta_analysis.csv"), 
+#             row.names = F, sep=',', quote = F)
+# 
+# 
 
 #************************* Paxlovid v Molnupiravir Analysis *************************#
 #* Thailand only - this is used in the Lancet Infectious Diseases paper 2023
-Res_Paxlovid_Molnupiravir = 
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir','Molnupiravir',"No study drug"),
-                 Rand_date > "2022-06-03 00:00:00",
-                 Rand_date < "2023-02-24 00:00:00",
-                 Country %in% c('Thailand')) %>%
-  arrange(Rand_date, ID, Time) %>% ungroup() 
-
-write.table(x = Res_Paxlovid_Molnupiravir, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_analysis.csv"), row.names = F, sep=',', quote = F)
-
-## Meta-analysis which we report in the publication using unblinded arms from the same site
-Res_Paxlovid_Molnupiravir_meta = 
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-                            'Molnupiravir',
-                            "No study drug",
-                            'Ivermectin',
-                            'Remdesivir',
-                            'Favipiravir'),
-                 Rand_date < "2023-02-24 00:00:00",
-                 Site =='th001') %>%
-  arrange(Rand_date, ID, Time) 
-
-write.table(x = Res_Paxlovid_Molnupiravir_meta, 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_analysis.csv"), 
-            row.names = F, sep=',', quote = F)
-
-
-
-fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
-fever_data = fever_data %>% 
-  filter(Label %in% unique(Res_Paxlovid_Molnupiravir_meta$ID)) %>%
-  mutate(ID = Label,
-         ax_temperature = fut_temp)
-write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_fever.csv"), 
-            row.names = F, sep=',', quote = F)
-
-
-
-symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
-symptom_data = symptom_data %>% 
-  filter(Label %in% unique(Res_Paxlovid_Molnupiravir_meta$ID)) %>%
-  mutate(ID = Label,
-         Any_symptom = sq_yn)
-write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_symptoms.csv"), 
-            row.names = F, sep=',', quote = F)
-
+# Res_Paxlovid_Molnupiravir = 
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir','Molnupiravir',"No study drug"),
+#                  Rand_date > "2022-06-03 00:00:00",
+#                  Rand_date < "2023-02-24 00:00:00",
+#                  Country %in% c('Thailand')) %>%
+#   arrange(Rand_date, ID, Time) %>% ungroup() 
+# 
+# write.table(x = Res_Paxlovid_Molnupiravir, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
+# ## Meta-analysis which we report in the publication using unblinded arms from the same site
+# Res_Paxlovid_Molnupiravir_meta = 
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+#                             'Molnupiravir',
+#                             "No study drug",
+#                             'Ivermectin',
+#                             'Remdesivir',
+#                             'Favipiravir'),
+#                  Rand_date < "2023-02-24 00:00:00",
+#                  Site =='th001') %>%
+#   arrange(Rand_date, ID, Time) 
+# 
+# write.table(x = Res_Paxlovid_Molnupiravir_meta, 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_analysis.csv"), 
+#             row.names = F, sep=',', quote = F)
+# 
+# 
+# fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
+# fever_data = fever_data %>% 
+#   filter(Label %in% unique(Res_Paxlovid_Molnupiravir_meta$ID)) %>%
+#   mutate(ID = Label,
+#          ax_temperature = fut_temp)
+# write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_fever.csv"), 
+#             row.names = F, sep=',', quote = F)
+# 
+# 
+# 
+# symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
+# symptom_data = symptom_data %>% 
+#   filter(Label %in% unique(Res_Paxlovid_Molnupiravir_meta$ID)) %>%
+#   mutate(ID = Label,
+#          Any_symptom = sq_yn)
+# write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_Molnupiravir_meta_symptoms.csv"), 
+#             row.names = F, sep=',', quote = F)
+# 
 
 #************************* Paxlovid v No study drug - recent data only *************************#
 #* Thailand only - this is used for internal analyses
@@ -1010,23 +1009,23 @@ write.table(x = Res_Nitazoxanide, file = paste0(prefix_analysis_data, "/Analysis
 
 #************************* Evusheld Analysis *************************#
 #* Thailand added 2022-09-01; Brazil added 2022-10-31
-Res_Evusheld = 
-  Res %>% filter(Trt %in% c('Evusheld',"No study drug"),
-                 (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00") |
-                   (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00")) %>%
-  arrange(Rand_date, ID, Time)
-
-evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_test.csv"))
-table(evusheld_mutations$evusheld_resistant, useNA = 'ifany')
-
-Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
-Res_Evusheld$evusheld_resistant =
-  ifelse(is.na(Res_Evusheld$evusheld_resistant),T,
-         Res_Evusheld$evusheld_resistant)
-
-Res_Evusheld$evusheld_resistant[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
-
-write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
+# Res_Evusheld = 
+#   Res %>% filter(Trt %in% c('Evusheld',"No study drug"),
+#                  (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00") |
+#                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00")) %>%
+#   arrange(Rand_date, ID, Time)
+# 
+# evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_test.csv"))
+# table(evusheld_mutations$evusheld_resistant, useNA = 'ifany')
+# 
+# Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
+# Res_Evusheld$evusheld_resistant =
+#   ifelse(is.na(Res_Evusheld$evusheld_resistant),T,
+#          Res_Evusheld$evusheld_resistant)
+# 
+# Res_Evusheld$evusheld_resistant[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
+# 
+# write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
 #************************* Ensitrelvir Analysis *************************#
