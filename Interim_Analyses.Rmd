@@ -2,12 +2,14 @@
 title: "PLATCOV Statistical Analysis"
 author: "James Watson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: 
-  html_document: 
+output:
+  html_document:
     toc: yes
     fig_caption: yes
     keep_md: yes
     number_sections: yes
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}

@@ -789,6 +789,14 @@ print(unique(Res$ID[duplicated(Res$BARCODE)]))
 
 Res = Res[!duplicated(Res$BARCODE), ]
 
+
+
+Res$Variant2 <- as.character(Res$Variant)
+
+Res$Variant2[Res$Variant2 %in% c("BA.5.2", "BA.5.5", "BQ.1")] <- "BA.5"
+Res$Variant2[Res$Variant2 %in% c("BN.1.2", "BN.1.3", "CH.1.1")] <- "BA.2.75"
+Res$Variant2[Res$Variant2 %in% c("XBB1.5-like with F456L")] <- "XBB.1.5-like"
+
 ###### Write csv files
 # Overall data files
 write.table(x = control_dat, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_control_dat.csv"), row.names = F, sep=',')
