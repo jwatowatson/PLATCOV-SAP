@@ -50,13 +50,13 @@ Set up analysis
 ```{r load_data}
 # intervention = 'interim_all' # prefix of analysis file
 # intervention = 'MolPax_combination' # prefix of analysis file
- intervention = 'Ensitrelvir' # prefix of analysis file
+ intervention = 'Nitazoxanide' # prefix of analysis file
 # intervention = 'Fluoxetine' # prefix of analysis file
 # intervention = 'Nitazoxanide'
-# ref_arm = 'No study drug' #
- ref_arm = 'Nirmatrelvir' #
-# study_threshold = 1.2 # depending on comparison with no study drug or positive control
- study_threshold = 0.9
+ ref_arm = 'No study drug' #
+# ref_arm = 'Nirmatrelvir' #
+ study_threshold = 1.2 # depending on comparison with no study drug or positive control
+# study_threshold = 0.9
 ```
 
 ```{r define_population}
@@ -399,6 +399,8 @@ formatter <- function(x){
 effect_ests_plot <- as.data.frame(do.call("rbind", effect_ests))
 effect_ests_plot <- exp(effect_ests_plot)
 
+effect_ests_plot <- effect_ests_plot[row.names(effect_ests_plot) != "No study drug",]
+
 colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
 
 effect_ests_plot$trt <- row.names(effect_ests_plot)
@@ -412,11 +414,12 @@ G2 <- ggplot(effect_ests_plot,
   geom_point(position = position_dodge(width = 0.5), size = 4, col =  model_cols) +
   geom_errorbar(aes(x = trt, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65, col =  model_cols) +
   geom_errorbar(aes(x = trt, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5, col =  model_cols) +
-  geom_rect(aes(ymin = 0.75, ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
+  geom_rect(aes(ymin = min(0.75, min(effect_ests_plot$L95)-0.05), ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
   coord_flip() +
   theme_bw() +
   geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
-  scale_y_continuous(labels = formatter, limits = c(0.75, max(effect_ests_plot$U95) + .25), expand = c(0,0)) +
+  scale_y_continuous(labels = formatter, limits = c(min(0.75, min(effect_ests_plot$L95)-0.05), max(effect_ests_plot$U95) + .25), expand = c(0,0),
+                     breaks = seq(0.6,3.6, 0.2)) +
     scale_x_discrete(labels= my.labs) +
   ylab("Change in viral clearance rate (%)") +
   xlab("") +
