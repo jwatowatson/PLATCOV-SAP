@@ -337,6 +337,8 @@ dataplot$Trt <- as.character(dataplot$Trt)
 dataplot$Trt[dataplot$Trt == "Nirmatrelvir + Ritonavir"] <- "Nirmatrelvir"
 dataplot$Trt <- as.factor(dataplot$Trt)
 
+dataplot$Trt <- factor(dataplot$Trt, levels = as.character(unique(dataplot[,c("Trt", "trt_color")])$Trt))
+
 dataplot = 
   dataplot %>% ungroup() %>%
   filter(Timepoint_ID %in% c(0:7, 10, 14), mITT) %>%
@@ -359,6 +361,7 @@ dataplot3[,4:6] <- as.data.frame(as.matrix(dataplot3[,4]))
 colnames(dataplot3)[4:6] <- c("Q1", "Q2", "Q3")
 
 colors <- unique(platcov_dat_analysis$trt_color)
+
 
 G1 <- ggplot() +
   geom_jitter(data = dataplot, aes(x = Timepoint_ID_num, y = log10_viral_load, col = Trt), 
@@ -396,13 +399,6 @@ formatter <- function(x){
 effect_ests_plot <- as.data.frame(do.call("rbind", effect_ests))
 effect_ests_plot <- exp(effect_ests_plot)
 
-# effect_ests$model <- as.factor(effect_ests$mod)
-# levels(effect_fluoxetine$model) <- c("Linear", "Non-linear")
-# effect_fluoxetine$model <- factor(effect_fluoxetine$model, levels = (c("Linear", "Non-linear")))
-
-# effect_fluoxetine$Dmax <- as.factor(effect_fluoxetine$Dmax)
-# levels(effect_fluoxetine$Dmax) <- c("5 days", "7 days")
-
 colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
 
 effect_ests_plot$trt <- row.names(effect_ests_plot)
@@ -417,12 +413,9 @@ G2 <- ggplot(effect_ests_plot,
   geom_errorbar(aes(x = trt, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65, col =  model_cols) +
   geom_errorbar(aes(x = trt, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5, col =  model_cols) +
   geom_rect(aes(ymin = 0.75, ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
- # facet_grid(model~., scales = "free") +
   coord_flip() +
   theme_bw() +
   geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
-#  scale_color_manual(values = c("#004225", "#F99417"), name = "Follow-up duration") +
-#  scale_shape_manual(values = c(16,17), name = "Model", guide = "none") +
   scale_y_continuous(labels = formatter, limits = c(0.75, max(effect_ests_plot$U95) + .25), expand = c(0,0)) +
     scale_x_discrete(labels= my.labs) +
   ylab("Change in viral clearance rate (%)") +
