@@ -50,9 +50,9 @@ Set up analysis
 ```{r load_data}
 # intervention = 'interim_all' # prefix of analysis file
 # intervention = 'MolPax_combination' # prefix of analysis file
- intervention = 'Nitazoxanide' # prefix of analysis file
-# intervention = 'Fluoxetine' # prefix of analysis file
-# intervention = 'Nitazoxanide'
+# intervention = 'Nitazoxanide' # prefix of analysis file
+# intervention = 'Ensitrelvir' # prefix of analysis file
+ intervention = 'Nitazoxanide'
  ref_arm = 'No study drug' #
 # ref_arm = 'Nirmatrelvir' #
  study_threshold = 1.2 # depending on comparison with no study drug or positive control
@@ -374,7 +374,7 @@ G1 <- ggplot() +
   scale_color_manual(values = colors, name = "") +
   theme_bw() +
   scale_x_continuous(breaks = 0:14) +
-  scale_y_continuous(labels=label_math(), breaks = seq(0,8,2)) +
+  scale_y_continuous(labels=label_math(), breaks = seq(0,10,2), limits = c(0,9)) +
   xlab("Time since randomisation (days)") +
   ylab("SARS-CoV-2 genomes/mL") + 
   theme(axis.title  = element_text(face = "bold"),
