@@ -905,35 +905,38 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')
 #************************* Fluoxetine Analysis *************************#
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
 #*  Stopped in all sites on 8th May 2023
-# Res_Fluoxetine = 
-#   Res %>% filter(Trt %in% c('Fluoxetine',"No study drug", "Nirmatrelvir + Ritonavir"),
-#                  (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
-#                    (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
-#                    (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
-#                    (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
-#                  Rand_date < "2023-05-09") %>%
-#   arrange(Rand_date, ID, Time)
-# write.table(x = Res_Fluoxetine, file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_analysis.csv"), row.names = F, sep=',', quote = F)
-# 
-# 
-# 
-# Res_Fluoxetine_meta = 
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-#                             'Molnupiravir',
-#                             "No study drug",
-#                             'Ivermectin',
-#                             'Remdesivir',
-#                             'Favipiravir',
-#                             'Fluoxetine'),
-#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-#                  Rand_date <= "2023-05-09 00:00:00") %>%
-#   arrange(Rand_date, ID, Time) 
-# 
-# write.table(x = Res_Fluoxetine_meta, 
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_meta_analysis.csv"), 
-#             row.names = F, sep=',', quote = F)
-# 
-# 
+Res_Fluoxetine =
+  Res %>% filter(Trt %in% c('Fluoxetine',"No study drug", "Nirmatrelvir + Ritonavir"),
+                 (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
+                   (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
+                   (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
+                   (Country=='Pakistan' & Rand_date > "2022-06-21 00:00:00"),
+                 Rand_date < "2023-05-09") %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Fluoxetine, file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_analysis.csv"), row.names = F, sep=',', quote = F)
+#
+#
+
+
+
+Res_Fluoxetine_meta =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+                            'Molnupiravir',
+                            "No study drug",
+                            'Ivermectin',
+                            'Remdesivir',
+                            'Favipiravir',
+                            'Fluoxetine',
+                            'Regeneron'),
+                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+                 Rand_date <= "2023-05-09 00:00:00") %>%
+  arrange(Rand_date, ID, Time)
+
+write.table(x = Res_Fluoxetine_meta,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Fluoxetine_meta_analysis.csv"),
+            row.names = F, sep=',', quote = F)
+
+
 
 #************************* Paxlovid v Molnupiravir Analysis *************************#
 #* Thailand only - this is used in the Lancet Infectious Diseases paper 2023
