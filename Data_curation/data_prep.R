@@ -884,12 +884,14 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')
 
 #************************* Favipiravir Analysis *************************#
 #* Thailand and Brazil
-# Res_Favipiravir = 
-#   Res %>% filter(Trt %in% c('Favipiravir',"No study drug"),
-#                  Rand_date < '2022-10-31',
-#                  Country %in% c('Thailand','Brazil')) %>%
-#   arrange(Rand_date, ID, Time)
-# write.table(x = Res_Favipiravir, file = '../Analysis_Data/Favipiravir_analysis.csv', row.names = F, sep=',', quote = F)
+Res_Favipiravir =
+  Res %>% filter(Trt %in% c('Favipiravir',"No study drug"),
+                 Rand_date < '2022-10-31',
+                 Country %in% c('Thailand','Brazil')) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Favipiravir, 
+            file =  paste0(prefix_analysis_data, "/Analysis_Data/Favipiravir_analysis.csv"), 
+            row.names = F, sep=',', quote = F)
 
 
 #************************* Regeneron Analysis *************************#
@@ -906,7 +908,7 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
 #*  Stopped in all sites on 8th May 2023
 Res_Fluoxetine =
-  Res %>% filter(Trt %in% c('Fluoxetine',"No study drug", "Nirmatrelvir + Ritonavir"),
+  Res %>% filter(Trt %in% c('Fluoxetine',"No study drug"),
                  (Country=='Thailand' & Rand_date > "2022-04-01 00:00:00") |
                    (Country=='Brazil' & Rand_date > "2022-06-21 00:00:00") |
                    (Country=='Laos' & Rand_date > "2022-06-21 00:00:00") |
