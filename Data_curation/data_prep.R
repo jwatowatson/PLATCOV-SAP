@@ -1104,3 +1104,17 @@ Res_Unblinded_meta =
 write.table(x = Res_Unblinded_meta, 
             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"), 
             row.names = F, sep=',', quote = F)
+
+
+
+#************************* Unblinded all *************************#
+Res_Unblinded_all = 
+  Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
+                            'Nitazoxanide',
+                            'Ensitrelvir')) %>%
+  arrange(Rand_date, ID, Time) 
+
+
+write.table(x = Res_Unblinded_all, 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
+            row.names = F, sep=',', quote = F)

@@ -149,7 +149,7 @@ plot((output_df_unk_unique$Mean_log_IgG+log(200)+log(50))/log(10),
      xlab='Bayesian model mean estimate (log10)',
      ylab = 'Previous value - taken from thresholding (log10)',
      panel.first=grid())
-lines(-4:20, -4:20, col='red', lwd=3)
+lines(-4:20, -4:20, col='grey', lwd=3)
 
 xx_low_low = output_df_unk_unique %>% filter(log10_IgG==0,Mean_log_IgG < -2)
 xx_low_high = output_df_unk_unique %>% filter(log10_IgG==0,Mean_log_IgG > 0)
