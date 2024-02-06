@@ -726,16 +726,24 @@ control_dat2$preds <- preds
 
 G1 <- ggplot(control_dat2, aes(x = CT, y = log10_true_density, col = Lab)) +
   theme_bw() +
-  geom_line(aes(x = CT, y = preds, group = batch), alpha = 0.1, linewidth = 1) +
+  geom_line(aes(x = CT, y = preds, group = batch), alpha = 0.5, linewidth = 0.5) +
   scale_color_manual(values = (c("red", "black", "blue", "#CF4DCE")), name = "") +
   geom_point(width  = 0, height = 0.05, shape = 1, alpha = 1, size = 3.5) +
   xlab("CT values") +
-  ylab("Standard viral loads") +
+  ylab("Viral densities (log10 genomes/mL)") +
   theme(axis.title = element_text(size = 12, face = "bold"),
         plot.title = element_text(size = 14, face = "bold")
         ) +
-  facet_wrap(Lab~., ncol = 4)
+  facet_wrap(Lab~., ncol = 4) +
+  scale_y_continuous(breaks = seq(2,10,1)) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 9),
+        axis.text = element_text(size = 10),
+        strip.text = element_text(size = 10, face = "bold"))
 G1
+
+png("../Plots/standard_curves.png", width = 10, height = 4, units = "in", res = 350)
+G1
+dev.off()
 
 control_dat2$resid <- resid(conv_mod)
 

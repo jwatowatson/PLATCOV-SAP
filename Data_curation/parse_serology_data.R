@@ -123,8 +123,8 @@ summary(sero_all_fit, pars='beta')$summary
 
 
 log_x_init = rstan::extract(sero_all_fit, pars='log_x_init')$log_x_init
-log_IgG_ests = t(apply(log_x_init, 2, function(x) c(mean(x), sd(x))))
-colnames(log_IgG_ests) = c('Mean_log_IgG', 'SE_IgG')
+log_IgG_ests = t(apply(log_x_init, 2, function(x) c(mean(x), sd(x), quantile(x, c(0.5, 0.025, 0.975)))))
+colnames(log_IgG_ests) = c('Mean_log_IgG', 'SE_IgG', 'Med_log_IgG', 'Low_log_IgG', 'Up_log_IgG')
 output_df_unk_unique = output_df_unk %>% arrange(ID) %>%
   distinct(ID, .keep_all = T)
 output_df_unk_unique = cbind(output_df_unk_unique, log_IgG_ests)
