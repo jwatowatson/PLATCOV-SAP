@@ -54,9 +54,15 @@ temp_data = temp_data %>% filter(!is.na(scrpassed),
                                                         rantim, sep=' '))),
          Timepoint_ID = gsub(x = visit,replacement = '',pattern='D'),
          Timepoint_ID = gsub(x = Timepoint_ID, replacement = '', pattern = 'H1'),
-         Timepoint_ID = as.numeric(Timepoint_ID)) %>%
+         Timepoint_ID = as.numeric(Timepoint_ID),
+         Time1 = as.numeric(as.POSIXct(temp_time)-as.POSIXct(Rand_date_time))/24) %>%
   filter(!is.na(temp_time)) %>%
   arrange(Label, temp_time, Rand_date_time)
+
+range(temp_data$Time1)
+
+xx_problems = (temp_data %>% filter(Time1< -1 | Time1>21))
+write.csv(xx_problems, file = '~/Downloads/problem_temp_data.csv')
 
 temp_data$Label[temp_data$Rand_date_time > temp_data$temp_time]
 for(i in 1:nrow(temp_data)){
