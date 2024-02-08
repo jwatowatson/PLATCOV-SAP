@@ -52,12 +52,23 @@ temp_data = temp_data %>% filter(!is.na(scrpassed),
   mutate(rangrp = sjlabelled::as_character(rangrp),
          Rand_date_time = as.character(as.POSIXct(paste(randat,
                                                         rantim, sep=' '))),
-         Time = difftime(temp_time,Rand_date_time, units = 'days'),
          Timepoint_ID = gsub(x = visit,replacement = '',pattern='D'),
          Timepoint_ID = gsub(x = Timepoint_ID, replacement = '', pattern = 'H1'),
-         Timepoint_ID = as.numeric(Timepoint_ID),
-         Time = as.numeric(Time)) %>%
-  group_by(Label) %>%
+         Timepoint_ID = as.numeric(Timepoint_ID)) %>%
+  filter(!is.na(temp_time)) %>%
+  arrange(Label, temp_time, Rand_date_time)
+
+temp_data$Label[temp_data$Rand_date_time > temp_data$temp_time]
+for(i in 1:nrow(temp_data)){
+  temp_data$Time[i]=as.numeric(difftime(temp_data$temp_time[i],
+                                        temp_data$Rand_date_time[i], 
+                                        units = 'days'))
+}
+
+table(temp_data$Time<0)
+
+
+temp_data = temp_data %>% group_by(Label) %>%
   mutate(Fever_Baseline = ifelse(any(fut_temp>37.4 & Time<1), 1, 0))
 
 write.csv(x = temp_data, file = '../Analysis_Data/temperature_data.csv', row.names = F, quote = F)
