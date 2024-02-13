@@ -260,9 +260,15 @@ all_dates = all_dates[all_dates!='']
 bad_dates = all_dates[which(is.na(parse_date_time(all_dates, orders = 'dmy')))]
 vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(intersect(x ,bad_dates))>0))]
 
+vac_error_ID <- NULL
+
+clin_data$Label[!clin_data$Label %in% vacc_data$Label]
+
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
+  vacc_data[vacc_data$Label == id, ]
+  
   ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer','Chula-Cov19'))
   
   vac_dates = unlist(unique(vacc_data[ind, vacc_date_cols]))
@@ -283,9 +289,11 @@ for(i in 1:nrow(clin_data)){
                most_recent_vac,units = 'days')
   }
   
+  if(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
+  
 }
 
-
+vac_error_ID
 
 
 ##******************** Log database ***********************
@@ -707,7 +715,7 @@ control_dat$batch = as.factor(control_dat$Plate)
 
 
 # random slope and intercept
-conv_mod = lmer(log10_true_density ~ 1 + CT + (1+CT|batch),
+conv_mod = lmer(log10_true_density ~ 1 + CT*Lab + (1+CT|batch),
                 data = control_dat,
                 control = lmerControl(optimizer ="Nelder_Mead"))
 
@@ -736,14 +744,15 @@ G1 <- ggplot(control_dat2, aes(x = CT, y = log10_true_density, col = Lab)) +
         ) +
   facet_wrap(Lab~., ncol = 4) +
   scale_y_continuous(breaks = seq(2,10,1)) +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 9),
+  theme(plot.title = element_text(face = "bold", size = 12),
         axis.text = element_text(size = 10),
-        strip.text = element_text(size = 10, face = "bold"))
+        strip.text = element_text(size = 10, face = "bold"))  +
+  ggtitle("A) Standard curves")
 G1
 
-png("../Plots/standard_curves.png", width = 10, height = 4, units = "in", res = 350)
-G1
-dev.off()
+# png("../Plots/standard_curves.png", width = 10, height = 4, units = "in", res = 350)
+# G1
+# dev.off()
 
 control_dat2$resid <- resid(conv_mod)
 
@@ -755,27 +764,44 @@ G2 <- ggplot(control_dat2, aes(x =resid)) +
   geom_histogram(aes(y=after_stat(density)), bins = 20) +
   facet_wrap(Lab~., ncol = 4) +
   theme_bw() +
-  xlab("Residues of standard curve") +
+  xlab("Residuals of standard curve") +
   ylab("Density") +
   theme(axis.title = element_text(size = 12, face = "bold"),
         plot.title = element_text(size = 14, face = "bold")
   )  +
   geom_vline(xintercept = 0, col = "red", linetype = "dashed", linewidth = 0.75) +
-  geom_text(data = var, aes(x = 0.25, y = 6, label = Labels))
+  geom_text(data = var, aes(x = 0.25, y = 6, label = Labels)) +
+  theme(plot.title = element_text(face = "bold", size = 12),
+        axis.text = element_text(size = 10),
+        strip.text = element_text(size = 10, face = "bold")) +
+  ggtitle("B) Residuals of fitted model")
+G2
 
-
-library(ggpubr)
-ggarrange(G1, G2, ncol = 1, nrow = 2, common.legend = T, align = "hv", labels = "AUTO", legend = "right")
-
+# library(cowplot)
+# 
+# png("../Plots/standard_curves.png", width = 12, height = 8, units = "in", res = 350)
+# plot_grid(
+#   plot_grid(
+#     G1 + theme(legend.position = "none")
+#     , G2
+#     , ncol = 1
+#     , align = "hv")
+#   , plot_grid(
+#     get_legend(G1)
+#     , ggplot() + theme_minimal()
+#     , ncol =1)
+#   , rel_widths = c(9,1)
+# )
+# dev.off()
 ############################################################################
 preds_all =
   predict(conv_mod,
-          newdata = data.frame(CT=Res$CT_NS,
+          newdata = data.frame(CT=Res$CT_NS, Lab=Res$Lab,
                                batch=as.factor(Res$Plate)),
           allow.new.levels = F)
 preds_cens =
   predict(conv_mod,
-          newdata = data.frame(CT=rep(40,nrow(Res)),
+          newdata = data.frame(CT=rep(40,nrow(Res)), Lab=Res$Lab,
                                batch=as.factor(Res$Plate)),
           allow.new.levels = F)
 

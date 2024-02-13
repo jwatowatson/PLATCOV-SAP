@@ -75,7 +75,7 @@ table(temp_data$Time<0)
 
 
 temp_data = temp_data %>% group_by(Label) %>%
-  mutate(Fever_Baseline = ifelse(any(fut_temp>37.4 & Time<1), 1, 0))
+  mutate(Fever_Baseline = ifelse(any(fut_temp>37 & Time<1), 1, 0))
 
 write.csv(x = temp_data, file = '../Analysis_Data/temperature_data.csv', row.names = F, quote = F)
 
