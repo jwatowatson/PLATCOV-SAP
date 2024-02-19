@@ -1097,6 +1097,17 @@ Res_MolPax =
 write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/MolPax_combination_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
+
+#************************* Hydroxychloroquine Analysis *************************#
+#* Thailand added 2024-01-02
+
+Res_HCQ = 
+  Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug"),
+                 (Country=='Thailand' & Rand_date > "2024-01-01 00:00:00")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hydroxychloroquine_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
 #************************* Ineffective Interventions *************************#
 
 Res_ineffective = 

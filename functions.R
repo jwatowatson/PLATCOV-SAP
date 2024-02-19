@@ -621,7 +621,7 @@ get_itt_population = function(prefix_drop_rand){
 
 
 get_trt_colors = function(){
-  trt_cols = array(dim = 12)
+  trt_cols = array(dim = 13)
   names(trt_cols) = 
     c("Ivermectin",
       "Regeneron",
@@ -634,7 +634,8 @@ get_trt_colors = function(){
       "Nirmatrelvir+Molnupiravir",
       "Evusheld",
       'Ensitrelvir',
-      "Nirmatrelvir")
+      "Nirmatrelvir",
+      "Hydroxychloroquine")
   trt_cols['No study drug'] = viridis::viridis(n = 10)[8]
   trt_cols['Fluoxetine'] = viridis::viridis(n = 10)[5]
   trt_cols['Nitazoxanide'] = viridis::magma(n = 10)[8]
@@ -647,11 +648,15 @@ get_trt_colors = function(){
   trt_cols['Molnupiravir'] = viridis::inferno(n = 10)[7]
   trt_cols['Remdesivir'] = RColorBrewer::brewer.pal('Dark2',n=8)[8]
   trt_cols['Ensitrelvir'] = RColorBrewer::brewer.pal('Set1',n=8)[1]
+  trt_cols['Hydroxychloroquine'] = RColorBrewer::brewer.pal('Set1',n=8)[8]
   
   return(trt_cols)
 }
 
-
+plot_trt_colors = function(trt_cols){
+  plot(NA, NA, xaxt='n', xlab='', yaxt='n', ylab='',xlim=0:1, ylim=0:1,bty='n')
+  legend('right', legend = names(trt_cols), fill = trt_cols,border = NA)
+}
 
 checkStrict(make_stan_inputs)
 checkStrict(plot_serial_data)

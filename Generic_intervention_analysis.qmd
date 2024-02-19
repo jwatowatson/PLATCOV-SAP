@@ -48,14 +48,17 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-# intervention = 'interim_all' # prefix of analysis file
-# intervention = 'MolPax_combination' # prefix of analysis file
- intervention = 'Nitazoxanide' # prefix of analysis file
-# intervention = 'Ensitrelvir' # prefix of analysis file
- ref_arm = 'No study drug' #
-# ref_arm = 'Nirmatrelvir' #
- study_threshold = 1.2 # depending on comparison with no study drug or positive control
-# study_threshold = 0.9
+# intervention = 'interim_all';ref_arm = 'No study drug'
+# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+ intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
+# intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+if(ref_arm=='No study drug'){
+  study_threshold = 1.2 # 
+}
+if(ref_arm=='Nirmatrelvir'){
+  study_threshold = 0.9
+}
 ```
 
 ```{r define_population}
@@ -352,7 +355,7 @@ dataplot =
 
 dataplot$Timepoint_ID_num <- dataplot$Timepoint_ID
 
-dataplot2 <- aggregate(log10_viral_load~ID+Timepoint_ID+Timepoint_ID_num+Trt+Site+BMI+Plate+Age+Sex+Symptom_onset, 
+dataplot2 <- aggregate(log10_viral_load~ID+Timepoint_ID+Timepoint_ID_num+Trt+Symptom_onset, 
                        data = dataplot, FUN = median)
 
 dataplot3<- aggregate(log10_viral_load~Timepoint_ID+Timepoint_ID_num+Trt, data = dataplot, FUN = quantile, c(0.25, 0.5, 0.75))
