@@ -1046,7 +1046,7 @@ Res_Nitazoxanide =
   Res %>% filter(Trt %in% c('Nitazoxanide',"No study drug"),
                  Rand_date > "2022-06-03 00:00:00",
                  Country %in% c('Brazil','Laos', 'Pakistan'),
-                 !ID %in% c("PLT-BR3-006", ## why are we exclusing these patients at this stage - should be at the analysis stage?
+                 !ID %in% c("PLT-BR3-006", ## why are we excluding these patients at this stage - should be at the analysis stage?
                             "PLT-BR3-018",
                             "PLT-BR3-033",
                             "PLT-BR3-043")) %>%
