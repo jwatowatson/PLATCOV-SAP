@@ -51,13 +51,16 @@ Set up analysis
 # intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
- intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
-# intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+# intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
+ intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
 }
 if(ref_arm=='Nirmatrelvir'){
   study_threshold = 0.9
+}
+if(intervention=='MolPax_combination'){
+  study_threshold = 1.2
 }
 ```
 
@@ -335,12 +338,14 @@ for(i in 1:length(ff)){
 ```{r}
 dataplot <- platcov_dat_analysis
 
+# you can do this by changing level names?
 dataplot$Trt <- as.character(dataplot$Trt)
 dataplot$Trt[dataplot$Trt == "Nirmatrelvir + Ritonavir"] <- "Nirmatrelvir"
 dataplot$Trt <- as.factor(dataplot$Trt)
-
+## This line seems duplicate? Also ref level is no longer ref_arm?
 dataplot$Trt <- factor(dataplot$Trt, levels = as.character(unique(dataplot[,c("Trt", "trt_color")])$Trt))
 
+### duplicate of what is happening to placov_dat_analysis?
 dataplot = 
   dataplot %>% ungroup() %>%
   filter(Timepoint_ID %in% c(0:7, 10, 14), mITT) %>%
@@ -358,20 +363,24 @@ dataplot$Timepoint_ID_num <- dataplot$Timepoint_ID
 dataplot2 <- aggregate(log10_viral_load~ID+Timepoint_ID+Timepoint_ID_num+Trt+Symptom_onset, 
                        data = dataplot, FUN = median)
 
-dataplot3<- aggregate(log10_viral_load~Timepoint_ID+Timepoint_ID_num+Trt, data = dataplot, FUN = quantile, c(0.25, 0.5, 0.75))
+dataplot3 <- aggregate(log10_viral_load~Timepoint_ID+Timepoint_ID_num+Trt, data = dataplot, FUN = quantile, c(0.25, 0.5, 0.75))
 dataplot3[,4:6] <- as.data.frame(as.matrix(dataplot3[,4]))
 colnames(dataplot3)[4:6] <- c("Q1", "Q2", "Q3")
 
 colors <- unique(platcov_dat_analysis$trt_color)
 
-
+## I don't understand what the below is doing. is it taking the median of the daily viral loads (mean of duplicate swabs)?
 G1 <- ggplot() +
   geom_jitter(data = dataplot, aes(x = Timepoint_ID_num, y = log10_viral_load, col = Trt), 
               alpha = 0.4, size = 1.75, shape = 21,
               width = 0.15) +
   scale_fill_manual(values = colors, name = "") +
-  geom_line(data = subset(dataplot3, Timepoint_ID_num <= 7), aes(x =  Timepoint_ID_num, y = Q2, group = Trt, col = Trt), linewidth = 1, linetype = 1) +
-  geom_line(data = subset(dataplot3,  Timepoint_ID_num >= 7), aes(x =  Timepoint_ID_num, y = Q2, group = Trt, col = Trt), linewidth = 0.75, linetype = "dashed") +
+  geom_line(data = subset(dataplot3, Timepoint_ID_num <= 7),
+            aes(x =  Timepoint_ID_num, y = Q2, group = Trt, col = Trt), 
+            linewidth = 1, linetype = 1) +
+  geom_line(data = subset(dataplot3,  Timepoint_ID_num >= 7), 
+            aes(x =  Timepoint_ID_num, y = Q2, group = Trt, col = Trt), 
+            linewidth = 0.75, linetype = "dashed") +
   geom_point(data = dataplot3, aes(x = Timepoint_ID_num, y = Q2, fill = Trt), size = 3.5, shape = 24) +
   scale_color_manual(values = colors, name = "") +
   theme_bw() +

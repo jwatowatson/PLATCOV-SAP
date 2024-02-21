@@ -648,14 +648,15 @@ get_trt_colors = function(){
   trt_cols['Molnupiravir'] = viridis::inferno(n = 10)[7]
   trt_cols['Remdesivir'] = RColorBrewer::brewer.pal('Dark2',n=8)[8]
   trt_cols['Ensitrelvir'] = RColorBrewer::brewer.pal('Set1',n=8)[1]
-  trt_cols['Hydroxychloroquine'] = RColorBrewer::brewer.pal('Set1',n=8)[8]
+  trt_cols['Hydroxychloroquine'] = RColorBrewer::brewer.pal('Paired',n=8)[1]
   
   return(trt_cols)
 }
 
-plot_trt_colors = function(trt_cols){
+plot_trt_colors = function(){
+  trt_cols= get_trt_colors()
   plot(NA, NA, xaxt='n', xlab='', yaxt='n', ylab='',xlim=0:1, ylim=0:1,bty='n')
-  legend('right', legend = names(trt_cols), fill = trt_cols,border = NA)
+  legend('right', legend = names(trt_cols), fill = trt_cols,border = NA,cex=1.5)
 }
 
 checkStrict(make_stan_inputs)
