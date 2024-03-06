@@ -111,4 +111,3 @@ symp_data = symp_data %>% arrange(Label, Timepoint_ID)
 write.csv(x = symp_data, file = '../Analysis_Data/symptom_data.csv', row.names = F, quote = F)
 
 rm(list=ls())
-
