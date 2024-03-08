@@ -847,7 +847,7 @@ Res =
                             Site == 'br003' ~ 'Brazil',
                             Site == 'la008' ~ 'Laos',
                             Site == 'pk001' ~ 'Pakistan'))
-
+###### Fever data------------------------------------------------------------------
 fever_data = read_csv(file = paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 fever_data = fever_data %>% 
   mutate(ID = Label,
@@ -855,15 +855,61 @@ fever_data = fever_data %>%
 write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
             file = paste0(prefix_analysis_data, "/Analysis_Data/fever_interim.csv"), 
             row.names = F, sep=',', quote = F)
-
-
+####################################################################################### 
+###### Symptom data------------------------------------------------------------------
 symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
+# cleaning
 symptom_data = symptom_data %>% 
   mutate(ID = Label,
-         Any_symptom = sq_yn)
+         Any_symptom = sq_yn) %>%
+  rename("sq_soreyn" = "sq_sore")
+
+# Listing 'other symptoms'
+other_symptoms <- symptom_data %>%
+  select(matches("^sq.*des$")) %>%
+  unlist() %>%
+  unname() %>%
+  table()
+
+write.csv(other_symptoms, "../Analysis_Data/other_symptoms.csv", row.names = F)
+#----------------------------------------------------------------------------------------
+# Check if 'other symptoms' have been filled
+col_others <- colnames(symptom_data)[grepl('^sq.*des$', colnames(symptom_data))]
+
+symptom_data <- symptom_data %>%
+  mutate(sq_otheryn = NA) %>%
+  mutate(across(all_of(col_others), ~ifelse(. == "", NA, .)))
+
+for(i in 1:nrow(symptom_data)){
+  if(!all(is.na(symptom_data[i,col_others]))){symptom_data$sq_otheryn[i] <- 1} else {symptom_data$sq_otheryn[i] <- 0}
+}
+
+# Check if 1 in sq_yn always provided details
+columns_to_check <- colnames(symptom_data)[grepl('^sq.*yn$', colnames(symptom_data))]
+columns_to_check <- columns_to_check[-1]
+check_sqyn <- symptom_data %>% 
+  filter(sq_yn == 1) %>%
+  mutate(row_sum = (rowSums(select(., all_of(columns_to_check)), na.rm = TRUE))) %>%
+  filter(row_sum == 0)
+
+write.csv(check_sqyn, "symptoms_no_details.csv", row.names = F) # These entries report the presence of symptoms without providing more details
+
+
+
+
+
+
+
+
 write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
             file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
             row.names = F, sep=',', quote = F)
+
+################################################################################################
+
+
+
+
 
 #***********************************************************************#
 #************************ Specific analysis data files *****************#
