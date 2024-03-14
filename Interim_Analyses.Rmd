@@ -93,8 +93,8 @@ source('functions.R')
 ## Load data
 
 ```{r}
-screen_dat = read.csv('interim_screening_dat.csv')
-platcov_dat = read.csv('interim_dat.csv')
+screen_dat = read.csv('Analysis_Data/interim_screening_dat.csv')
+platcov_dat = read.csv('Analysis_Data/interim_all_analysis.csv')
 
 # remove the saliva samples
 platcov_dat = subset(platcov_dat, Swab_ID != 'Saliva')

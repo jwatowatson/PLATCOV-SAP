@@ -893,15 +893,17 @@ check_sqyn <- symptom_data %>%
   filter(row_sum == 0)
 
 write.csv(check_sqyn, "symptoms_no_details.csv", row.names = F) # These entries report the presence of symptoms without providing more details
+#----------------------------------------------------------------------------------------
+col_symptom_gr <- colnames(symptom_data)[grepl('^sq.*gr$', colnames(symptom_data))]
+col_symptom_gr <- col_symptom_gr[!grepl('oth', col_symptom_gr)]
 
+summary(symptom_data[,col_symptom_gr]) #Check if there is any dodgy grade data
 
+symptom_data <- symptom_data %>%
+  mutate(across(.cols = all_of(col_symptom_gr), 
+                .fns = ~ifelse(!is.na(sq_yn) & is.na(.), 0, .)))
 
-
-
-
-
-
-write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate')], 
+write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate', col_symptom_gr)], 
             file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
             row.names = F, sep=',', quote = F)
 
