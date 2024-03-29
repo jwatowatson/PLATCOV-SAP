@@ -182,7 +182,7 @@ if(any(abs(Rand_diffs)>5)){
   writeLines(sprintf('More than 5 min difference in rand time for %s',
                      clin_data$Label[which(abs(Rand_diffs)>5)]))
 }
-print(clin_data[which(abs(Rand_diffs)>1400), c('Label','Rand_Time_TZ','Rand_date_time') ])
+print(clin_data[which(abs(Rand_diffs)>5), c('Label','Rand_Time_TZ','Rand_date_time') ])
 # We use the app time as this is more reliable (timestamp is automatic)
 clin_data$Rand_date_time[which(abs(Rand_diffs)>5)] = 
   clin_data$Rand_Time_TZ[which(abs(Rand_diffs)>5)]
@@ -627,8 +627,8 @@ cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'Swab_ID','Rand_date','Any_dose','N_dose','Time_since_last_dose',
          'Any_dose_mRNA','N_dose_mRNA',
          'Weight','BMI','Plate','Fever_Baseline','BARCODE',
-         'Age', 'Sex', 'Symptom_onset','Variant','Variant_Imputed',
-         'CT_NS','CT_RNaseP','Epoch', 'Per_protocol_sample','Lab', 'Lot no.')
+         'Age', 'Sex', 'Symptom_onset','Variant',
+         'CT_NS','CT_RNaseP', 'Per_protocol_sample','Lab', 'Lot no.')
 
 writeLines('\n column names:')
 print(cols)
