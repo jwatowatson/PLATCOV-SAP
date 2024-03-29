@@ -40,7 +40,6 @@ screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_f
 write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
 # --- Excluding screening failure data ---
 clin_data = clin_data[!ind, ]
-sort(unique(clin_data$Label))
 
 clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp) #Randomisation group labels
 AE_data = merge(AE_data, clin_data[, c('Label','rangrp')])
@@ -151,11 +150,11 @@ if(any(is.na(clin_data$age))){
   writeLines(sprintf('Age missing for %s', clin_data$Label[is.na(clin_data$age)]))
 }
 
-ind = !is.na(clin_data$age) & (!clin_data$age == clin_data$age_yr)
+ind = !is.na(clin_data$age) & (! floor(as.numeric(clin_data$age)) == clin_data$age_yr)
 if(any(ind)) {
   writeLines(sprintf('Age inconsistent for %s', clin_data$Label[ind]))
 }
-print(clin_data[clin_data$age != clin_data$age_yr, c('Label','age','age_yr')])
+print(clin_data[floor(as.numeric(clin_data$age)) != floor(as.numeric(clin_data$age_yr)), c('Label','age','age_yr')])
 colnames(clin_data)[which(names(clin_data) == 'age_yr')] <- 'Age'
 
 ####### Sex #########
@@ -183,7 +182,7 @@ if(any(abs(Rand_diffs)>5)){
   writeLines(sprintf('More than 5 min difference in rand time for %s',
                      clin_data$Label[which(abs(Rand_diffs)>5)]))
 }
-print(clin_data[which(abs(Rand_diffs)>5), c('Label','Rand_Time_TZ','Rand_date_time') ])
+print(clin_data[which(abs(Rand_diffs)>1400), c('Label','Rand_Time_TZ','Rand_date_time') ])
 # We use the app time as this is more reliable (timestamp is automatic)
 clin_data$Rand_date_time[which(abs(Rand_diffs)>5)] = 
   clin_data$Rand_Time_TZ[which(abs(Rand_diffs)>5)]
@@ -197,41 +196,14 @@ clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
                           'Symptom_onset','Site','Fever_Baseline')]
 
 ## Per protocol for treatment data
-# trt_distcont_data = haven::read_dta('../Data/InterimChangeTreatment.dta')
 trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRescue.dta")) %>% filter(!is.na(dardat))
 
 
-# ### Variant data
-# ## PCR variant data (up until July 2022)
-# fnames_var = list.files('~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/PCR genotyping/',pattern = 'variant genotyping',full.names = T)
-# dat = lapply(fnames_var,read_excel)
-# for(i in 1:length(dat)) dat[[i]] = dat[[i]][, c("SUBJECT ID","Summary")]
-# dat = do.call(what = rbind, dat)
-# dat = dat[!is.na(dat$Summary),]
-# var_data = dat[!duplicated(dat$`SUBJECT ID`), ]
-# colnames(var_data)=c('ID', 'Summary_PCR')
-# 
-# var_data$Summary_PCR = plyr::mapvalues(x = var_data$Summary_PCR,
-#                                        from = c('Delta_B1.617.2','Omicron BA.2_B.1.1.529',
-#                                                 'Omicron_B.1.1.529','undetermined'),
-#                                        to = c('Delta','BA.2','BA.1',NA))
-# writeLines(sprintf('We have PCR variant genotyping for %s patients',nrow(var_data)))
-
-## Nanopore data
-
+## Variant data
 source(paste0(prefix_dat_cur, "get_nanopore_data.R"))
 variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
 
-
-# original <- read.csv("../Analysis_Data/lineages.csv")
-# new <- read.csv("../Analysis_Data/newlineagelist.csv")
-# variants <- merge(original, new, by.x = "Lineage", by.y = "Original")
-# variants <- variants[order(variants$ID, decreasing = F),c("ID", "Lineage", "VariantClass")]
-# write.csv(variants, "../Analysis_Data/variants_list.csv", row.names = F)
-
-# ggplot(variant_data, aes(Rand_date_time, after_stat(count), group=Variant, fill = Variant)) +
-#  geom_density(position = "fill")
 
 ##******************** Vaccine database *******************
 ##*********************************************************
@@ -304,7 +276,7 @@ log_data$sl_barc[log_data$sl_barc=='']=NA
 log_data = log_data[!is.na(log_data$sl_barc), ]
 log_data = log_data[!is.na(log_data$sl_sampdat), ]
 log_data = log_data[!is.na(log_data$sl_samptim), ]
-log_data$sl_barc = tolower(log_data$sl_barc)
+log_data$sl_barc = tolower(log_data$sl_barc) # avoids case dependency
 
 
 ##******************** Virus Density PCR database *********
@@ -420,6 +392,7 @@ SC = Res[ind, c('Sample ID','N/S Gene','Target conc. c/mL','Plate','Lab','Lot no
 
 SC$`N/S Gene`[SC$`N/S Gene`=='Undetermined'] = 40
 SC$CT_NS = as.numeric(SC$`N/S Gene`)
+SC = SC[!is.na(SC$CT_NS), ]
 SC$log10_true_density = log10(as.numeric(SC$`Target conc. c/mL`))
 SC$ID = apply(SC[, c('Sample ID','Plate')], 1, function(x) paste(x[1],as.numeric(x[2]), sep='_'))
 
@@ -439,11 +412,6 @@ table(Res$Location, useNA = 'ifany')
 writeLines('Clinical data from the following patients not in database:\n')
 print(unique(Res$`SUBJECT ID`[!Res$`SUBJECT ID` %in%  clin_data$Label]))
 Res = Res[Res$`SUBJECT ID` %in% clin_data$Label, ]
-
-## get missing data from log file
-# table(Res$BARCODE %in% log_data$sl_barc)
-# xx=Res[!Res$BARCODE %in% log_data$sl_barc, c('BARCODE', 'SUBJECT ID')]
-# write.csv(x = xx, file = '~/Downloads/missing_barcodes.csv')
 
 writeLines('Number of samples per patient:')
 range(table(Res$`SUBJECT ID`))
@@ -647,41 +615,6 @@ writeLines(sprintf('there are a total of %s patients in the PCR database',
                    length(unique(Res$`SUBJECT ID`))))
 
 Res = merge(Res, variant_data[,c('ID','Variant')], by = 'ID', all.x = T)
-
-## Add genotyping data
-ind_missing_variant = is.na(Res$Variant) | Res$Variant=='none'
-Res$Variant_Imputed=0 #1: imputed; 0: genotyped
-Res$Variant_Imputed[ind_missing_variant]=1
-
-# Imputation based on date if not yet typed
-d1 = as.POSIXct('2022-01-01')
-d2 = as.POSIXct('2022-02-20')
-d3 = as.POSIXct('2022-07-01')
-d4 = as.POSIXct('2022-11-01')
-d5 = as.POSIXct('2023-01-01')
-
-ind_Delta = Res$Rand_date < d1
-ind_BA1 = Res$Rand_date >= d1 & Res$Rand_date < d2
-ind_BA2 = (Res$Rand_date >= d2 & Res$Rand_date < d3) 
-ind_BA5 = Res$Rand_date >= d3 & Res$Rand_date < d4
-ind_BA2.75 = Res$Rand_date >= d4 & Res$Rand_date <d5
-ind_xbb = Res$Rand_date >= d5 
-
-Res$Variant[ind_missing_variant&ind_Delta] = 'Delta'
-Res$Variant[ind_missing_variant&ind_BA1] = 'BA.1'
-Res$Variant[ind_missing_variant&ind_BA2] = 'BA.2'
-Res$Variant[ind_missing_variant&ind_BA5] = 'BA.5'
-Res$Variant[ind_missing_variant&ind_BA2.75] = 'BA.2.75'
-Res$Variant[ind_missing_variant&ind_xbb] = 'XBB'
-
-
-Res$Epoch = 0
-Res$Epoch[Res$Rand_date > as.POSIXct('2022-04-01')] = 1 # stopped ivermectin
-Res$Epoch[Res$Rand_date > as.POSIXct('2022-04-18')] = 2 # added fluoxetine
-Res$Epoch[Res$Rand_date > as.POSIXct('2022-06-10')] = 3 # stopped remdesivir
-Res$Epoch[Res$Rand_date > as.POSIXct('2022-10-31')] = 4 # stopped favipiravir
-Res$Epoch[Res$Rand_date > as.POSIXct('2023-02-13')] = 5 # stopped molnupiravir
-table(Res$Epoch[!duplicated(Res$`SUBJECT ID`)], useNA = 'ifany')
 
 # manually correct error
 Res$Swab_ID[Res$BARCODE=='20LH895'] = 'Right_tonsil_1'

@@ -48,10 +48,10 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-# intervention = 'interim_all';ref_arm = 'No study drug'
+ intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
- intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
+# intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 # intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 

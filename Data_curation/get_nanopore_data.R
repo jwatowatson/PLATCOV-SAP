@@ -1,4 +1,4 @@
-get_nanopore_data = function(prefix_dropbox){
+get_nanopore_data = function(prefix_dropbox, run_python=F){
   fnames_var = list.files(paste0(prefix_dropbox,"/Data/Nanopore sequencing"),full.names = T,pattern = '.csv')
   res_nano = lapply(fnames_var, read.csv)
   for(i in 1:length(res_nano)) res_nano[[i]] = res_nano[[i]][, c('Sequence.name','Scorpio.call','Lineage')]
@@ -9,7 +9,7 @@ get_nanopore_data = function(prefix_dropbox){
   write.csv(x = res[, c('ID','Lineage')], file = paste0(prefix_analysis_data, "/Analysis_Data/lineages.csv"),row.names = F)
 
   ## run the python script to convert lineage names into a usable set
-   shell(run_lineage_classifier)
+  if(run_python) shell(run_lineage_classifier)
   
   res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
   res_update <- res_update[-1,] # Remove header
