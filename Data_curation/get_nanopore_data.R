@@ -8,9 +8,13 @@ get_nanopore_data = function(prefix_dropbox, run_python=F){
   res = res_nano[!duplicated(res_nano$ID), ]
   write.csv(x = res[, c('ID','Lineage')], file = paste0(prefix_analysis_data, "/Analysis_Data/lineages.csv"),row.names = F)
 
-  ## run the python script to convert lineage names into a usable set
-  if(run_python) shell(run_lineage_classifier)
-  
+  if(run_python){  
+  ##### run the python script to convert lineage names into a usable set
+  ### For Windows
+  # shell(run_lineage_classifier) #run_lineage_classifier is defined in user_setting.R
+  ### For Mac
+  system("python3 lineage_classifier.py --input ../Analysis_Data/lineages.csv --output ../Analysis_Data/newlineagelist.csv")
+}
   res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
   res_update <- res_update[-1,] # Remove header
   res_update = res_update[!duplicated(res_update$Original), ]

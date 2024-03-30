@@ -39,6 +39,8 @@ my_probs = c(0.025, 0.1, .5, .9, .975)
 source('functions.R')
 source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
+
+interim_version <- "v10"
 ```
 
 All paths are local
@@ -48,11 +50,12 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
- intervention = 'interim_all';ref_arm = 'No study drug'
+# intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
-# intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
+ intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 # intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
 }
@@ -307,7 +310,7 @@ if(RUN_MODELS){
 
 ```{r}
 ff = list.files('Rout/', pattern = paste0(intervention,'.RData'),)
-ff = ff[grep(pattern = 'model_fits_',x = ff)]
+ff = ff[grep(pattern = 'model_fits_',x = ff, ignore.case = T)]
 if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all model settings')
 ff = paste0('Rout/',ff)
 ```
@@ -336,117 +339,23 @@ for(i in 1:length(ff)){
 ## Plot viral dynamics
 
 ```{r}
-dataplot <- platcov_dat_analysis
-
-# you can do this by changing level names?
-dataplot$Trt <- as.character(dataplot$Trt)
-dataplot$Trt[dataplot$Trt == "Nirmatrelvir + Ritonavir"] <- "Nirmatrelvir"
-dataplot$Trt <- as.factor(dataplot$Trt)
-## This line seems duplicate? Also ref level is no longer ref_arm?
-dataplot$Trt <- factor(dataplot$Trt, levels = as.character(unique(dataplot[,c("Trt", "trt_color")])$Trt))
-
-### duplicate of what is happening to placov_dat_analysis?
-dataplot = 
-  dataplot %>% ungroup() %>%
-  filter(Timepoint_ID %in% c(0:7, 10, 14), mITT) %>%
-  arrange(log10_viral_load==log10_cens_vl) %>%
-  mutate(Variant = as.factor(Variant),
-         Site = as.factor(Site),
-         RnaseP_scaled = scale(40 - CT_RNaseP,scale = F),
-         Mean_age = mean(Age[!duplicated(ID)]),
-         SD_age = sd(Age[!duplicated(ID)]),
-         Age_scaled = (Age-Mean_age)/SD_age,
-         Symptom_onset = ifelse(is.na(Symptom_onset),2,Symptom_onset)) 
-
-dataplot$Timepoint_ID_num <- dataplot$Timepoint_ID
-
-dataplot2 <- aggregate(log10_viral_load~ID+Timepoint_ID+Timepoint_ID_num+Trt+Symptom_onset, 
-                       data = dataplot, FUN = median)
-
-dataplot3 <- aggregate(log10_viral_load~Timepoint_ID+Timepoint_ID_num+Trt, data = dataplot, FUN = quantile, c(0.25, 0.5, 0.75))
-dataplot3[,4:6] <- as.data.frame(as.matrix(dataplot3[,4]))
-colnames(dataplot3)[4:6] <- c("Q1", "Q2", "Q3")
-
-colors <- unique(platcov_dat_analysis$trt_color)
-
-## I don't understand what the below is doing. is it taking the median of the daily viral loads (mean of duplicate swabs)?
-G1 <- ggplot() +
-  geom_jitter(data = dataplot, aes(x = Timepoint_ID_num, y = log10_viral_load, col = Trt), 
-              alpha = 0.4, size = 1.75, shape = 21,
-              width = 0.15) +
-  scale_fill_manual(values = colors, name = "") +
-  geom_line(data = subset(dataplot3, Timepoint_ID_num <= 7),
-            aes(x =  Timepoint_ID_num, y = Q2, group = Trt, col = Trt), 
-            linewidth = 1, linetype = 1) +
-  geom_line(data = subset(dataplot3,  Timepoint_ID_num >= 7), 
-            aes(x =  Timepoint_ID_num, y = Q2, group = Trt, col = Trt), 
-            linewidth = 0.75, linetype = "dashed") +
-  geom_point(data = dataplot3, aes(x = Timepoint_ID_num, y = Q2, fill = Trt), size = 3.5, shape = 24) +
-  scale_color_manual(values = colors, name = "") +
-  theme_bw() +
-  scale_x_continuous(breaks = 0:14) +
-  scale_y_continuous(labels=label_math(), breaks = seq(0,10,2), limits = c(0,9)) +
-  xlab("Time since randomisation (days)") +
-  ylab("SARS-CoV-2 genomes/mL") + 
-  theme(axis.title  = element_text(face = "bold"),
-        plot.title = element_text(face = "bold"),
-        legend.position = "bottom",
-        axis.text = element_text(size = 10)) +
-  ggtitle("A) Viral load dynamics")
-
-G1 
+G1 <- plot_vl(dataplot = platcov_dat_analysis, trt_colors = trt_colors)
+G1
 ```
 
 ## Plot treatment effects
 
 ```{r}
-formatter <- function(x){  
-  (x-1)*100 
-}
-```
-
-```{r}
-
-effect_ests_plot <- as.data.frame(do.call("rbind", effect_ests))
-effect_ests_plot <- exp(effect_ests_plot)
-
-effect_ests_plot <- effect_ests_plot[row.names(effect_ests_plot) != "No study drug",]
-
-colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
-
-effect_ests_plot$trt <- row.names(effect_ests_plot)
-effect_ests_plot$trt <- as.factor(effect_ests_plot$trt)
-
-my.labs <- levels(effect_ests_plot$trt)
-my.labs[my.labs == "Nirmatrelvir+Molnupiravir"] <- "Nirmatrelvir +\nMolnupiravir"
-
-G2 <- ggplot(effect_ests_plot, 
-       aes(x = trt, y = med)) +
-  geom_point(position = position_dodge(width = 0.5), size = 4, col =  model_cols) +
-  geom_errorbar(aes(x = trt, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65, col =  model_cols) +
-  geom_errorbar(aes(x = trt, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5, col =  model_cols) +
-  geom_rect(aes(ymin = min(0.75, min(effect_ests_plot$L95)-0.05), ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
-  coord_flip() +
-  theme_bw() +
-  geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
-  scale_y_continuous(labels = formatter, limits = c(min(0.75, min(effect_ests_plot$L95)-0.05), max(effect_ests_plot$U95) + .25), expand = c(0,0),
-                     breaks = seq(0.6,3.6, 0.2)) +
-    scale_x_discrete(labels= my.labs) +
-  ylab("Change in viral clearance rate (%)") +
-  xlab("") +
-  ggtitle("B) Estimated treatment effects")  + 
-  theme(axis.title  = element_text(face = "bold"),
-        plot.title = element_text(face = "bold"),
-        legend.position = "bottom",
-        axis.text = element_text(size = 10))
+G2 <- plot_trt_effs(effect_ests = effect_ests)
 G2
 ```
 
 ```{r}
-png(paste0("Plots/", intervention, ".png"), unit = "in", res = 350, width = 10, height = 6)
-plot_grid(G1, G2, ncol = 2, align = "h", axis = "b")
-dev.off()
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".pdf")
 
+pdf(plot_name, width = 12, height = 6)
+plot_grid(G1, G2, ncol = 2, align = "hv", axis = "b")
+dev.off()
 ```
 
 ```{r Figure_main, fig.height=6, fig.width=9}

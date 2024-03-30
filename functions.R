@@ -659,6 +659,83 @@ plot_trt_colors = function(){
   legend('right', legend = names(trt_cols), fill = trt_cols,border = NA,cex=1.5)
 }
 
+
+plot_vl <- function(dataplot, trt_colors){
+  dataplot_median <- dataplot %>%
+    group_by(Trt, Timepoint_ID) %>%
+    summarise(median_VL = median(daily_VL), .groups = 'drop')
+  
+  colors <- trt_colors[names(trt_colors) %in% unique(dataplot$Trt)]
+  colors <- colors[levels(dataplot$Trt)]
+  labels <- names(colors)
+  labels[labels == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
+  
+  G <- ggplot(dataplot, aes(x = Timepoint_ID, y = log10_viral_load, col = Trt)) +
+    geom_jitter(width = 0.15, shape = 21, alpha = 0.4, size = 1.75) +
+    geom_line(data = dataplot_median, aes(x =  Timepoint_ID, y = median_VL, group = Trt, col = Trt), linewidth = 1, linetype = 1) +
+    geom_point(data = dataplot_median, aes(x = Timepoint_ID, y = median_VL, fill = Trt), size = 3.5, shape = 24, col = "black") +
+    scale_color_manual(label = labels, values = colors, name = "") +
+    scale_fill_manual(label = labels, values = colors, name = "") +
+    theme_bw() +
+    scale_x_continuous(breaks = 0:14) +
+    scale_y_continuous(labels=label_math(), breaks = seq(0,10,2), limits = c(0,9)) +
+    xlab("Time since randomisation (days)") +
+    ylab("SARS-CoV-2 genomes/mL") + 
+    theme(axis.title  = element_text(face = "bold"),
+          plot.title = element_text(face = "bold"),
+          legend.position = "bottom",
+          axis.text = element_text(size = 10)) +
+    ggtitle("\nA) Viral load dynamics")
+  
+  G
+}
+
+formatter <- function(x){  
+  (x-1)*100 
+}
+
+plot_trt_effs <- function(effect_ests){
+  effect_ests_plot <- as.data.frame(do.call("rbind", effect_ests))
+  effect_ests_plot <- exp(effect_ests_plot)
+  colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
+  
+  effect_ests_plot$arm <- row.names(effect_ests_plot)
+  effect_ests_plot$arm <- as.factor(effect_ests_plot$arm)
+  
+  #Labeling reference arm
+  lab_ref <- ref_arm
+  lab_ref[lab_ref == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
+  #Labeling intervention arm
+  my.labs <- levels(effect_ests_plot$arm)
+  my.labs[my.labs == "Nirmatrelvir+Molnupiravir"] <- "Nirmatrelvir +\nMolnupiravir"
+  
+  title <- paste0("B) Estimated treatment effects \nrelative to ", tolower(lab_ref), " arm")
+  
+  G <- ggplot(effect_ests_plot, 
+         aes(x = arm, y = med)) +
+    geom_point(position = position_dodge(width = 0.5), size = 4, col =  model_cols) +
+    geom_errorbar(aes(x = arm, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65, col =  model_cols) +
+    geom_errorbar(aes(x = arm, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5, col =  model_cols) +
+    geom_rect(aes(ymin = min(0.75, min(effect_ests_plot$L95)-0.05), ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
+    coord_flip() +
+    theme_bw() +
+    geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
+    scale_y_continuous(labels = formatter, limits = c(min(0.75, min(effect_ests_plot$L95)-0.05), max(effect_ests_plot$U95) + .25), expand = c(0,0),
+                       breaks = seq(0.2,3.6, 0.2)) +
+    scale_x_discrete(labels= my.labs) +
+    ylab("Change in viral clearance rate (%)") +
+    xlab("") +
+    ggtitle(title)  + 
+    theme(axis.title  = element_text(face = "bold"),
+          plot.title = element_text(face = "bold"),
+          legend.position = "bottom",
+          axis.text = element_text(size = 10))
+  G
+}
+
+
+
+
 checkStrict(make_stan_inputs)
 checkStrict(plot_serial_data)
 checkStrict(plot_effect_estimates)

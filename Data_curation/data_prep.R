@@ -201,7 +201,7 @@ trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRes
 
 ## Variant data
 source(paste0(prefix_dat_cur, "get_nanopore_data.R"))
-variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox)
+variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox, run_python = T)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
 
 
@@ -1144,3 +1144,4 @@ Res_Unblinded_all =
 write.table(x = Res_Unblinded_all, 
             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
             row.names = F, sep=',', quote = F)
+
