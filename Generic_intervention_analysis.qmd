@@ -53,8 +53,8 @@ Set up analysis
 # intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
- intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
-# intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+# intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
+ intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -358,6 +358,27 @@ plot_grid(G1, G2, ncol = 2, align = "hv", axis = "b")
 dev.off()
 ```
 
+## Summarize treatment effect
+
+```{r}
+effect_ests_rep <- as.data.frame(do.call("rbind", effect_ests))
+effect_ests_rep <- formatter(exp(effect_ests_rep))
+
+for(i in 1:nrow(effect_ests_rep)){
+  writeLines(sprintf('Estimated treatment effect of %s relative to %s is %s%% [95%% CrI: %s to %s %%]', 
+                     rownames(effect_ests_rep)[i],
+                     ref_arm,
+                     round(effect_ests_rep[i, 3],2),
+                     round(effect_ests_rep[i, 1],2),
+                     round(effect_ests_rep[i, 5],2)
+             )
+  )
+}
+  
+i <- 1
+
+```
+
 ```{r Figure_main, fig.height=6, fig.width=9}
 
 par(las=1, mar=c(5,5,2,2),cex.lab=1.3, cex.axis=1.3, mfrow=c(1,2))
@@ -373,6 +394,7 @@ plot_effect_estimates(effect_ests = effect_ests,
 # title(intervention)
 legend('right',pch=15:16,legend = c('Linear','Non-linear'),
        col = model_cols,inset=0.03, cex=1.2)
+
 
 
 for(i in 1:length(ff)){
