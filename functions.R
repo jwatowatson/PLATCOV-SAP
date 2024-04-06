@@ -661,6 +661,9 @@ plot_trt_colors = function(){
 
 
 plot_vl <- function(dataplot, trt_colors){
+  dataplot <- dataplot %>%
+    distinct(ID, Timepoint_ID, daily_VL, .keep_all = T)
+  
   dataplot_median <- dataplot %>%
     group_by(Trt, Timepoint_ID) %>%
     summarise(median_VL = median(daily_VL), .groups = 'drop')
@@ -670,12 +673,25 @@ plot_vl <- function(dataplot, trt_colors){
   labels <- names(colors)
   labels[labels == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
   
+  f_tab <- dataplot %>%
+    distinct(ID, Trt) %>%
+    group_by(Trt) %>%
+    summarise(n = n()) %>%
+    as.data.frame()
+  
+  f_tab$lab <- paste0(f_tab$Trt, ": ", f_tab$n)
+  f_text <- paste(f_tab$lab, collapse = '\n')
+  
+  
   G <- ggplot(dataplot, aes(x = Timepoint_ID, y = log10_viral_load, col = Trt)) +
-    geom_jitter(width = 0.15, shape = 21, alpha = 0.4, size = 1.75) +
+    geom_jitter(width = 0.15, alpha = 0.4, size = 1.75, aes(shape = censor) ) +
     geom_line(data = dataplot_median, aes(x =  Timepoint_ID, y = median_VL, group = Trt, col = Trt), linewidth = 1, linetype = 1) +
-    geom_point(data = dataplot_median, aes(x = Timepoint_ID, y = median_VL, fill = Trt), size = 3.5, shape = 24, col = "black") +
+    geom_point(data = dataplot_median, aes(x = Timepoint_ID, y = median_VL, fill = Trt)
+               , size = 3.5, shape = 24, col = "black") +
+    scale_shape_manual(values = c(25, 21), guide = NULL) +
     scale_color_manual(label = labels, values = colors, name = "") +
     scale_fill_manual(label = labels, values = colors, name = "") +
+    annotate("text", x = 2.5, y = 9, label = f_text, hjust = 0, vjust = 1)  +
     theme_bw() +
     scale_x_continuous(breaks = 0:14) +
     scale_y_continuous(labels=label_math(), breaks = seq(0,10,2), limits = c(0,9)) +
@@ -688,6 +704,59 @@ plot_vl <- function(dataplot, trt_colors){
     ggtitle("\nA) Viral load dynamics")
   
   G
+}
+
+plot_vl_box <- function(dataplot, trt_colors){
+  dataplot$Timepoint_ID <- as.factor(dataplot$Timepoint_ID)
+  dataplot <- dataplot %>%
+    distinct(ID, Timepoint_ID, daily_VL, .keep_all = T)
+  
+  dataplot_median <- dataplot %>%
+    group_by(Trt, Timepoint_ID) %>%
+    summarise(median_VL = median(daily_VL), .groups = 'drop')
+  
+  f_tab <- dataplot %>%
+    distinct(ID, Trt) %>%
+    group_by(Trt) %>%
+    summarise(n = n()) %>%
+    as.data.frame()
+  f_tab$lab <- paste0("n = ", f_tab$n)
+  
+  colors <- trt_colors[names(trt_colors) %in% unique(dataplot$Trt)]
+  colors <- colors[levels(dataplot$Trt)]
+  labels <- names(colors)
+  labels[labels == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
+  
+  G <- ggplot(dataplot, aes(x = Timepoint_ID, y = daily_VL, fill = Trt)) +
+    geom_jitter(width = 0.2, alpha = 0.25, size = 1.5, aes(shape = censor, fill = Trt),
+                stroke = 0.5) +
+    geom_boxplot(width=0.65, size = 0.5, outlier.shape = NA,  coef = 0, aes(fill = Trt), alpha = 0.3) +
+    geom_line(data = dataplot_median, aes(x =  Timepoint_ID, y = median_VL, group = Trt, col = Trt), 
+              linewidth = 1.2, linetype = 1) +
+    geom_point(data = dataplot_median, aes(x = Timepoint_ID, y = median_VL, fill = Trt)
+               , size = 3.5, shape = 24, col = "black") +
+    scale_shape_manual(values = c(25, 21), guide = NULL) +
+    scale_color_manual(label = labels, values = colors, name = "") +
+    scale_fill_manual(label = labels, values = colors, name = "") +
+    facet_grid(.~Trt) +
+    theme_bw() +
+    scale_y_continuous(labels=label_math(), breaks = seq(0,10,1), limits = c(0,9)) +
+    xlab("Time since randomisation (days)") +
+    ylab("SARS-CoV-2 genomes/mL") + 
+    theme(axis.title  = element_text(face = "bold"),
+          plot.title = element_text(face = "bold"),
+          legend.position = "none",
+          axis.text = element_text(size = 10),
+          strip.text = element_text(size = 10, face = 'bold')) +
+    geom_hline(yintercept = 0, col = "red", linetype = "dashed", linewidth = 0.75) +
+    geom_text(data = f_tab, x = 4, y = 9, aes(label = lab),
+              hjust = 0, vjust = 1) +
+    ggtitle("Viral densitiy dynamics")
+  G
+}
+
+slope_to_hl  <- function(slope){
+  24*log10(2)/(-(slope)) 
 }
 
 formatter <- function(x){  
@@ -733,6 +802,53 @@ plot_trt_effs <- function(effect_ests){
   G
 }
 
+
+
+plot_hl <- function(Half_life, trt_colors){
+  Half_life_med <- Half_life %>%
+    group_by(Trt) %>%
+    summarise(med_hl = median(t_12_med))  %>%
+    as.data.frame()
+  
+  colors <- trt_colors[names(trt_colors) %in% unique(Half_life$Trt)]
+  colors <- colors[levels(Half_life$Trt)]
+  labels <- names(colors)
+  labels[labels == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
+  
+  f_tab <- Half_life %>%
+    distinct(ID, Trt) %>%
+    group_by(Trt) %>%
+    summarise(n = n()) %>%
+    as.data.frame()
+  f_tab$med_hl <- Half_life_med$med_hl
+  
+  f_tab$lab <- paste0(f_tab$Trt,": n = ", f_tab$n, "; t_1/2 = ", round(f_tab$med_hl,1), " h")
+  freq_lab <- paste(f_tab$lab, collapse = '\n')
+  
+  
+  G <- ggplot(Half_life, aes(x = t_12_med, y = ID, col = Trt)) +
+    geom_errorbar(aes(xmin = t_12_low, xmax = t_12_up),width = 0, alpha = 0.4) +
+    geom_point(size = 2) +
+    geom_vline(data = Half_life_med, aes(xintercept = med_hl, col = Trt),linewidth = 1) +
+    theme_bw() +  
+    scale_y_discrete(expand = c(0.01,0.01), breaks = NULL) +
+    scale_color_manual(label = labels, values = colors, name = "") +
+    scale_x_continuous(breaks = seq(0,40,5), expand = c(0,0)) +
+    guides(color = guide_legend(override.aes=list(linetype = rep(0, length(unique(Half_life$Trt)))))) +
+    theme(axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title = element_text(size = 12, face = "bold"),
+          plot.title = element_text( face = "bold"),
+          legend.position = "bottom") +
+    coord_cartesian(xlim=c(0, 35)) +
+    xlab("Estimated viral clearance half-life (h)") +
+    ylab("") +
+    ggtitle("A) Individual viral clearance half-life\n") +
+    annotate("text", x = 13, y = nrow(Half_life)/6, label = freq_lab, hjust = 0, vjust = 1, size = 3) 
+  G
+  
+  
+}
 
 
 

@@ -52,9 +52,9 @@ Set up analysis
 ```{r load_data}
 # intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
-# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+ intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
- intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+# intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -315,7 +315,7 @@ if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all mo
 ff = paste0('Rout/',ff)
 ```
 
-main model selection
+## main model selection
 
 ```{r}
 main_mod = which(model_settings$prior==1&
@@ -343,6 +343,61 @@ G1 <- plot_vl(dataplot = platcov_dat_analysis, trt_colors = trt_colors)
 G1
 ```
 
+```{r}
+G1_box <- plot_vl_box(dataplot = platcov_dat_analysis, trt_colors = trt_colors)
+G1_box
+```
+
+```{r}
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".pdf")
+
+pdf(plot_name, width = 8, height = 5)
+G1_box
+dev.off()
+```
+
+## Plot half-life
+
+```{r}
+
+slopes = rstan::extract(out, pars='slope')$slope
+analysis_data_stan = stan_inputs$analysis_data_stan
+t12_output = data.frame(t_12_med = 24*log10(.5)/apply(slopes,2,mean),
+                          t_12_up = 24*log10(.5)/apply(slopes,2,quantile,.9),
+                          t_12_low = 24*log10(.5)/apply(slopes,2,quantile,.1),
+                          slope_median = apply(slopes,2,median),
+                          ID_stan = analysis_data_stan$id[analysis_data_stan$ind_start])
+t12_output = merge(t12_output, stan_inputs$ID_map, by = 'ID_stan')
+
+
+
+Half_life <- t12_output
+# for(i in 1:nrow(stan_inputs$ID_map)){
+#   slopes <- rstan::extract(out, paste0("slope[", i, "]"))[[1]]
+#   hl <- slope_to_hl(slopes)
+#   summary_hl <- data.frame("ID_stan" = i,
+#                            "low" = quantile(hl, 0.1),
+#                            "med" = mean(hl),
+#                            "high" = quantile(hl, 0.9))
+#   Half_life <- rbind(Half_life, summary_hl)
+# }
+# Half_life <- merge(stan_inputs$ID_map, Half_life, by = "ID_stan")
+
+Half_life <- platcov_dat_analysis %>%
+  distinct(ID, Trt) %>%
+  merge(Half_life, by.x = "ID", by.y = "ID_key") %>%
+  arrange(Trt, t_12_med)
+
+Half_life$ID <- as.factor(Half_life$ID)
+Half_life$ID <- factor(Half_life$ID, levels = Half_life$ID)
+Half_life
+```
+
+```{r}
+G_hl <- plot_hl(Half_life, trt_colors)
+G_hl
+```
+
 ## Plot treatment effects
 
 ```{r}
@@ -351,10 +406,10 @@ G2
 ```
 
 ```{r}
-plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".pdf")
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_t12_trt.pdf")
 
 pdf(plot_name, width = 12, height = 6)
-plot_grid(G1, G2, ncol = 2, align = "hv", axis = "b")
+plot_grid(G_hl, G2, ncol = 2, align = "hv", axis = "b")
 dev.off()
 ```
 
