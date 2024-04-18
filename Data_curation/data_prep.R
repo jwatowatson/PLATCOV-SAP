@@ -58,7 +58,7 @@ clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
 ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
 # calculate age at randomisation 
 for(i in which(ind)){
-  clin_data$age_yr[i] = trunc((as.POSIXct(clin_data$dob_my[i], format='%d/%m/%Y') %--% as.POSIXct(clin_data$randat[i])) / years(1))
+  clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
 }
 
 ind = is.na(clin_data$age_yr)
@@ -899,25 +899,25 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate',
 
 #************************* Favipiravir Analysis *************************#
 #* Thailand and Brazil
-Res_Favipiravir =
-  Res %>% filter(Trt %in% c('Favipiravir',"No study drug"),
-                 Rand_date < '2022-10-31',
-                 Country %in% c('Thailand','Brazil')) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_Favipiravir, 
-            file =  paste0(prefix_analysis_data, "/Analysis_Data/Favipiravir_analysis.csv"), 
-            row.names = F, sep=',', quote = F)
+# Res_Favipiravir =
+#   Res %>% filter(Trt %in% c('Favipiravir',"No study drug"),
+#                  Rand_date < '2022-10-31',
+#                  Country %in% c('Thailand','Brazil')) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_Favipiravir, 
+#             file =  paste0(prefix_analysis_data, "/Analysis_Data/Favipiravir_analysis.csv"), 
+#             row.names = F, sep=',', quote = F)
 
 
 #************************* Regeneron Analysis *************************#
 #* Thailand only
-# Res_REGN =
-#   Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
-#                #  Country == 'Thailand',
-#                  Rand_date < '2022-10-20') %>%
-#   arrange(Rand_date, ID, Time)
-# write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
-# 
+Res_REGN =
+  Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
+               #  Country == 'Thailand',
+                 Rand_date < '2022-10-21 00:00:00') %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
+
 
 #************************* Fluoxetine Analysis *************************#
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
@@ -1037,12 +1037,12 @@ write.table(x = Res_Nitazoxanide, file = paste0(prefix_analysis_data, "/Analysis
 
 #************************* Evusheld Analysis *************************#
 #* Thailand added 2022-09-01; Brazil added 2022-10-31
-# Res_Evusheld = 
-#   Res %>% filter(Trt %in% c('Evusheld',"No study drug"),
-#                  (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00") |
-#                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00")) %>%
-#   arrange(Rand_date, ID, Time)
-# 
+Res_Evusheld =
+  Res %>% filter(Trt %in% c('Evusheld',"No study drug"),
+                 (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00") |
+                   (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")) %>%
+  arrange(Rand_date, ID, Time)
+
 # evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_test.csv"))
 # table(evusheld_mutations$evusheld_resistant, useNA = 'ifany')
 # 
@@ -1052,8 +1052,8 @@ write.table(x = Res_Nitazoxanide, file = paste0(prefix_analysis_data, "/Analysis
 #          Res_Evusheld$evusheld_resistant)
 # 
 # Res_Evusheld$evusheld_resistant[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
-# 
-# write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
+
+write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
 #************************* Ensitrelvir Analysis *************************#
@@ -1091,57 +1091,57 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 #************************* Ineffective Interventions *************************#
 
-Res_ineffective = 
-  Res %>% filter(Trt %in% c('Ivermectin',
-                            "Favipiravir",
-                            "Fluoxetine",
-                            "No study drug")) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_ineffective, file = paste0(prefix_analysis_data, "/Analysis_Data/Ineffective_analysis.csv"), row.names = F, sep=',', quote = F)
+# Res_ineffective = 
+#   Res %>% filter(Trt %in% c('Ivermectin',
+#                             "Favipiravir",
+#                             "Fluoxetine",
+#                             "No study drug")) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_ineffective, file = paste0(prefix_analysis_data, "/Analysis_Data/Ineffective_analysis.csv"), row.names = F, sep=',', quote = F)
 
 #************************* No Study Drugs *************************#
-Res_noStudyDrugs = 
-  Res %>% filter(Trt %in% c("No study drug")) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs.csv"), row.names = F, sep=',', quote = F)
+# Res_noStudyDrugs = 
+#   Res %>% filter(Trt %in% c("No study drug")) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs.csv"), row.names = F, sep=',', quote = F)
 
 #************************* Site TH01 only *************************#
-Res_TH1 <-  Res %>% filter(Site %in% c("th001")) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_TH1.csv"), row.names = F, sep=',', quote = F)
+# Res_TH1 <-  Res %>% filter(Site %in% c("th001")) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_TH1.csv"), row.names = F, sep=',', quote = F)
 
 
 
 #************************* Unblinded arm meta-analysis *************************#
-Res_Unblinded_meta = 
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-                            'Molnupiravir',
-                            "No study drug",
-                            'Ivermectin',
-                            'Remdesivir',
-                            'Favipiravir',
-                            'Regeneron'),
-                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-                 Rand_date <= "2023-10-20 00:00:00"
-                 ) %>%
-  arrange(Rand_date, ID, Time) 
-
-
-write.table(x = Res_Unblinded_meta, 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"), 
-            row.names = F, sep=',', quote = F)
+# Res_Unblinded_meta = 
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+#                             'Molnupiravir',
+#                             "No study drug",
+#                             'Ivermectin',
+#                             'Remdesivir',
+#                             'Favipiravir',
+#                             'Regeneron'),
+#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+#                  Rand_date <= "2023-10-20 00:00:00"
+#                  ) %>%
+#   arrange(Rand_date, ID, Time) 
+# 
+# 
+# write.table(x = Res_Unblinded_meta, 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"), 
+#             row.names = F, sep=',', quote = F)
 
 
 
 #************************* Unblinded all *************************#
-Res_Unblinded_all = 
-  Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
-                            'Nitazoxanide',
-                            'Ensitrelvir')) %>%
-  arrange(Rand_date, ID, Time) 
-
-
-write.table(x = Res_Unblinded_all, 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
-            row.names = F, sep=',', quote = F)
+# Res_Unblinded_all = 
+#   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
+#                             'Nitazoxanide',
+#                             'Ensitrelvir')) %>%
+#   arrange(Rand_date, ID, Time) 
+# 
+# 
+# write.table(x = Res_Unblinded_all, 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
+#             row.names = F, sep=',', quote = F)
 
