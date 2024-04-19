@@ -61,3 +61,5 @@ Rout/model_fits.RData
 Data_curation/Rplots.pdf
 Data_curation/user_settings.R
 interim_all.R
+*.fasta
+/Analysis_Data/Nextclade
