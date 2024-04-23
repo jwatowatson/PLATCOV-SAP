@@ -913,7 +913,7 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate',
 #* Thailand only
 Res_REGN =
   Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
-               #  Country == 'Thailand',
+                 Country == 'Thailand',
                  Rand_date < '2022-10-21 00:00:00') %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
@@ -1113,23 +1113,27 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 
 #************************* Unblinded arm meta-analysis *************************#
-# Res_Unblinded_meta = 
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-#                             'Molnupiravir',
-#                             "No study drug",
-#                             'Ivermectin',
-#                             'Remdesivir',
-#                             'Favipiravir',
-#                             'Regeneron'),
-#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-#                  Rand_date <= "2023-10-20 00:00:00"
-#                  ) %>%
-#   arrange(Rand_date, ID, Time) 
+Res_Unblinded_meta =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+                            'Molnupiravir',
+                            "No study drug",
+                            'Ivermectin',
+                            'Remdesivir',
+                            'Favipiravir',
+                            'Regeneron'),
+                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+                 Rand_date <= "2023-10-20 00:00:00"
+                 ) %>%
+  arrange(Rand_date, ID, Time)
+
+# Res_new <- Res %>%
+#   filter(ID %in% A)
 # 
-# 
-# write.table(x = Res_Unblinded_meta, 
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"), 
-#             row.names = F, sep=',', quote = F)
+# unique(Res_Unblinded_meta$ID)[!unique(Res_Unblinded_meta$ID) %in% A]
+
+write.table(x = Res_Unblinded_meta,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
+            row.names = F, sep=',', quote = F)
 
 
 

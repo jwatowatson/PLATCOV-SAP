@@ -11,9 +11,9 @@ get_nanopore_data = function(prefix_dropbox, run_python=F){
   if(run_python){  
   ##### run the python script to convert lineage names into a usable set
   ### For Windows
-  # shell(run_lineage_classifier) #run_lineage_classifier is defined in user_setting.R
+   shell(run_lineage_classifier) #run_lineage_classifier is defined in user_setting.R
   ### For Mac
-  system("python3 lineage_classifier.py --input ../Analysis_Data/lineages.csv --output ../Analysis_Data/newlineagelist.csv")
+  #system("python3 lineage_classifier.py --input ../Analysis_Data/lineages.csv --output ../Analysis_Data/newlineagelist.csv")
 }
   res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
   res_update <- res_update[-1,] # Remove header
