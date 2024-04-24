@@ -751,7 +751,7 @@ plot_vl_box <- function(dataplot, trt_colors){
     geom_hline(yintercept = 0, col = "red", linetype = "dashed", linewidth = 0.75) +
     geom_text(data = f_tab, x = 4, y = 9, aes(label = lab),
               hjust = 0, vjust = 1) +
-    ggtitle("Viral densitiy dynamics")
+    ggtitle("Viral density dynamics")
   G
 }
 
@@ -763,14 +763,20 @@ formatter <- function(x){
   (x-1)*100 
 }
 
-plot_trt_effs <- function(effect_ests){
-  effect_ests_plot <- as.data.frame(do.call("rbind", effect_ests))
-  effect_ests_plot <- exp(effect_ests_plot)
-  colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
+plot_trt_effs <- function(effect_ests, model_cols){
+  effect_ests_plots <- NULL
+    for(i in 1:length(effect_ests)){
+    effect_ests_plot <- as.data.frame(effect_ests[[i]])
+    effect_ests_plot <- exp(effect_ests_plot)
+    colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
+    effect_ests_plot$arm <- row.names(effect_ests_plot)
+    effect_ests_plot$arm <- as.factor(effect_ests_plot$arm)
+    effect_ests_plot$model <- names(effect_ests)[i]
+    effect_ests_plots <- rbind(effect_ests_plots, effect_ests_plot)
+  }
   
-  effect_ests_plot$arm <- row.names(effect_ests_plot)
-  effect_ests_plot$arm <- as.factor(effect_ests_plot$arm)
-  
+  effect_ests_plots$model <- as.factor(effect_ests_plots$model)
+
   #Labeling reference arm
   lab_ref <- ref_arm
   lab_ref[lab_ref == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
@@ -780,16 +786,19 @@ plot_trt_effs <- function(effect_ests){
   
   title <- paste0("B) Estimated treatment effects \nrelative to ", tolower(lab_ref), " arm")
   
-  G <- ggplot(effect_ests_plot, 
-         aes(x = arm, y = med)) +
-    geom_point(position = position_dodge(width = 0.5), size = 4, col =  model_cols) +
-    geom_errorbar(aes(x = arm, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65, col =  model_cols) +
-    geom_errorbar(aes(x = arm, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5, col =  model_cols) +
-    geom_rect(aes(ymin = min(0.75, min(effect_ests_plot$L95)-0.05), ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
+  names(model_cols) <- levels(effect_ests_plots$model)
+  
+  G <- ggplot(effect_ests_plots, 
+         aes(x = arm, y = med, col = model, group = model)) +
+    geom_rect(aes(ymin = min(0.75, min(effect_ests_plots$L95)-0.05), ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
+    geom_point(position = position_dodge(width = 0.5), size = 4) +
+    geom_errorbar(aes(x = arm, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65) +
+    geom_errorbar(aes(x = arm, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5) +
+    scale_color_manual(values = model_cols) +
     coord_flip() +
     theme_bw() +
     geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
-    scale_y_continuous(labels = formatter, limits = c(min(0.75, min(effect_ests_plot$L95)-0.05), max(effect_ests_plot$U95) + .25), expand = c(0,0),
+    scale_y_continuous(labels = formatter, limits = c(min(0.75, min(effect_ests_plots$L95)-0.05), max(effect_ests_plots$U95) + .25), expand = c(0,0),
                        breaks = seq(0.2,3.6, 0.2)) +
     scale_x_discrete(labels= my.labs) +
     ylab("Change in viral clearance rate (%)") +

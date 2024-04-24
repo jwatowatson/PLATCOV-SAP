@@ -98,7 +98,7 @@ plot(jitter(std_data$true_conc), std_data$Abs,panel.first=grid(),
 
 # output_df_unk = output_df_unk %>% filter(ID %in% 1:2000)
 ## Run Bayesian model ##
-mod = stan_model(file = 'serology_standard_curves.stan')
+mod = stan_model(file = 'serology_estimation.stan')
 stan_data = data = list(N_controls=nrow(std_data),
                         K_plates=max(std_data$plate_ID_int),
                         conc_controls = std_data$true_conc/200,
