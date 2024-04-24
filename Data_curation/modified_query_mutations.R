@@ -5,6 +5,7 @@ library(readxl)
 #############################################################
 source("functions_query_mutations.R")
 #############################################################
+# Need to run "prep_fasta_files.R" before (with Nextclade installed). 
 nextclade_file <- "../Analysis_Data/Nextclade/output/nextclade.tsv"
 naming_file <- "../Analysis_Data/sequencing_ID_map.csv"
 #############################################################
@@ -47,7 +48,7 @@ evusheld_muts <- evusheld_muts %>% mutate(
     TRUE ~ NA
     )
   )
-
+#############################################################
 # Resistance
 regeneron_muts <- regeneron_muts %>% mutate(
   regeneron_test = case_when(
@@ -57,4 +58,7 @@ regeneron_muts <- regeneron_muts %>% mutate(
     TRUE ~ NA
   )
 )
-
+#############################################################
+write.csv(evusheld_muts, '../Analysis_Data/evusheld_mutations.csv', row.names = F)
+write.csv(regeneron_muts, '../Analysis_Data/regeneron_mutations.csv', row.names = F)
+#############################################################

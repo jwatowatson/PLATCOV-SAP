@@ -841,10 +841,13 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate',
             row.names = F, sep=',', quote = F)
 
 ################################################################################################
-
-
-
-
+#***********************************************************************#
+#*************************      Serology       ************************#
+serology_data <- read.csv("../Analysis_data/Serology_estimated.csv") # Estimated from "parse_serology_data.R"
+baseline_serology_data <- serology_data %>% 
+  filter(Day == 0) %>%
+  mutate(Baseline_log_IgG = Med_log_IgG) %>%
+  select("ID", "Baseline_log_IgG")
 
 #***********************************************************************#
 #************************ Specific analysis data files *****************#
@@ -916,8 +919,20 @@ Res_REGN =
                  Country == 'Thailand',
                  Rand_date < '2022-10-21 00:00:00') %>%
   arrange(Rand_date, ID, Time)
-write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
 
+regeneron_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/regeneron_mutations.csv"))
+regeneron_mutations <- regeneron_mutations %>% select(Patient_ID, regeneron_test)
+colnames(regeneron_mutations)[1] <- "ID"
+table(regeneron_mutations$regeneron_test, useNA = 'ifany')
+
+Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
+Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
+
+Res_REGN$regeneron_test =
+  ifelse(is.na(Res_REGN$regeneron_test),T,
+         Res_REGN$regeneron_test)
+
+write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
 
 #************************* Fluoxetine Analysis *************************#
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
@@ -1043,15 +1058,19 @@ Res_Evusheld =
                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
 
-# evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_test.csv"))
-# table(evusheld_mutations$evusheld_resistant, useNA = 'ifany')
-# 
-# Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
-# Res_Evusheld$evusheld_resistant =
-#   ifelse(is.na(Res_Evusheld$evusheld_resistant),T,
-#          Res_Evusheld$evusheld_resistant)
-# 
-# Res_Evusheld$evusheld_resistant[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
+ evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_mutations.csv"))
+ evusheld_mutations <- evusheld_mutations %>% select(Patient_ID, evusheld_test)
+ colnames(evusheld_mutations)[1] <- "ID"
+ table(evusheld_mutations$evusheld_test, useNA = 'ifany')
+ 
+ Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
+ Res_Evusheld <- merge(Res_Evusheld, baseline_serology_data, by = "ID", all.x = T)
+ 
+Res_Evusheld$evusheld_test =
+  ifelse(is.na(Res_Evusheld$evusheld_test),T,
+         Res_Evusheld$evusheld_test)
+
+ Res_Evusheld$evusheld_test[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
 
 write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
