@@ -52,9 +52,9 @@ Set up analysis
 ```{r load_data}
 # intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
- intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
-# intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+ intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -221,7 +221,7 @@ all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 #                              prior = 1,
 #                              cov_matrices = 2))
 
-model_settings = expand.grid(mod = 'Stan_models/Linear_model_RNaseP.stan',
+model_settings = expand.grid(mod = c('Stan_models/Linear_model_RNaseP.stan', 'Stan_models/Nonlinear_model_RNaseP.stan'),
                              prior = 1,
                              cov_matrices = 1)
 
@@ -320,7 +320,7 @@ ff = paste0('Rout/',ff)
 ```{r}
 main_mod = which(model_settings$prior==1&
                    model_settings$cov_matrices==1&
-                   model_settings$mod==all_mods[1])
+                   model_settings$mod==all_mods[3])
 
 model_cols = brewer.pal(n = 8, name = 'Dark2')[1:nrow(model_settings)]
 names(model_cols) = paste('model', 1:nrow(model_settings))
@@ -333,6 +333,7 @@ for(i in 1:length(ff)){
   effect_ests[[i]] = 
     summary(out, pars='trt_effect',use_cache=F,probs=my_probs)$summary[,c('2.5%','10%','50%','90%','97.5%'),drop=F]
   rownames(effect_ests[[i]]) = trts
+  names(effect_ests)[i] <-  gsub("\\_.*", "", gsub("\\..*", "", gsub(".*/", "", model_settings$mod[i])))
 }
 ```
 
@@ -360,6 +361,8 @@ dev.off()
 
 ```{r}
 
+load(ff[main_mod])
+
 slopes = rstan::extract(out, pars='slope')$slope
 analysis_data_stan = stan_inputs$analysis_data_stan
 t12_output = data.frame(t_12_med = 24*log10(.5)/apply(slopes,2,mean),
@@ -372,17 +375,6 @@ t12_output = merge(t12_output, stan_inputs$ID_map, by = 'ID_stan')
 
 
 Half_life <- t12_output
-# for(i in 1:nrow(stan_inputs$ID_map)){
-#   slopes <- rstan::extract(out, paste0("slope[", i, "]"))[[1]]
-#   hl <- slope_to_hl(slopes)
-#   summary_hl <- data.frame("ID_stan" = i,
-#                            "low" = quantile(hl, 0.1),
-#                            "med" = mean(hl),
-#                            "high" = quantile(hl, 0.9))
-#   Half_life <- rbind(Half_life, summary_hl)
-# }
-# Half_life <- merge(stan_inputs$ID_map, Half_life, by = "ID_stan")
-
 Half_life <- platcov_dat_analysis %>%
   distinct(ID, Trt) %>%
   merge(Half_life, by.x = "ID", by.y = "ID_key") %>%
@@ -401,7 +393,7 @@ G_hl
 ## Plot treatment effects
 
 ```{r}
-G2 <- plot_trt_effs(effect_ests = effect_ests)
+G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols)
 G2
 ```
 
@@ -416,11 +408,13 @@ dev.off()
 ## Summarize treatment effect
 
 ```{r}
-effect_ests_rep <- as.data.frame(do.call("rbind", effect_ests))
-effect_ests_rep <- formatter(exp(effect_ests_rep))
 
+for(j in 1:length(ff)){
+  effect_ests_rep <- effect_ests[[j]]
+  effect_ests_rep <- formatter(exp(effect_ests_rep))
 for(i in 1:nrow(effect_ests_rep)){
-  writeLines(sprintf('Estimated treatment effect of %s relative to %s is %s%% [95%% CrI: %s to %s %%]', 
+  writeLines(sprintf('%s model:\nEstimated treatment effect of %s relative to %s is %s%% [95%% CrI: %s to %s %%]\n', 
+                     names(effect_ests)[j],
                      rownames(effect_ests_rep)[i],
                      ref_arm,
                      round(effect_ests_rep[i, 3],2),
@@ -429,9 +423,7 @@ for(i in 1:nrow(effect_ests_rep)){
              )
   )
 }
-  
-i <- 1
-
+}
 ```
 
 ```{r Figure_main, fig.height=6, fig.width=9}

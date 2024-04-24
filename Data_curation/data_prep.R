@@ -1113,23 +1113,25 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 
 #************************* Unblinded arm meta-analysis *************************#
-# Res_Unblinded_meta = 
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-#                             'Molnupiravir',
-#                             "No study drug",
-#                             'Ivermectin',
-#                             'Remdesivir',
-#                             'Favipiravir',
-#                             'Regeneron'),
-#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-#                  Rand_date <= "2023-10-20 00:00:00"
-#                  ) %>%
-#   arrange(Rand_date, ID, Time) 
-# 
-# 
-# write.table(x = Res_Unblinded_meta, 
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"), 
-#             row.names = F, sep=',', quote = F)
+Res_Unblinded_meta =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+                            'Molnupiravir',
+                            "No study drug",
+                            'Ivermectin',
+                            'Remdesivir',
+                            'Favipiravir',
+                            'Regeneron'),
+                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+                 Rand_date <= "2023-10-20 00:00:00"
+                 ) %>%
+  arrange(Rand_date, ID, Time)
+
+Res_Unblinded_meta <- Res_Unblinded_meta %>%
+  filter(!ID %in% c("PLT-TH1-1048", "PLT-TH1-1049", "PLT-TH1-1051"))
+
+write.table(x = Res_Unblinded_meta,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
+            row.names = F, sep=',', quote = F)
 
 
 
