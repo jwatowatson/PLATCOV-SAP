@@ -1126,11 +1126,6 @@ Res_Unblinded_meta =
                  ) %>%
   arrange(Rand_date, ID, Time)
 
-# Res_new <- Res %>%
-#   filter(ID %in% A)
-# 
-# unique(Res_Unblinded_meta$ID)[!unique(Res_Unblinded_meta$ID) %in% A]
-
 write.table(x = Res_Unblinded_meta,
             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
             row.names = F, sep=',', quote = F)

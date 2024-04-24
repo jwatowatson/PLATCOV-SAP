@@ -51,10 +51,6 @@ Reformat_Mutations <- function(nextclade_file, naming_file) {
   
 }
 
-Query_Mutations(aa_matrix, querystring = "S:G446S", nucl_positions = "22898,22899,22900")
-
-
-
 Query_Mutations<- function(aa_matrix, querystring, nucl_positions) {
   
   #first, add a column to determine whether the queried amino acid is missing based on the nucleotide missingness
