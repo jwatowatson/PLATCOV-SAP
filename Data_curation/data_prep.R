@@ -913,7 +913,7 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate',
 #* Thailand only
 Res_REGN =
   Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
-               #  Country == 'Thailand',
+                 Country == 'Thailand',
                  Rand_date < '2022-10-21 00:00:00') %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
@@ -1126,8 +1126,6 @@ Res_Unblinded_meta =
                  ) %>%
   arrange(Rand_date, ID, Time)
 
-Res_Unblinded_meta <- Res_Unblinded_meta %>%
-  filter(!ID %in% c("PLT-TH1-1048", "PLT-TH1-1049", "PLT-TH1-1051"))
 
 write.table(x = Res_Unblinded_meta,
             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),

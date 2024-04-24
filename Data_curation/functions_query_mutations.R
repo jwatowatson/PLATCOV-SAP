@@ -136,7 +136,7 @@ call_mutations <- function(mutation_data){
   mutation_list <- apply(mutation_data, 1, function(x) Query_Mutations(aa_matrix, querystring = x[2], nucl_positions = x[3]))
   mutation_summary <- mutation_list %>% reduce(left_join, by = "Patient_ID")
   missing_ind <- grep("missing", colnames(mutation_summary))
-  mutation_summary[,missing_ind] <- mutation_summary[,missing_ind]>0
+  #mutation_summary[,missing_ind] <- mutation_summary[,missing_ind]>0
   return(mutation_summary)
 }
 

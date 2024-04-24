@@ -108,6 +108,8 @@ table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
 
 To reduce the number of variant groups, as suggested by Liz.
 
+THIS SHOULD BE MOVED OUT OF HERE
+
 ```{r}
 
 platcov_dat$Variant2 <- as.character(platcov_dat$Variant)
