@@ -52,14 +52,14 @@ write.csv(Sample_ID_map, file = paste0(prefix_analysis_data, "/Analysis_Data/", 
 # Output: Interested only .tsv file
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
-re_download = F
+re_download = T
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
   arg_download
   #for Windows
-  shell(arg_download)
+  #shell(arg_download)
   ### For Mac #### TO BE CHANGED #######
-  # system(arg_download) 
+   system(arg_download) 
 }
 ##------------------------------------------------------------------------------------
 sars_cov_2_data <- "../Analysis_Data/Nextclade/sars-cov-2" # path to the data downloaded from Nextclade

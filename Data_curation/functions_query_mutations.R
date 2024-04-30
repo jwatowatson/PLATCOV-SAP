@@ -12,14 +12,20 @@ match_nextclade_ID <- function(nextclade_file, naming_file){
   missing_IDs <- nextclade$seqName2[!nextclade$seqName2 %in% naming$Sequence_ID2]
   writeLines(sprintf('This sample lacks of Patient ID or Sequence ID %s', missing_IDs))
   
+  if(length(missing_IDs > 0)){
   for(i in 1:length(missing_IDs)){
     if(grepl("MTM",  missing_IDs[i])){naming <- rbind(naming, 
                                                       c(paste0("PLT-TH1-", as.numeric(gsub(".*_(\\d+)", "\\1", missing_IDs[i]))), 
                                                         missing_IDs[i], missing_IDs[i]))}
     if(grepl("PLT",  missing_IDs[i])){naming <- rbind(naming, c(missing_IDs[i], NA, missing_IDs[i]))}
   }
+  }
+  
   
   joined <- merge(nextclade, naming, by.x = "seqName2", by.y = "Sequence_ID2")
+  joined$Patient_ID <- str_trim(joined$Patient_ID, "both")
+  
+  #if(sum(is.na(joined$Patient_ID)>0)) { writeLines(sprintf('This sample lacks of Patient ID or Sequence ID %s', joined$seqName2[is.na(joined$Patient_ID)]))}
   
   return(joined)
   
@@ -138,7 +144,15 @@ Check_Missing_Range <- function(number, range_string) {
 call_mutations <- function(mutation_data){
   mutation_list <- apply(mutation_data, 1, function(x) Query_Mutations(aa_matrix, querystring = x[2], nucl_positions = x[3]))
   mutation_summary <- mutation_list %>% reduce(left_join, by = "Patient_ID")
-  missing_ind <- grep("missing", colnames(mutation_summary))
+  mutation_summary <- mutation_summary %>%
+    separate(Patient_ID, into=c("study", "site", "ID", "Loc", "Timepoint"), sep = "-") %>%
+    mutate("Patient_ID" = paste0(study, "-", site, "-", ID)) %>%
+    select(-starts_with("study"), -starts_with("site"), -starts_with("ID")) %>%
+    relocate(Patient_ID, .before = 1)
+  mutation_summary$Timepoint <-  gsub("\\D", "", mutation_summary$Timepoint) %>% as.numeric()
+  
+  
+  #missing_ind <- grep("missing", colnames(mutation_summary))
   #mutation_summary[,missing_ind] <- mutation_summary[,missing_ind]>0
   return(mutation_summary)
 }

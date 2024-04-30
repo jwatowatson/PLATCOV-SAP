@@ -5,6 +5,7 @@ library(readxl)
 #############################################################
 source("functions_query_mutations.R")
 #############################################################
+# Need to run "prep_fasta_files.R" before (with Nextclade installed). 
 nextclade_file <- "../Analysis_Data/Nextclade/output/nextclade.tsv"
 naming_file <- "../Analysis_Data/sequencing_ID_map.csv"
 #############################################################
@@ -48,7 +49,7 @@ evusheld_muts <- evusheld_muts %>% mutate(
     TRUE ~ NA
     )
   )
-
+#############################################################
 # Resistance
 regeneron_muts <- regeneron_muts %>% mutate(
   regeneron_test = case_when(
@@ -60,6 +61,9 @@ regeneron_muts <- regeneron_muts %>% mutate(
 )
 #############################################################
 #Export
+write.csv(evusheld_muts, '../Analysis_Data/evusheld_mutations.csv', row.names = F)
+write.csv(regeneron_muts, '../Analysis_Data/regeneron_mutations.csv', row.names = F)
+#############################################################
 joined_data_export <- joined_data %>% select(Patient_ID, Nextclade_pango)  
 
 # Patient_ID, seqName, seqName2, Nextclade_pango, clade, partiallyAliased,
@@ -70,6 +74,6 @@ joined_data_export$ID <- lapply(str_split(str_trim(joined_data_export$Patient_ID
 colnames(joined_data_export)[2] <- "Lineage"
 joined_data_export <- joined_data_export %>% select(ID, Lineage)
 
-#write.csv(joined_data_export, "../Analysis_Data/lineages.csv", row.names = F, col.names = F)
 write.table(joined_data_export, file = "../Analysis_Data/lineages.csv", sep=",", row.names = F, col.names=FALSE)
+
 
