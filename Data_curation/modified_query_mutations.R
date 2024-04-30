@@ -9,7 +9,8 @@ nextclade_file <- "../Analysis_Data/Nextclade/output/nextclade.tsv"
 naming_file <- "../Analysis_Data/sequencing_ID_map.csv"
 #############################################################
 # Transforming data for calling mutations
-aa_matrix <- Reformat_Mutations(nextclade_file, naming_file)
+joined_data <- match_nextclade_ID(nextclade_file, naming_file)
+aa_matrix <- Reformat_Mutations(joined_data)
 #############################################################
 # Mutations of interest
 # Evusheld
@@ -57,4 +58,18 @@ regeneron_muts <- regeneron_muts %>% mutate(
     TRUE ~ NA
   )
 )
+#############################################################
+#Export
+joined_data_export <- joined_data %>% select(Patient_ID, Nextclade_pango)  
+
+# Patient_ID, seqName, seqName2, Nextclade_pango, clade, partiallyAliased,
+# clade_nextstrain, clade_who, clade_display, qc.overallScore, qc.overallStatus,
+# coverage
+
+joined_data_export$ID <- lapply(str_split(str_trim(joined_data_export$Patient_ID, "both"), "-"), function(x) paste(x[1], x[2], x[3], sep = "-")) %>% unlist()
+colnames(joined_data_export)[2] <- "Lineage"
+joined_data_export <- joined_data_export %>% select(ID, Lineage)
+
+#write.csv(joined_data_export, "../Analysis_Data/lineages.csv", row.names = F, col.names = F)
+write.table(joined_data_export, file = "../Analysis_Data/lineages.csv", sep=",", row.names = F, col.names=FALSE)
 
