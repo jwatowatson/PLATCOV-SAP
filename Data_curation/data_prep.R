@@ -201,8 +201,9 @@ trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRes
 
 ## Variant data
 source(paste0(prefix_dat_cur, "get_nanopore_data.R"))
-variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox, run_python = T)
-variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label')
+variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox, run_python = T) #MORU firewalls blocks this
+
+variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 
 
 ##******************** Vaccine database *******************

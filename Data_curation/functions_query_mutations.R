@@ -1,4 +1,4 @@
-Reformat_Mutations <- function(nextclade_file, naming_file) {
+match_nextclade_ID <- function(nextclade_file, naming_file){
   #import the nextclade data
   nextclade <- read_tsv(nextclade_file)
   nextclade$seqName2 <- nextclade$seqName
@@ -14,8 +14,9 @@ Reformat_Mutations <- function(nextclade_file, naming_file) {
   
   if(length(missing_IDs > 0)){
   for(i in 1:length(missing_IDs)){
-    if(grepl("MTM",  missing_IDs[i])){naming <- rbind(naming, c(paste0("PLT-TH1-", str_pad(unlist(str_split(missing_IDs[1], "_"))[3], 3, pad = "0")),
-                                                                missing_IDs[i], missing_IDs[i]))}
+    if(grepl("MTM",  missing_IDs[i])){naming <- rbind(naming, 
+                                                      c(paste0("PLT-TH1-", as.numeric(gsub(".*_(\\d+)", "\\1", missing_IDs[i]))), 
+                                                        missing_IDs[i], missing_IDs[i]))}
     if(grepl("PLT",  missing_IDs[i])){naming <- rbind(naming, c(missing_IDs[i], NA, missing_IDs[i]))}
   }
   }
@@ -26,6 +27,11 @@ Reformat_Mutations <- function(nextclade_file, naming_file) {
   
   #if(sum(is.na(joined$Patient_ID)>0)) { writeLines(sprintf('This sample lacks of Patient ID or Sequence ID %s', joined$seqName2[is.na(joined$Patient_ID)]))}
   
+  return(joined)
+  
+}
+
+Reformat_Mutations <- function(joined) {
   #select amino acid changes and missing nucleotide ranges only and sort names
   aachanges <- joined %>% select(c(Patient_ID, aaSubstitutions, aaDeletions, aaInsertions, missing))
   
