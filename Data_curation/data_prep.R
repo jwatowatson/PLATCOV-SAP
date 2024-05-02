@@ -928,9 +928,22 @@ table(regeneron_mutations$regeneron_test, useNA = 'ifany')
 Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
 Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
 
-Res_REGN$regeneron_test =
-  ifelse(is.na(Res_REGN$regeneron_test),T,
-         Res_REGN$regeneron_test)
+#impute variants
+Res_REGN$regeneron_test[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- T
+Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "BA.1"
+
+Res_REGN$regeneron_test[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- T
+Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "BA.2.75"
+
+#impute IgG
+mean_baseline_IgG <- Res_REGN %>% ungroup() %>% 
+  filter(Timepoint_ID==0, Rand_date > as.Date('2022-04-01')) %>% 
+  distinct(ID, .keep_all = T) %>%
+  summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
+
+Res_REGN$Baseline_log_IgG[which(is.na(Res_REGN$Baseline_log_IgG))] <- mean_baseline_IgG
+
+colnames(Res_REGN)[colnames(Res_REGN) == "regeneron_test"] <- "Resistant_test"
 
 write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
 
@@ -1085,6 +1098,13 @@ Res_Ensitrelvir =
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
+
+Res_Ensitrelvir_allpax = 
+  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
+                 (Country=='Thailand') |
+                   (Country=='Laos')) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Ensitrelvir_allpax, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_allpax_analysis.csv"), row.names = F, sep=',', quote = F)
 
 #************************* Nirmatrelvir+Molnupiravir Analysis *************************#
 #* Thailand, Brazil and Laos added 2023-05-29 
