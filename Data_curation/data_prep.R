@@ -1079,14 +1079,29 @@ Res_Evusheld =
  
  Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
  Res_Evusheld <- merge(Res_Evusheld, baseline_serology_data, by = "ID", all.x = T)
+
  
-Res_Evusheld$evusheld_test =
-  ifelse(is.na(Res_Evusheld$evusheld_test),T,
-         Res_Evusheld$evusheld_test)
+ #impute variants
+ Res_Evusheld$evusheld_test[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- F
+ Res_Evusheld$Variant2[Res_Evusheld$Site == "br003"  & is.na(Res_Evusheld$Variant2)] <- "BA.5"
+ 
+ Res_Evusheld$evusheld_test[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- F
+ Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- "BA.2.75"
+ 
+ Res_Evusheld$evusheld_test[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- T
+ Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- "XBB.1.5-like"
+ 
+ #impute IgG
+ mean_baseline_IgG <- Res_Evusheld %>% ungroup() %>% 
+   filter(Timepoint_ID==0) %>% 
+   distinct(ID, .keep_all = T) %>%
+   summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
+ 
+ Res_Evusheld$Baseline_log_IgG[which(is.na(Res_Evusheld$Baseline_log_IgG))] <- mean_baseline_IgG
+ 
+ colnames(Res_Evusheld)[colnames(Res_Evusheld) == "evusheld_test"] <- "Resistant_test"
 
- Res_Evusheld$evusheld_test[Res_Evusheld$Country=='Brazil' & Res_Evusheld$Rand_date<'2022-12-01']=F
-
-write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
+ write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
 #************************* Ensitrelvir Analysis *************************#
