@@ -922,19 +922,22 @@ Res_REGN =
   arrange(Rand_date, ID, Time)
 
 regeneron_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/regeneron_mutations.csv"))
-regeneron_mutations <- regeneron_mutations %>% select(Patient_ID, regeneron_test)
+regeneron_mutations <- regeneron_mutations %>% select(Patient_ID, test_regeneron)
 colnames(regeneron_mutations)[1] <- "ID"
-table(regeneron_mutations$regeneron_test, useNA = 'ifany')
+table(regeneron_mutations$test_regeneron, useNA = 'ifany')
 
 Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
 Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
 
 #impute variants
-Res_REGN$regeneron_test[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- T
+Res_REGN$test_regeneron[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "G446S"
 Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "BA.1"
 
-Res_REGN$regeneron_test[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- T
+Res_REGN$test_regeneron[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "G446S"
 Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "BA.2.75"
+
+Res_REGN$Resistant_test <- "Sensitive"
+Res_REGN$Resistant_test[Res_REGN$test_regeneron != "Wildtype"] <- "Resistant"
 
 #impute IgG
 mean_baseline_IgG <- Res_REGN %>% ungroup() %>% 
@@ -943,8 +946,6 @@ mean_baseline_IgG <- Res_REGN %>% ungroup() %>%
   summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
 
 Res_REGN$Baseline_log_IgG[which(is.na(Res_REGN$Baseline_log_IgG))] <- mean_baseline_IgG
-
-colnames(Res_REGN)[colnames(Res_REGN) == "regeneron_test"] <- "Resistant_test"
 
 write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
 
@@ -1073,24 +1074,27 @@ Res_Evusheld =
   arrange(Rand_date, ID, Time)
 
  evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_mutations.csv"))
- evusheld_mutations <- evusheld_mutations %>% select(Patient_ID, evusheld_test)
+ evusheld_mutations <- evusheld_mutations %>% select(Patient_ID, test_evusheld)
  colnames(evusheld_mutations)[1] <- "ID"
- table(evusheld_mutations$evusheld_test, useNA = 'ifany')
+ table(evusheld_mutations$test_evusheld, useNA = 'ifany')
  
  Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
  Res_Evusheld <- merge(Res_Evusheld, baseline_serology_data, by = "ID", all.x = T)
 
  
  #impute variants
- Res_Evusheld$evusheld_test[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- F
+ Res_Evusheld$test_evusheld[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- "F846* and (R346* or K444*)"
  Res_Evusheld$Variant2[Res_Evusheld$Site == "br003"  & is.na(Res_Evusheld$Variant2)] <- "BA.5"
  
- Res_Evusheld$evusheld_test[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- F
+ Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- "R346* or K444*"
  Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- "BA.2.75"
  
- Res_Evusheld$evusheld_test[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- T
+ Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- "F846* and (R346* or K444*)"
  Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- "XBB.1.5-like"
  
+ Res_Evusheld$Resistant_test <- "Partially resistant"
+ Res_Evusheld$Resistant_test[Res_Evusheld$test_evusheld == "F846* and (R346* or K444*)"] <- "Resistant"
+  
  #impute IgG
  mean_baseline_IgG <- Res_Evusheld %>% ungroup() %>% 
    filter(Timepoint_ID==0) %>% 
@@ -1099,8 +1103,6 @@ Res_Evusheld =
  
  Res_Evusheld$Baseline_log_IgG[which(is.na(Res_Evusheld$Baseline_log_IgG))] <- mean_baseline_IgG
  
- colnames(Res_Evusheld)[colnames(Res_Evusheld) == "evusheld_test"] <- "Resistant_test"
-
  write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
 

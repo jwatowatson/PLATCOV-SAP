@@ -40,25 +40,94 @@ regeneron_muts <- call_mutations(mutation_data = regeneron_mutations)
 #############################################################
 # Infering resistance
 # Evusheld
+# evusheld_muts <- evusheld_muts %>% mutate(
+#   evusheld_test = case_when(
+#     (`S:F486_any` == TRUE & `S:F486*_missing` == FALSE) &
+#       ((`S:R346_any` == TRUE & `S:R346*_missing` == FALSE)|(`S:K444_any` == TRUE & `S:K444*_missing` == FALSE)) ~ "Resistant",
+#     (`S:F486_any` == FALSE & `S:F486*_missing` == FALSE) ~ "Wild type",
+#     ((`S:R346_any` == FALSE & `S:R346*_missing` == FALSE)|(`S:K444_any` == FALSE & `S:K444*_missing` == FALSE)) ~ "Wild type",
+#     TRUE ~ NA
+#     )
+#   )
+
 evusheld_muts <- evusheld_muts %>% mutate(
-  evusheld_test = case_when(
-    (`S:F486_any` == TRUE & `S:F486*_missing` == FALSE) & 
-      ((`S:R346_any` == TRUE & `S:R346*_missing` == FALSE)|(`S:K444_any` == TRUE & `S:K444*_missing` == FALSE)) ~ TRUE,
+  test_F486_any = case_when(
+    (`S:F486_any` == TRUE & `S:F486*_missing` == FALSE) ~ TRUE,
     (`S:F486_any` == FALSE & `S:F486*_missing` == FALSE) ~ FALSE,
-    ((`S:R346_any` == FALSE & `S:R346*_missing` == FALSE)|(`S:K444_any` == FALSE & `S:K444*_missing` == FALSE)) ~ FALSE,
     TRUE ~ NA
-    )
-  )
-#############################################################
-# Resistance
-regeneron_muts <- regeneron_muts %>% mutate(
-  regeneron_test = case_when(
-    (`S:G446S` == TRUE & `S:G446S_missing` == FALSE) ~ TRUE,
+  ),
+  test_R346_any = case_when(
+    (`S:R346_any` == TRUE & `S:R346*_missing` == FALSE) ~ TRUE,
+    (`S:R346_any` == FALSE & `S:R346*_missing` == FALSE) ~ FALSE,
+    TRUE ~ NA
+  ),
+  test_K444_any = case_when(
     (`S:K444_any` == TRUE & `S:K444*_missing` == FALSE) ~ TRUE,
-    (`S:G446S` == FALSE & `S:G446S_missing` == FALSE) & (`S:K444_any` == FALSE & `S:K444*_missing` == FALSE) ~ FALSE,
+    (`S:K444_any` == FALSE & `S:K444*_missing` == FALSE) ~ FALSE,
+    TRUE ~ NA
+  ),
+  test_evusheld = case_when(
+    test_F486_any == FALSE & (test_R346_any == FALSE & test_K444_any == FALSE) ~ "Wild type",
+    test_F486_any == TRUE & (test_R346_any == FALSE & test_K444_any == FALSE) ~ "F846*",
+    test_F486_any == FALSE & (test_R346_any == TRUE | test_K444_any == TRUE) ~ "R346* or K444*",
+    test_F486_any == TRUE & (test_R346_any == TRUE | test_K444_any == TRUE) ~ "F846* and (R346* or K444*)",
     TRUE ~ NA
   )
 )
+evusheld_muts
+#############################################################
+# Resistance
+# regeneron_muts <- regeneron_muts %>% mutate(
+#   regeneron_test = case_when(
+#     (`S:G446S` == TRUE & `S:G446S_missing` == FALSE) ~ "Resistant",
+#     (`S:K444_any` == TRUE & `S:K444*_missing` == FALSE) ~ "Resistant",
+#     (`S:G446S` == FALSE & `S:G446S_missing` == FALSE) & (`S:K444_any` == FALSE & `S:K444*_missing` == FALSE) ~ "Wildtype",
+#     TRUE ~ NA
+#   )
+# )
+
+regeneron_muts <- regeneron_muts %>% mutate(
+  test_G446S = case_when(
+    (`S:G446S` == TRUE & `S:G446S_missing` == FALSE) ~ TRUE,
+    (`S:G446S` == FALSE & `S:G446S_missing` == FALSE) ~ FALSE,
+    TRUE ~ NA
+  ),
+  test_K444_any = case_when(
+    (`S:K444_any` == TRUE & `S:K444*_missing` == FALSE) ~ TRUE,
+    (`S:K444_any` == FALSE & `S:K444*_missing` == FALSE) ~ FALSE,
+    TRUE ~ NA
+  ),
+  test_regeneron = case_when(
+    test_G446S == TRUE & test_K444_any == FALSE ~ "G446S",
+    test_G446S == FALSE & test_K444_any == TRUE ~ "K444*",
+    test_G446S == TRUE & test_K444_any == TRUE ~ "G446S and K444*", 
+    test_G446S == FALSE & test_K444_any == FALSE ~ "Wildtype",
+    TRUE ~ NA
+  )
+)
+regeneron_muts
+
+# regeneron_muts <- regeneron_muts %>% mutate(
+#   test_G446S = case_when(
+#     (`S:G446S` == TRUE & `S:G446S_missing` == FALSE) ~ TRUE,
+#     (`S:G446S` == FALSE & `S:G446S_missing` == FALSE) ~ FALSE,
+#     TRUE ~ NA
+#   ),
+#   test_K444_any = case_when(
+#     (`S:K444_any` == TRUE & `S:K444*_missing` == FALSE) ~ TRUE,
+#     (`S:K444_any` == FALSE & `S:K444*_missing` == FALSE) ~ FALSE,
+#     TRUE ~ NA
+#   ),
+#   regeneron_test_number = as.numeric(test_G446S) + as.numeric(test_K444_any),
+#   regeneron_test = case_when(
+#     regeneron_test_number == 2 ~ "Fully resistant",
+#     regeneron_test_number == 1 ~ "Partially resistant",
+#     regeneron_test_number == 0 ~ "Wild type",
+#     TRUE ~ NA
+#   )
+# )
+# regeneron_muts
+
 #############################################################
 #Export
 write.csv(evusheld_muts, '../Analysis_Data/evusheld_mutations.csv', row.names = F)
