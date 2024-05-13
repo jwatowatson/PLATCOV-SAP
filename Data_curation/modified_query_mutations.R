@@ -68,9 +68,9 @@ evusheld_muts <- evusheld_muts %>% mutate(
   ),
   test_evusheld = case_when(
     test_F486_any == FALSE & (test_R346_any == FALSE & test_K444_any == FALSE) ~ "Wild type",
-    test_F486_any == TRUE & (test_R346_any == FALSE & test_K444_any == FALSE) ~ "F846*",
+    test_F486_any == TRUE & (test_R346_any == FALSE & test_K444_any == FALSE) ~ "F486*",
     test_F486_any == FALSE & (test_R346_any == TRUE | test_K444_any == TRUE) ~ "R346* or K444*",
-    test_F486_any == TRUE & (test_R346_any == TRUE | test_K444_any == TRUE) ~ "F846* and (R346* or K444*)",
+    test_F486_any == TRUE & (test_R346_any == TRUE | test_K444_any == TRUE) ~ "F486* and (R346* or K444*)",
     TRUE ~ NA
   )
 )

@@ -1081,19 +1081,23 @@ Res_Evusheld =
  Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
  Res_Evusheld <- merge(Res_Evusheld, baseline_serology_data, by = "ID", all.x = T)
 
+ Res_Evusheld$Rand_date <- as.Date(Res_Evusheld$Rand_date)
  
  #impute variants
- Res_Evusheld$test_evusheld[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- "F846* and (R346* or K444*)"
+ Res_Evusheld$test_evusheld[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- "F486* and (R346* or K444*)"
  Res_Evusheld$Variant2[Res_Evusheld$Site == "br003"  & is.na(Res_Evusheld$Variant2)] <- "BA.5"
  
- Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- "R346* or K444*"
- Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2022-01-01")] <- "BA.2.75"
+ Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2023-01-01")] <- "R346* or K444*"
+ Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2023-01-01")] <- "BA.2.75"
  
- Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- "F846* and (R346* or K444*)"
- Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2022-04-01")] <- "XBB.1.5-like"
+ Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2023-04-01")] <- "F486* and (R346* or K444*)"
+ Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2023-04-01")] <- "XBB.1.5-like"
+ 
+ Res_Evusheld$test_evusheld[is.na(Res_Evusheld$test_evusheld) & Res_Evusheld$Variant2 == "BA.2.75"]  <- "R346* or K444*"
+ Res_Evusheld$test_evusheld[is.na(Res_Evusheld$test_evusheld) & Res_Evusheld$Variant2 == "BA.5"]  <- "F486* and (R346* or K444*)"
  
  Res_Evusheld$Resistant_test <- "Partially resistant"
- Res_Evusheld$Resistant_test[Res_Evusheld$test_evusheld == "F846* and (R346* or K444*)"] <- "Resistant"
+ Res_Evusheld$Resistant_test[Res_Evusheld$test_evusheld == "F486* and (R346* or K444*)"] <- "Resistant"
   
  #impute IgG
  mean_baseline_IgG <- Res_Evusheld %>% ungroup() %>% 
@@ -1102,6 +1106,9 @@ Res_Evusheld =
    summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
  
  Res_Evusheld$Baseline_log_IgG[which(is.na(Res_Evusheld$Baseline_log_IgG))] <- mean_baseline_IgG
+ 
+ table(Res_Evusheld$Variant2, useNA = 'ifany')
+ table(Res_Evusheld$test_evusheld, useNA = 'ifany')
  
  write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
 
