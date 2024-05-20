@@ -124,9 +124,6 @@ platcov_dat$Variant2 <- as.factor(platcov_dat$Variant2)
 ## Baseline characteristics
 
 ```{r}
-
-#platcov_dat$Variant <- platcov_dat$Variant2
-
 #| echo: false
 platcov_dat = platcov_dat %>% group_by(ID, Timepoint_ID) %>%
   mutate(daily_VL = mean(log10_viral_load),
@@ -170,7 +167,6 @@ tab.ff <- Baseline_data %>% filter(mITT) %>%
   ) %>%
   kable_classic(full_width = FALSE)
 tab.ff
-# save_kable(tab.ff,file = 'Baseline_characteristics.png')
 ```
 
 ## Fit models
@@ -216,14 +212,8 @@ stan_inputs =
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-# model_settings = rbind(expand.grid(mod = all_mods,
-#                              prior = 1,
-#                              cov_matrices = 1),
-#                        expand.grid(mod = all_mods[1],
-#                              prior = 1,
-#                              cov_matrices = 2))
-
-model_settings = expand.grid(mod = c('Stan_models/Linear_model_RNaseP.stan', 'Stan_models/Nonlinear_model_RNaseP.stan'),
+model_settings = expand.grid(mod = c('Stan_models/Linear_model_RNaseP.stan',
+                                     'Stan_models/Nonlinear_model_RNaseP.stan'),
                              prior = 1,
                              cov_matrices = 1)
 
@@ -247,62 +237,7 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
-## BRMS checks
 
-```{r brms_slopes}
-# platcov_dat_no_effect = platcov_dat_analysis %>% 
-#   filter(Trt %in% c('No study drug', 'Ivermectin',
-#                     'Favipiravir', 'Fluoxetine',
-#                     'Nitazoxanide'))
-# nl_bf_form = 
-#   bf(formula = log10_viral_load | cens(censor) ~ alpha0*Time*exp(alpha) + beta0,
-#      alpha ~ (1|ID),
-#      alpha0 ~ 1,
-#      beta0 ~ 1 + (1|ID),
-#      nl = T)
-# mod_naive = brm(formula = nl_bf_form,
-#                 data = platcov_dat_no_effect,
-#                 prior = c(prior(normal(-0.5, 0.5), nlpar='alpha0'),
-#                           prior(normal(5,2), nlpar=beta0)),
-#                 family = 'student', cores = 4, chains = 4)
-# mod_naive = brm(log10_viral_load | cens(censor) ~ Time + Site + s(Study_time,k=6) + (1+Time | ID),
-#                 data = platcov_dat_no_effect,
-#                 prior = c(prior(lkj(2), class = "cor"),
-#                           prior(normal(5, 5), class = Intercept),
-#                           prior(constant(7), class = 'nu')),
-#                 family = 'student', cores = 4, chains = 4)
-# thetas = ranef(mod_naive, summary = F)
-# mean_slopes = fixef(mod_naive, summary = F)
-# slopes_randef = apply(thetas$ID[,,'Time']+mean_slopes[,'Time'], 2,
-#                       quantile, probs=c(0.1, 0.5, 0.9))
-# slopes_dat = merge(data.frame(ID=colnames(slopes_randef),
-#                               slope_re = slopes_randef[2, ],
-#                               slope_re_lower = slopes_randef[1, ],
-#                               slope_re_upper = slopes_randef[3, ]),
-#                    platcov_dat[!duplicated(platcov_dat$ID),],
-#                    by = 'ID') %>%
-#   arrange(Rand_date)
-# mod_gam = mgcv::gam(slope_re ~ s(Study_time,k=5), data=slopes_dat)
-# summary(mod_gam)
-# par(las=1, family='serif')
-# plot(slopes_dat$Rand_date, slopes_dat$slope_re,
-#      ylab='Slope random effect',
-#      ylim=c(min(slopes_dat$slope_re_lower),
-#             max(slopes_dat$slope_re_upper)),
-#      col=slopes_dat$trt_color,
-#      xlab='Randomisation date', panel.first=grid(), pch=16)
-# for(i in 1:nrow(slopes_dat)){
-#   lines(rep(slopes_dat$Rand_date[i],2),
-#         c(slopes_dat$slope_re_lower[i], slopes_dat$slope_re_upper[i]),
-#         col=adjustcolor(slopes_dat$trt_color[i],alpha.f = .4))
-# }
-# legend('bottomleft',legend = unique(slopes_dat$Trt), col = unique(slopes_dat$trt_color),pch=16,lwd=2,inset=0.02)
-# abline(MASS::rlm(slopes_dat$slope_re~slopes_dat$Rand_date),
-#        col='darkblue',lwd=3,lty=2)
-# lines(slopes_dat$Rand_date, predict(mod_gam),lwd=3)
-# 
-# summary(lm(slope_re~Rand_date+Trt, data = slopes_dat))
-```
 
 ```{r}
 if(RUN_MODELS){
