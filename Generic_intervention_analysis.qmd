@@ -104,23 +104,6 @@ pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
 ```
 
-## Grouping variants
-
-To reduce the number of variant groups, as suggested by Liz.
-
-THIS SHOULD BE MOVED OUT OF HERE
-
-```{r}
-
-platcov_dat$Variant2 <- as.character(platcov_dat$Variant)
-
-platcov_dat$Variant2[platcov_dat$Variant2 %in% c("BA.5.2", "BA.5.5", "BQ.1")] <- "BA.5"
-platcov_dat$Variant2[platcov_dat$Variant2 %in% c("BN.1.2", "BN.1.3", "CH.1.1")] <- "BA.2.75"
-platcov_dat$Variant2[platcov_dat$Variant2 %in% c("XBB1.5-like with F456L")] <- "XBB.1.5-like"
-
-platcov_dat$Variant2 <- as.factor(platcov_dat$Variant2)
-```
-
 ## Baseline characteristics
 
 ```{r}

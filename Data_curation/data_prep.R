@@ -205,6 +205,12 @@ variant_data = get_nanopore_data(prefix_dropbox = prefix_dropbox, run_python = T
 
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 
+#To reduce the number of variant groups, as suggested by Liz.
+variant_data$Variant2 <- as.character(variant_data$Variant)
+variant_data$Variant2[variant_data$Variant2 %in% c("BA.5.2", "BA.5.5", "BQ.1")] <- "BA.5"
+variant_data$Variant2[variant_data$Variant2 %in% c("BN.1.2", "BN.1.3", "CH.1.1")] <- "BA.2.75"
+variant_data$Variant2[variant_data$Variant2 %in% c("XBB1.5-like with F456L")] <- "XBB.1.5-like"
+variant_data$Variant2 <- as.factor(variant_data$Variant2)
 
 ##******************** Vaccine database *******************
 ##*********************************************************
@@ -615,7 +621,7 @@ Res = dplyr::arrange(Res, Rand_date_time, ID, Time)
 writeLines(sprintf('there are a total of %s patients in the PCR database',
                    length(unique(Res$`SUBJECT ID`))))
 
-Res = merge(Res, variant_data[,c('ID','Variant')], by = 'ID', all.x = T)
+Res = merge(Res, variant_data[,c('ID','Variant', 'Variant2')], by = 'ID', all.x = T)
 
 # manually correct error
 Res$Swab_ID[Res$BARCODE=='20LH895'] = 'Right_tonsil_1'
@@ -628,7 +634,7 @@ cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'Swab_ID','Rand_date','Any_dose','N_dose','Time_since_last_dose',
          'Any_dose_mRNA','N_dose_mRNA',
          'Weight','BMI','Plate','Fever_Baseline','BARCODE',
-         'Age', 'Sex', 'Symptom_onset','Variant',
+         'Age', 'Sex', 'Symptom_onset','Variant', 'Variant2',
          'CT_NS','CT_RNaseP', 'Per_protocol_sample','Lab', 'Lot no.')
 
 writeLines('\n column names:')
@@ -758,12 +764,6 @@ print(unique(Res$ID[duplicated(Res$BARCODE)]))
 Res = Res[!duplicated(Res$BARCODE), ]
 
 
-
-Res$Variant2 <- as.character(Res$Variant)
-
-Res$Variant2[Res$Variant2 %in% c("BA.5.2", "BA.5.5", "BQ.1")] <- "BA.5"
-Res$Variant2[Res$Variant2 %in% c("BN.1.2", "BN.1.3", "CH.1.1")] <- "BA.2.75"
-Res$Variant2[Res$Variant2 %in% c("XBB1.5-like with F456L")] <- "XBB.1.5-like"
 
 ###### Write csv files
 # Overall data files
@@ -1133,7 +1133,6 @@ write.table(x = Res_Ensitrelvir_allpax, file = paste0(prefix_analysis_data, "/An
 
 #************************* Nirmatrelvir+Molnupiravir Analysis *************************#
 #* Thailand, Brazil and Laos added 2023-05-29 
-
 Res_MolPax = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',"No study drug",'Nirmatrelvir + Ritonavir'),
                  Country %in% c('Thailand','Laos','Brazil'), 
@@ -1145,7 +1144,6 @@ write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/
 
 #************************* Hydroxychloroquine Analysis *************************#
 #* Thailand added 2024-01-02
-
 Res_HCQ = 
   Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug"),
                  (Country=='Thailand' & Rand_date > "2024-01-01 00:00:00")) %>%
@@ -1154,7 +1152,6 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 
 #************************* Ineffective Interventions *************************#
-
 # Res_ineffective = 
 #   Res %>% filter(Trt %in% c('Ivermectin',
 #                             "Favipiravir",
