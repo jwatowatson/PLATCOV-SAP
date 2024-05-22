@@ -1,7 +1,26 @@
-SC = read.csv('Analysis_Data/interim_control_dat.csv')
-table(SC$Lab)
+library(tidyverse)
 
-control_dat = dplyr::arrange(SC, CT_NS, Plate)
+SC = read.csv('Analysis_Data/interim_control_dat.csv')
+SC_dupes = SC %>% get_dupes()
+control_dat = SC %>% distinct(Lab, Lot.no., Plate, batch, log10_true_density, CT, .keep_all = T)
+
+table(control_dat$Lab)
+
+control_dat = control_dat %>% arrange(Lab, Lot.no., Plate, batch, log10_true_density) %>%
+  group_by(Lab, Lot.no., Plate, batch, log10_true_density) %>%
+  mutate(
+    n_replicates = n(),
+    replicate_number = 1:n(),
+    mean_CT = mean(CT),
+    sd_CT = sd(CT)
+  )
+unique(control_dat$n_replicates)
+View(control_dat %>% filter(n_replicates>2))
+
+control_dat_summary = control_dat %>% filter(replicate_number<=2) %>%ungroup() %>%
+  distinct(Lab, Lot.no., Plate, batch, log10_true_density, .keep_all = T)
+
+
 control_dat$CT = control_dat$CT_NS
 control_dat$CT[control_dat$CT_NS==40]=NA
 control_dat$batch = as.factor(control_dat$Plate)

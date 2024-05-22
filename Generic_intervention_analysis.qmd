@@ -237,8 +237,6 @@ save(model_settings,
      file = model_setup_f_name)
 ```
 
-
-
 ```{r}
 if(RUN_MODELS){
   system(paste('Rscript --vanilla run_models_local.R',intervention))

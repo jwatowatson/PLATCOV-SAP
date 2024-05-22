@@ -790,7 +790,8 @@ plot_trt_effs <- function(effect_ests, model_cols){
   
   G <- ggplot(effect_ests_plots, 
          aes(x = arm, y = med, col = model, group = model)) +
-    geom_rect(aes(ymin = min(0.75, min(effect_ests_plots$L95)-0.05), ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
+    geom_rect(aes(ymin = min(0.75, min(L95)-0.05), 
+                  ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
     geom_point(position = position_dodge(width = 0.5), size = 4) +
     geom_errorbar(aes(x = arm, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65) +
     geom_errorbar(aes(x = arm, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5) +
@@ -798,7 +799,8 @@ plot_trt_effs <- function(effect_ests, model_cols){
     coord_flip() +
     theme_bw() +
     geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
-    scale_y_continuous(labels = formatter, limits = c(min(0.75, min(effect_ests_plots$L95)-0.05), max(effect_ests_plots$U95) + .25), expand = c(0,0),
+    scale_y_continuous(labels = formatter, 
+                       limits = c(min(0.75, min(L95)-0.05), max(U95) + .25), expand = c(0,0),
                        breaks = seq(0.2,3.6, 0.2)) +
     scale_x_discrete(labels= my.labs) +
     ylab("Change in viral clearance rate (%)") +
