@@ -36,7 +36,7 @@ ensitrelvir_mutations <- data.frame(
 # Calling mutations
 evusheld_muts <- call_mutations(mutation_data = evusheld_mutations)
 regeneron_muts <- call_mutations(mutation_data = regeneron_mutations)
-#ensitrelvir_muts <- call_mutations(mutation_data = ensitrelvir_mutations)
+ensitrelvir_muts <- call_mutations(mutation_data = ensitrelvir_mutations)
 #############################################################
 # Infering resistance
 # Evusheld

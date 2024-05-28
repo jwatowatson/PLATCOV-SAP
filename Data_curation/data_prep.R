@@ -395,6 +395,8 @@ if(max(table(Res$Plate))>96){
 ind = grep('std', Res$`Sample ID`)
 SC = Res[ind, c('Sample ID','N/S Gene','Target conc. c/mL','Plate','Lab','Lot no.')]
 
+SC = SC[!duplicated(SC),]
+
 SC$`N/S Gene`[SC$`N/S Gene`=='Undetermined'] = 40
 SC$CT_NS = as.numeric(SC$`N/S Gene`)
 SC = SC[!is.na(SC$CT_NS), ]

@@ -136,7 +136,7 @@ evusheld_muts <- evusheld_muts %>% mutate(
 )  
 write_csv(evusheld_muts, "evusheld_20230816.csv")
 
-
+# NSP 5 gene
 ensitrelvir_t21i <- Query_Mutations(aa_matrix,"S:T21I","21623,21624,21625")
 
 ensitrelvir_m49i <- Query_Mutations(aa_matrix,"S:M49I","21707,21708,21709")
