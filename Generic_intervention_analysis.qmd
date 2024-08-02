@@ -49,7 +49,9 @@ All paths are local
 
 Set up analysis
 
-```{r load_data}#}
+\<\<\<\<\<\<\< HEAD
+
+```{r load_data}
 #intervention = 'interim_all';ref_arm = 'No study drug'
  intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'

@@ -12,6 +12,48 @@ library(lubridate)
 source('user_settings.R')
 
 #############################################################################################
+##******************** Randomisation data *******************
+# NOTE: Sites TH57 and TH58 did not use app so cannot cross check
+rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-PK01.csv"))) %>%
+  filter(!is.na(Treatment))
+# Defining patient ID
+rand_app_data$ID = paste0('PLT-', gsub(x = rand_app_data$site,pattern = '0',replacement = ''),
+                          '-',
+                          stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
+# Converting time zones
+rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3','LA08','PK01'),to=c('th001','br003',"la008","pk001"))
+rand_app_data$Rand_Time = as.POSIXct(rand_app_data$Date, format = '%a %b %d %H:%M:%S %Y',tz = 'GMT')
+rand_app_data$tzone = plyr::mapvalues(x = rand_app_data$site,
+                                      from = c('TH1','LA08','BR3','PK01'),
+                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo','Asia/Karachi'))
+rand_app_data$Rand_Time_TZ=NA
+for(i in 1:nrow(rand_app_data)){
+  rand_app_data$Rand_Time_TZ[i] = as.character(with_tz(rand_app_data$Rand_Time[i], tzone = rand_app_data$tzone[i]))
+}
+
+# Creating a checklist dataset
+check_data <- data.frame("ID"= rand_app_data[,c("ID")])
+
+##******************** Clinical database *******************
+##*********************************************************
+##*********************************************************
+# --- Clinical data ---
+clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
+clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
+
+check_data$on_macro_yn <- as.numeric(rand_app_data$ID %in% clin_data$Label)
+
+
+
+
+clin_data
+
+
+
+
 ##******************** Clinical database *******************
 ##*********************************************************
 ##*********************************************************
@@ -19,6 +61,10 @@ source('user_settings.R')
 # --- Fever ---
 fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv")) #A dropbox folder shared by James
 fever_data = fever_data %>% distinct(Label, .keep_all = T)
+
+clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
+
+
 # --- Clinical data (symptom onsets) ---
 clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
 clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
@@ -681,7 +727,7 @@ G1 <- ggplot(control_dat2, aes(x = CT, y = log10_true_density, col = Lab)) +
   ylab("Viral densities (log10 genomes/mL)") +
   theme(axis.title = element_text(size = 12, face = "bold"),
         plot.title = element_text(size = 14, face = "bold")
-        ) +
+  ) +
   facet_wrap(Lab~., ncol = 4) +
   scale_y_continuous(breaks = seq(2,10,1)) +
   theme(plot.title = element_text(face = "bold", size = 12),
@@ -1144,15 +1190,6 @@ Res_Ensitrelvir =
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
-symptom_data_Ensitrelvir <- symptom_data %>%
-  filter(Label %in% Res_Ensitrelvir$ID)
-
-write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
-
-fever_data_Ensitrelvir <- fever_data %>%
-  filter(Label %in% Res_Ensitrelvir$ID)
-
-write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
 
 # Res_Ensitrelvir_allpax = 
 #   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
@@ -1214,7 +1251,7 @@ Res_Unblinded_meta =
                             'Regeneron'),
                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
                  Rand_date <= "2023-10-20 00:00:00"
-                 ) %>%
+  ) %>%
   arrange(Rand_date, ID, Time)
 
 write.table(x = Res_Unblinded_meta,
@@ -1224,17 +1261,14 @@ write.table(x = Res_Unblinded_meta,
 
 
 #************************* Unblinded all *************************#
-# Res_Unblinded_all =
+# Res_Unblinded_all = 
 #   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
 #                             'Nitazoxanide',
-#                            # 'Ensitrelvir',
-#                             'Hydroxychloroquine',
-#                             "Evusheld",
-#                             "Regeneron")) %>%
-#   arrange(Rand_date, ID, Time)
+#                             'Ensitrelvir')) %>%
+#   arrange(Rand_date, ID, Time) 
 # 
 # 
-# write.table(x = Res_Unblinded_all,
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
+# write.table(x = Res_Unblinded_all, 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
 #             row.names = F, sep=',', quote = F)
 
