@@ -1127,6 +1127,15 @@ Res_Ensitrelvir =
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
+symptom_data_Ensitrelvir <- symptom_data %>%
+  filter(Label %in% Res_Ensitrelvir$ID)
+
+write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
+
+fever_data_Ensitrelvir <- fever_data %>%
+  filter(Label %in% Res_Ensitrelvir$ID)
+
+write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
 
 # Res_Ensitrelvir_allpax = 
 #   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
@@ -1198,14 +1207,17 @@ write.table(x = Res_Unblinded_meta,
 
 
 #************************* Unblinded all *************************#
-# Res_Unblinded_all = 
+# Res_Unblinded_all =
 #   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
 #                             'Nitazoxanide',
-#                             'Ensitrelvir')) %>%
-#   arrange(Rand_date, ID, Time) 
+#                            # 'Ensitrelvir',
+#                             'Hydroxychloroquine',
+#                             "Evusheld",
+#                             "Regeneron")) %>%
+#   arrange(Rand_date, ID, Time)
 # 
 # 
-# write.table(x = Res_Unblinded_all, 
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
+# write.table(x = Res_Unblinded_all,
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
 #             row.names = F, sep=',', quote = F)
 

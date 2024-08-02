@@ -69,10 +69,10 @@ input_fasta <- "../Analysis_Data/all_fasta.fasta" # path to input fasta files
 arguments <- paste0("nextclade run --input-dataset ", sars_cov_2_data, " --output-all ", output_folder, " ", input_fasta)
 arguments
 ### For Windows
-shell(arguments) 
+#shell(arguments) 
 
 ### For Mac #### TO BE CHANGED #######
-# system(arguments) 
+ system(arguments) 
 ####################################################################################
 
 

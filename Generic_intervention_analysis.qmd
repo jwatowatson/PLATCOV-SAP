@@ -36,7 +36,7 @@ RUN_MODELS = F
 add_epoch = T # if using non-concurrent controls
 
 my_probs = c(0.025, 0.1, .5, .9, .975)
-source('functions.R')
+source('functions.R') 
 source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
 
@@ -49,9 +49,9 @@ All paths are local
 
 Set up analysis
 
-```{r load_data}
-intervention = 'interim_all';ref_arm = 'No study drug'
-# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+```{r load_data}#}
+#intervention = 'interim_all';ref_arm = 'No study drug'
+ intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'

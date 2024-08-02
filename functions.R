@@ -800,7 +800,7 @@ plot_trt_effs <- function(effect_ests, model_cols){
     theme_bw() +
     geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
     scale_y_continuous(labels = formatter, 
-                       limits = c(min(0.75, min(L95)-0.05), max(U95) + .25), expand = c(0,0),
+                       limits = c(min(0.75, min(effect_ests_plots$L95)-0.05), max( effect_ests_plots$U95) + .25), expand = c(0,0),
                        breaks = seq(0.2,3.6, 0.2)) +
     scale_x_discrete(labels= my.labs) +
     ylab("Change in viral clearance rate (%)") +
