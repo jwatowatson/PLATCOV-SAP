@@ -289,11 +289,16 @@ writeLines(sprintf('Patient %s does not have a reason indicated for non-completi
 # Check if any patient died
 writeLines(sprintf('Patient %s was flagged as dead!!!! Please check!!!', 
                    check_data$ID[check_data$fs_diecov == 1 & !is.na(check_data$fs_diecov)]))
+check_data$dead_flag <- F
+check_data$dead_flag[check_data$fs_diecov == 1 & !is.na(check_data$fs_diecov)] <- T
 
+# Check if SAEs are flagged as AEs
+writeLines(sprintf('Patient %s has SAEs but not flagged as AEs',
+                   check_data$ID[check_data$fs_sae == 1 &  check_data$fs_ae == 0 & !(is.na(check_data$fs_sae) & is.na(check_data$fs_ae))]))
+check_data$sae_ae_match <- T
+check_data$sae_ae_match[check_data$fs_sae == 1 &  check_data$fs_ae == 0 & !(is.na(check_data$fs_sae) & is.na(check_data$fs_ae))] <- F
 
-
-
-
+check_data <- check_data[,-which(names(check_data) %in% c('fs_compyn', 'fs_rsn', 'fs_rsnothsp', 'fs_ae', 'fs_sae', 'fs_diecov'))]
 
 
 ##******************** Clinical database *******************
