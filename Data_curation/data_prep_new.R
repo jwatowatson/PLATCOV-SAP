@@ -10,10 +10,9 @@ library(lme4)
 library(lubridate)
 ##Define user folder path####################################################################
 source('user_settings.R')
-
+source('functions.R')
 #############################################################################################
 ##******************** Randomisation data *******************
-# NOTE: Sites TH57 and TH58 did not use app so cannot cross check
 rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")),
@@ -35,21 +34,264 @@ for(i in 1:nrow(rand_app_data)){
 }
 
 # Creating a checklist dataset
-check_data <- data.frame("ID"= rand_app_data[,c("ID")])
+# NOTE: Sites TH57 and TH58 did not use app so cannot cross check
+check_data <- data.frame(rand_app_data[,c("ID", "sex", "age", "Rand_Time_TZ", "Treatment")])
 
-##******************** Clinical database *******************
 ##*********************************************************
+##******************* Clinical database *******************
 ##*********************************************************
-# --- Clinical data ---
+##########  --- Clinical data --- ########## 
 clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
 clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
 
-check_data$on_macro_yn <- as.numeric(rand_app_data$ID %in% clin_data$Label)
+##########  Extract screening failure data
+table(clin_data$scrpassed, useNA = 'ifany')
+ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
+screen_failure =
+  clin_data[ind,
+            c("Trial","Site","scrid","scrdat",
+              "scrpassed","reason_failure","scrnote")]
+
+screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
+write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
+
+clin_data <- clin_data[!ind,]
+
+##########  Preparing data for checkings 
+##### removing patients that not randomised
+ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
+writeLines(sprintf('This patient %s passed the screening but never randomised', 
+                   clin_data$scrid[ind]))
+clin_data <- clin_data[!ind,]
+
+clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
+                from = c(1,2),
+                to = c('Male','Female'))
+### Check which patients has the data entered to the clinical database
+check_data$on_macro_yn <- (check_data$ID %in% clin_data$Label)
+writeLines(sprintf('Patient %s has no data on MACRO', 
+                   check_data$ID[!check_data$on_macro_yn]))
+### Check if sex information matched between randomisation database and clinical database
+check_data <- merge(check_data, clin_data[,c("Label", "Sex")], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$sex_agree_yn <- check_data$sex == check_data$Sex
+writeLines(sprintf('Patient %s has mismatched sex data: MACRO = %s and Randomisation = %s', 
+                   check_data$ID[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
+                   check_data$Sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
+                   check_data$sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)]))
+writeLines(sprintf('Patient %s has missing sex data on MACRO', 
+                   check_data$ID[is.na(check_data$sex_agree_yn)]))
+sex_problem_ID <- check_data$ID[check_data$on_macro_yn & (!check_data$sex_agree_yn | is.na(check_data$sex_agree_yn))]
+
+# Using sex information from randomisation database in further analyses
+for(i in 1:length(sex_problem_ID)){
+  clin_data$Sex[which(clin_data$Label == sex_problem_ID[i])] <- rand_app_data$sex[rand_app_data$ID == sex_problem_ID[i]]
+}
+writeLines("Frequency of sex in all clinical data after corrections:")
+print(table(clin_data$Sex, useNA = "always"))
+check_data <- check_data[,-which(names(check_data) %in% c("sex", "Sex"))]
+### Check if age information matched between randomisation database and clinical database
+clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
+
+ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
+# calculate age at randomisation 
+for(i in which(ind)){
+  clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
+}
+
+check_data <- merge(check_data, clin_data[,c("Label", "dob_my", "age_yr")], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$age <- floor(as.numeric(check_data$age))
+check_data$age_dob_missing <- is.na(check_data$age_yr)
+check_data$age_agree_yn <- check_data$age == check_data$age_yr
+
+writeLines(sprintf('Patient %s has no age or birth date information on MACRO', 
+                   check_data$ID[check_data$age_dob_missing]))
+writeLines(sprintf('Patient %s has mismatched age data: MACRO = %s and Randomisation = %s', 
+                   check_data$ID[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
+                   check_data$age_yr[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
+                   check_data$age[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)]
+                   ))
+
+check_data <- check_data[,-which(names(check_data) %in% c("dob_my", "age_yr", "age"))]
+
+### Check if symptom onset data is missing
+ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
+if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 #If day is missing >>> divide hours by 24
+
+ind = is.na(clin_data$cov_sympday)
+
+check_data <- merge(check_data, clin_data[,c("Label", "cov_sympday")], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$sympday_missing <- is.na(check_data$cov_sympday)
+writeLines(sprintf('Patient %s has no information on symptom onset (in hours or days) on MACRO', 
+                   check_data$ID[check_data$sympday_missing]))
+
+# Assign Symptomatic day = 2 for missing data 
+clin_data$cov_sympday[is.na(clin_data$cov_sympday)]=2
+
+check_data$sympday_exceed_yn <- check_data$cov_sympday > 4
+writeLines(sprintf('Patient %s has symptom onset greater than 4 days, which is %s days', 
+                   check_data$ID[check_data$sympday_exceed_yn & !is.na(check_data$sympday_exceed_yn)],
+                   check_data$cov_sympday[check_data$sympday_exceed_yn & !is.na(check_data$sympday_exceed_yn)]
+                   ))
+
+check_data <- check_data[,-which(names(check_data) %in% c("cov_sympday"))]
+
+### Check if weight and height data are missing
+clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
+clin_data$Weight = clin_data$weight
+
+check_data <- merge(check_data, clin_data[,c("Label", "BMI", "weight", "height")], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$weight_height_missing <- is.na(check_data$BMI)
+writeLines(sprintf('Patient %s has no information on weights and heights on MACRO', 
+                   check_data$ID[check_data$weight_height_missing]))
+
+check_data$weight_height_outlier <- abs(check_data$BMI - mean(check_data$BMI, na.rm = T)) > 3*sd(check_data$BMI, na.rm = T)
+writeLines(sprintf('Weights/heights of patient %s is outlier: Weight = %s kg; Height = %s cm', 
+                   check_data$ID[check_data$weight_height_outlier & !(check_data$weight_height_missing)],
+                   check_data$weight[check_data$weight_height_outlier & !(check_data$weight_height_missing)],
+                   check_data$height[check_data$weight_height_outlier & !(check_data$weight_height_missing)]
+                   ))
+
+check_data <- check_data[,-which(names(check_data) %in% c("BMI", "weight", "height"))]
+
+### Check if randomisation date and time is correct
+clin_data$Rand_date_time = NA
+for(i in 1:nrow(clin_data)){
+  if(!is.na(clin_data$randat[i]) & !is.na(clin_data$rantim[i])){
+    clin_data$Rand_date_time[i] = as.character(as.POSIXct(paste(clin_data$randat[i],
+                                                                clin_data$rantim[i], sep=' ')))
+  }
+}
+
+check_data <- merge(check_data, clin_data[,c("Label", "Rand_date_time")], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$Rand_diffs = apply(check_data[,c('Rand_date_time','Rand_Time_TZ')],1, function(x) difftime(x[1], x[2], units='mins'))
+
+# Check missing data
+check_data$rand_date_missing <- is.na(check_data$Rand_date_time)
+writeLines(sprintf('Patient %s has no information on randomisation date and time on MACRO', 
+                   check_data$ID[check_data$rand_date_missing]))
+
+# Check if the differences is more than 5 mins between both databases
+check_data$randtime_diff_exceed <- check_data$Rand_diffs > 5
+writeLines(sprintf('More than 5 min difference in rand time for %s, MACRO = %s and Randomisation = %s', 
+                   check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
+                   check_data$Rand_date_time[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
+                   check_data$Rand_Time_TZ[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)]
+))
+ID_exceed_5mins <- check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)]
+
+# Using randomisation date and time from randomisation database in further analyses
+for(i in 1:length(ID_exceed_5mins)){
+  clin_data$Rand_date_time[which(clin_data$Label == ID_exceed_5mins[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_exceed_5mins[i]]
+}
+
+check_data <- check_data[,-which(names(check_data) %in% c("Rand_date_time", "Rand_Time_TZ", "Rand_diffs"))]
+
+### Check if randomisation arms matched 
+clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
+clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
+clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
+
+check_data <- merge(check_data, clin_data[,c("Label", "rangrp")], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$rangrp_missing <- is.na(check_data$rangrp)
+writeLines(sprintf('Patient %s has no information on treatment arms on MACRO', 
+                   check_data$ID[check_data$rangrp_missing]))
+
+check_data$rangrp_agree <- check_data$Treatment == check_data$rangrp
+writeLines(sprintf('Randomisation data mismatched for %s, MACRO = %s and Randomisation = %s', 
+                   check_data$ID[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)],
+                   check_data$Rand_date_time[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)],
+                   check_data$Rand_Time_TZ[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)]
+))
+
+colnames(clin_data)
+check_data <- check_data[,-which(names(check_data) %in% c("rangrp"))]
+
+##########  --- Temperature data --- ########## 
+temp_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFUTemp.dta"))
+# Check if there is any patients without follow-up temperature data
+check_data$fu_temp_yn <- check_data$ID %in% temp_data$Label
+writeLines(sprintf('Patient %s has no information on follow-up tempearature dataset', 
+                   check_data$ID[!check_data$fu_temp_yn]))
+
+x1 = temp_data[, c('Site', 'Label', 'visit', 'fut_amdat', "fut_amtim", "fut_amtemp")] #Morning
+x2 = temp_data[, c('Site', 'Label', 'visit', 'fut_pmdat', "fut_pmtim", "fut_pmtemp")] #Evening
+colnames(x1) = colnames(x2) = 
+  c('Site', 'Label', 'visit', 'fut_dat', "fut_tim", "fut_temp")
+# Check which patients has missing data in the morning and evening
+fu_temp_am_missing <- check_temp_missing(x1, "am")
+fu_temp_pm_missing <- check_temp_missing(x2, "pm")
+
+check_data <-  merge(check_data, fu_temp_am_missing, by.x = "ID",  by.y = "Label", all.x = T)
+check_data <-  merge(check_data, fu_temp_pm_missing, by.x = "ID",  by.y = "Label", all.x = T)
+
+# Define fever at baseline
+fever_data <- prep_tempdata(temp_data, clin_data)
+fever_data
+# Check which patients has mismatch temperature time and timepoint ID
+FUtemp_checktime <- fever_data[abs(fever_data$Timepoint_ID - fever_data$Time) > 1, c("Label", "visit", "Rand_date_time", "temp_time", "visit",
+                                                                 "Timepoint_ID", "Time")]
+writeLines(sprintf('%s of patient %s: Rand_date = %s; Temp_date = %s; which is %s days post-randomisation', 
+                   FUtemp_checktime$visit,
+                   FUtemp_checktime$Label,
+                   FUtemp_checktime$Rand_date_time,
+                   FUtemp_checktime$temp_time,
+                   round(FUtemp_checktime$Time,2)
+                   ))
+FUtemp_checktime_wide <- FUtemp_checktime[,c("Label", "visit", "Time")] %>%
+  distinct(Label, visit, .keep_all = T) %>%
+  pivot_wider(names_from = visit, values_from = Time, values_fill = NA)
+colnames(FUtemp_checktime_wide)[-1] <- paste0("futemp_time_mismatch_", colnames(FUtemp_checktime_wide)[-1])
+FUtemp_checktime_wide[,-1] <- !is.na(FUtemp_checktime_wide[,-1])
+
+
+check_data <-  merge(check_data, FUtemp_checktime_wide, by.x = "ID",  by.y = "Label", all.x = T)
+check_data[,colnames(FUtemp_checktime_wide)[-1] ][is.na(check_data[,colnames(FUtemp_checktime_wide)[-1] ])] <- F
+
+# Extract fever at baseline
+fever_data = fever_data %>% distinct(Label, .keep_all = T)
+clin_data <- merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
+
+table(clin_data$Fever_Baseline, useNA = "always")
+clin_data$Label[is.na(clin_data$Fever_Baseline)]
+
+# Check if baseline temperature data is available?
+check_data <-  merge(check_data, clin_data[, c('Label','Fever_Baseline')], by.x = "ID",  by.y = "Label", all.x = T)
+check_data$fever_baseline_missing <- is.na(check_data$Fever_Baseline)
+writeLines(sprintf('Patient %s has no information on baseline fever', 
+                   check_data$ID[check_data$fever_baseline_missing]))
+
+##########  --- Final status data --- ########## 
+final_status = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFinalStatus.dta"))
+final_status = final_status[!is.na(final_status$fs_compyn), ]
+
+# Check if there is any patients without final status data
+check_data$fs_missing <- !check_data$ID %in% final_status$Label
+writeLines(sprintf('Patient %s has no information on final status dataset', 
+                   check_data$ID[check_data$fs_missing]))
+
+check_data <-  merge(check_data, final_status[,c('Label', 'fs_compyn', 'fs_rsn', 'fs_rsnothsp', 'fs_ae',
+                                                 'fs_sae', 'fs_diecov')], 
+                     by.x = "ID",  by.y = "Label", all.x = T)
+# Check if all patients that did not complete the treatment has reasons indicated
+check_data$fail_reason_yn <- T
+ID_no_fail_rsn <- check_data$ID[!is.na(check_data$fs_compyn) & check_data$fs_compyn == 0 & is.na(check_data$fs_rsn)]
+check_data$fail_reason_yn[check_data$ID %in% ID_no_fail_rsn] <- F
+writeLines(sprintf('Patient %s does not have a reason indicated for non-completion', 
+                   ID_no_fail_rsn))
+
+check_data$fail_reason_other <- T
+check_data$fs_rsnothsp[check_data$fs_rsnothsp == ""] <- NA
+ID_no_fail_rsn_other <- check_data$ID[!is.na(check_data$fs_rsn) & check_data$fs_rsn == 5 & is.na(check_data$fs_rsnothsp)]
+check_data$fail_reason_yn[check_data$ID %in% ID_no_fail_rsn_other] <- F
+writeLines(sprintf('Patient %s does not have a reason indicated for non-completion for "other reasons"', 
+                   ID_no_fail_rsn_other))
+
+# Check if any patient died
+writeLines(sprintf('Patient %s was flagged as dead!!!! Please check!!!', 
+                   check_data$ID[check_data$fs_diecov == 1 & !is.na(check_data$fs_diecov)]))
 
 
 
-
-clin_data
 
 
 
