@@ -342,7 +342,7 @@ if(system_used == "windows"){
 }
 ##------------------------------------------------------------------------------------
 # Run python to classify varaints
-variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = F, system_used = "windows")
+variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = F, system_used = "mac")
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 #To reduce the number of variant groups, as suggested by Liz.
 variant_data$Variant2 <- as.character(variant_data$Variant)
@@ -541,37 +541,10 @@ for(i in 1:length(unique(Res$Plate))){
                        tmp$`Lot no.`[1],
                        nrow(tmp)),
                )
-       # print(c(unique(Res$Plate)[i], tmp$`Lot no.`[1]))}
-  
 }
 }
 
-
-if(max(table(Res$Plate))>96){
-  writeLines('**************XXXXXXXXX MORE THAN 96 samples on a single plate!! XXXXXXXX************')
-}
-
-ID_plates <- names(table(Res$Plate)[table(Res$Plate) > 96])
-
-Res$`Lot no.`
-
-Plates <- NULL
-for(i in ID_plates){
-  plates <- data.frame("Plate" = i,
-                       "Lot_no" = unique(Res$`Lot no.`[Res$Plate == i]),
-                       "Sample_no" = nrow(Res[Res$Plate == i,]))
-  
-  Plates <- rbind(Plates, plates)
-}
-Plates
-
-aaa <- Res[Res$Plate == 68,]
-
-a <- Res[Res$Plate == 68,]
-
-aaaaa <- aaa[!duplicated(aaa),]
-
-## Extract standard curve data by plate ############
+### --- Extract standard curve data by plate --- ###
 ind = grep('std', Res$`Sample ID`)
 SC = Res[ind, c('Sample ID','N/S Gene','Target conc. c/mL','Plate','Lab','Lot no.')]
 
@@ -590,11 +563,16 @@ SC = SC[,cols]
 ## Extract sample data - this was for Liz Batty
 Res = Res[!is.na(Res$`SUBJECT ID`), ]
 Res$ID_sample = apply(Res, 1, function(x) paste(x[c("SUBJECT ID","Location","TIME-POINT")], collapse = '_'))
-write_csv(x = Res[, c('ID_sample',"SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")],file = '~/Downloads/Liz.csv')
-
+#write_csv(x = Res[, c('ID_sample',"SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")],file = '~/Downloads/Liz.csv')
 
 Res = Res[Res$Location != 'Saliva', ]
+Res <- Res[rowSums(is.na(Res)) != ncol(Res),]
+
+
+
 table(Res$Location, useNA = 'ifany')
+
+
 
 writeLines('Clinical data from the following patients not in database:\n')
 print(unique(Res$`SUBJECT ID`[!Res$`SUBJECT ID` %in%  clin_data$Label]))
