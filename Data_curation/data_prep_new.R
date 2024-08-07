@@ -243,16 +243,12 @@ FUtemp_checktime_wide <- FUtemp_checktime[,c("Label", "visit", "Time")] %>%
 colnames(FUtemp_checktime_wide)[-1] <- paste0("futemp_time_mismatch_", colnames(FUtemp_checktime_wide)[-1])
 FUtemp_checktime_wide[,-1] <- !is.na(FUtemp_checktime_wide[,-1])
 
-
 check_data <-  merge(check_data, FUtemp_checktime_wide, by.x = "ID",  by.y = "Label", all.x = T)
 check_data[,colnames(FUtemp_checktime_wide)[-1] ][is.na(check_data[,colnames(FUtemp_checktime_wide)[-1] ])] <- F
 
 # Extract fever at baseline
 fever_data = fever_data %>% distinct(Label, .keep_all = T)
 clin_data <- merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
-
-table(clin_data$Fever_Baseline, useNA = "always")
-clin_data$Label[is.na(clin_data$Fever_Baseline)]
 
 # Check if baseline temperature data is available?
 check_data <-  merge(check_data, clin_data[, c('Label','Fever_Baseline')], by.x = "ID",  by.y = "Label", all.x = T)
@@ -299,203 +295,55 @@ check_data$sae_ae_match <- T
 check_data$sae_ae_match[check_data$fs_sae == 1 &  check_data$fs_ae == 0 & !(is.na(check_data$fs_sae) & is.na(check_data$fs_ae))] <- F
 
 check_data <- check_data[,-which(names(check_data) %in% c('fs_compyn', 'fs_rsn', 'fs_rsnothsp', 'fs_ae', 'fs_sae', 'fs_diecov'))]
-
-
-##******************** Clinical database *******************
-##*********************************************************
-##*********************************************************
-##*
-# --- Fever ---
-fever_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv")) #A dropbox folder shared by James
-fever_data = fever_data %>% distinct(Label, .keep_all = T)
-
-clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
-
-
-# --- Clinical data (symptom onsets) ---
-clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
-clin_data = merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
-clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
-# --- Final status (completed the trials?) ---
-final_status = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFinalStatus.dta"))
-final_status = final_status[!is.na(final_status$fs_compyn), ]
-# --- Adverse effects ---
-AE_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimAE.dta"))
-# --- Extract screening failure data ---
-table(clin_data$scrpassed, useNA = 'ifany')
-ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
-screen_failure =
-  clin_data[ind,
-            c("Trial","Site","scrid","scrdat",
-              "scrpassed","reason_failure","scrnote")]
-
-screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
-write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
-# --- Excluding screening failure data ---
-clin_data = clin_data[!ind, ]
-
-clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp) #Randomisation group labels
-AE_data = merge(AE_data, clin_data[, c('Label','rangrp')])
-# --- check data for missing values ---
-#1. Day
-ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
-if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 #If day is missing >>> divide hours by 24
-#2. Symptomatic day
-ind = is.na(clin_data$cov_sympday)
-if(sum(ind)>0) {
-  writeLines(sprintf('Patient %s has missing time since symptom onset', clin_data$Label[ind]))
-  clin_data$cov_sympday[is.na(clin_data$cov_sympday)]=2 # Assign Symptomatic day = 2 for missing data
-}
-#3. Age in year
-clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
-ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
-# calculate age at randomisation 
-for(i in which(ind)){
-  clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
-}
-
-ind = is.na(clin_data$age_yr)
-if(sum(ind)>0) {
-  writeLines(sprintf('Patient %s has missing age', clin_data$Label[ind]))
-}
-#4. BMI
-clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
-clin_data$Weight = clin_data$weight
-
-ind = is.na(clin_data$BMI)
-if(sum(ind)>0) {
-  writeLines(sprintf('Patient %s has missing BMI', clin_data$Label[ind]))
-}
-
-# --- Cross check with online randomisation app data ---
-# NOTE: Sites TH57 and TH58 did not use app so cannot cross check
-rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-PK01.csv"))) %>%
-  filter(!is.na(Treatment))
-
-rand_app_data$ID = paste0('PLT-', gsub(x = rand_app_data$site,pattern = '0',replacement = ''),
-                          '-',
-                          stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
-rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3','LA08','PK01'),to=c('th001','br003',"la008","pk001"))
-
-writeLines('The following randomisation database IDs are not in clinical database:\n')
-print(rand_app_data$ID[!rand_app_data$ID %in% clin_data$Label])
-
-# rand_app_data = rand_app_data[rand_app_data$ID%in% clin_data$Label, ]
-rand_app_data$Rand_Time = as.POSIXct(rand_app_data$Date, format = '%a %b %d %H:%M:%S %Y',tz = 'GMT')
-rand_app_data$tzone = plyr::mapvalues(x = rand_app_data$site,
-                                      from = c('TH1','LA08','BR3','PK01'),
-                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo','Asia/Karachi'))
-rand_app_data$Rand_Time_TZ=NA
-for(i in 1:nrow(rand_app_data)){
-  rand_app_data$Rand_Time_TZ[i] = as.character(with_tz(rand_app_data$Rand_Time[i], tzone = rand_app_data$tzone[i]))
-}
-
-clin_data = merge(clin_data, rand_app_data,
-                  by.x = c('Label','Site'),
-                  by.y = c("ID",'Site'), all = T)
-
-# --- discrepancies between randomisation database and CRFs? ---
-clin_data$sex_char = sjlabelled::as_character(clin_data$sex.x)
-clin_data$Rand_date_time = NA
-for(i in 1:nrow(clin_data)){
-  if(!is.na(clin_data$randat[i]) & !is.na(clin_data$rantim[i])){
-    clin_data$Rand_date_time[i] = as.character(as.POSIXct(paste(clin_data$randat[i],
-                                                                clin_data$rantim[i], sep=' ')))
-  }
-}
-
-table(clin_data$rangrp)
-clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
-clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
-
-ind = is.na(clin_data$Treatment) & !is.na(clin_data$rangrp)
-clin_data$Treatment[ind] = clin_data$rangrp[ind]
-
-ind = !is.na(clin_data$Treatment) & is.na(clin_data$rangrp)
-clin_data$rangrp[ind] = clin_data$Treatment[ind]
-
-clin_data = clin_data %>% filter(!is.na(rangrp))
-# Reporting inconsistency between randomisation database (shiny app; Dropbox) and clinical database (CRF)
-if(any(! clin_data$Treatment == clin_data$rangrp)) {
-  writeLines(sprintf('Randomisation inconsistent for %s', 
-                     clin_data$Label[clin_data$Treatment != clin_data$rangrp]))
-  ind_diff = clin_data$Treatment != clin_data$rangrp
-  View(clin_data[ind_diff,c('Label','rangrp','Treatment')])
-  clin_data$rangrp[ind_diff] = clin_data$Treatment[ind_diff]
-}
-
-#######################
-# variables we need are:
-# * age
-# * sex
-# * time since symptom onset
-# * number of vaccine doses
-
-####### Age #########
-ind = is.na(clin_data$age_yr) & !is.na(clin_data$age)
-clin_data$age_yr[ind] = clin_data$age[ind]
-ind = !is.na(clin_data$age_yr) & is.na(clin_data$age)
-clin_data$age[ind] = clin_data$age_yr[ind]
-if(any(is.na(clin_data$age))){
-  writeLines(sprintf('Age missing for %s', clin_data$Label[is.na(clin_data$age)]))
-}
-
-ind = !is.na(clin_data$age) & (! floor(as.numeric(clin_data$age)) == clin_data$age_yr)
-if(any(ind)) {
-  writeLines(sprintf('Age inconsistent for %s', clin_data$Label[ind]))
-}
-print(clin_data[floor(as.numeric(clin_data$age)) != floor(as.numeric(clin_data$age_yr)), c('Label','age','age_yr')])
-colnames(clin_data)[which(names(clin_data) == 'age_yr')] <- 'Age'
-
-####### Sex #########
-ind = is.na(clin_data$sex_char) & !is.na(clin_data$sex.y)
-clin_data$sex_char[ind] = clin_data$sex.y[ind]
-ind = !is.na(clin_data$sex_char) & is.na(clin_data$sex.y)
-clin_data$sex.y[ind] = clin_data$sex_char[ind]
-if(any(is.na(clin_data$sex_char))){
-  writeLines(sprintf('Sex missing for %s', clin_data$Label[is.na(clin_data$sex_char)]))
-}
-
-if(any(!clin_data$sex_char == clin_data$sex.y)) {
-  writeLines(sprintf('Sex inconsistent for %s', clin_data$Label[clin_data$sex_char != clin_data$sex.y]))
-}
-clin_data$Sex = as.numeric(clin_data$sex_char=='Male')
-
-####### Rand Time #########
-ind = is.na(clin_data$Rand_date_time) & !is.na(clin_data$Rand_Time_TZ)
-clin_data$Rand_date_time[ind] = clin_data$Rand_Time_TZ[ind]
-ind = !is.na(clin_data$Rand_date_time) & is.na(clin_data$Rand_Time_TZ)
-clin_data$Rand_Time_TZ[ind] = clin_data$Rand_date_time[ind]
-Rand_diffs = apply(clin_data[,c('Rand_date_time','Rand_Time_TZ')],1,
-                   function(x) difftime(x[1], x[2], units='mins'))
-if(any(abs(Rand_diffs)>5)){
-  writeLines(sprintf('More than 5 min difference in rand time for %s',
-                     clin_data$Label[which(abs(Rand_diffs)>5)]))
-}
-print(clin_data[which(abs(Rand_diffs)>5), c('Label','Rand_Time_TZ','Rand_date_time') ])
-# We use the app time as this is more reliable (timestamp is automatic)
-clin_data$Rand_date_time[which(abs(Rand_diffs)>5)] = 
-  clin_data$Rand_Time_TZ[which(abs(Rand_diffs)>5)]
-
+#######################################################################################################################
 clin_data$Symptom_onset = clin_data$cov_sympday
 clin_data$Trt = clin_data$rangrp
+clin_data$Sex = as.numeric(clin_data$sex)
+clin_data$Sex[clin_data$Sex == 2] <- 0
+clin_data$Age <- clin_data$age_yr
 
 # Select variables of interest
 clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
                           "Rand_date_time",'BMI','Weight',
                           'Symptom_onset','Site','Fever_Baseline')]
+#######################################################################################################################
+##########  --- Variant data --- ########## 
+Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and saved it.
+# Run Nextclade for extracting mutation
+# Can't run on MORU internet
+# Input: Combined Fasta file "all_fasta.fasta"; SARS-CoV-2 data (downloaded from Nextclade: https://docs.nextstrain.org/projects/nextclade/en/stable/user/nextclade-cli/usage.html)
+# Output: Interested only .tsv file
+# Need Nextclade installed
+##------------------------------------------------------------------------------------
+re_download = F
+system_used = "windows"
 
-## Per protocol for treatment data
-trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRescue.dta")) %>% filter(!is.na(dardat))
+if(re_download){
+  arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
+  arg_download
+  if(system_used == "windows"){
+    shell(arg_download)
+  } else {
+    system(arg_download) 
+  }
+}
+##------------------------------------------------------------------------------------
+sars_cov_2_data <- "../Analysis_Data/Nextclade/sars-cov-2" # path to the data downloaded from Nextclade
+output_folder <- "../Analysis_Data/Nextclade/output" # folder name for outputs
+input_fasta <- "../Analysis_Data/all_fasta.fasta" # path to input fasta files
 
+arguments <- paste0("nextclade run --input-dataset ", sars_cov_2_data, " --output-all ", output_folder, " ", input_fasta)
+arguments
 
-## Variant data
-variant_data <- read.csv(paste0(prefix_dropbox, "/Data/variant_data.csv")) # Run python code, then save if to Dropbox
+if(system_used == "windows"){
+  shell(arguments)
+} else {
+  system(arguments) 
+}
+##------------------------------------------------------------------------------------
+# Run python to classify varaints
+variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = F, system_used = "windows")
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
-
 #To reduce the number of variant groups, as suggested by Liz.
 variant_data$Variant2 <- as.character(variant_data$Variant)
 variant_data$Variant2[variant_data$Variant2 %in% c("BA.5.2", "BA.5.5", "BQ.1")] <- "BA.5"
@@ -503,13 +351,18 @@ variant_data$Variant2[variant_data$Variant2 %in% c("BN.1.2", "BN.1.3", "CH.1.1")
 variant_data$Variant2[variant_data$Variant2 %in% c("XBB1.5-like with F456L")] <- "XBB.1.5-like"
 variant_data$Variant2 <- as.factor(variant_data$Variant2)
 
-##******************** Vaccine database *******************
-##*********************************************************
-##*********************************************************
+check_data <- merge(check_data, variant_data[,c("ID", "Variant")], by = "ID", all.x = T)
+check_data$Variant_missing <- is.na(check_data$Variant)
+check_data <- check_data[,-which(names(check_data) %in% c('Variant'))]
+
+table(check_data$Variant_missing)
+#######################################################################################################################
+##########  --- Vaccine data --- ########## 
 vacc_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVaccine.dta"))
 
 writeLines(sprintf('No vaccine data for %s',
                    clin_data$Label[!clin_data$Label %in% vacc_data$Label]))
+check_data$vacc_data_missing <- !check_data$ID %in% vacc_data$Label
 
 ## Some cleaning
 # vacc_data$vc_name = tolower(vacc_data$vc_name)
@@ -531,9 +384,8 @@ bad_dates = all_dates[which(is.na(parse_date_time(all_dates, orders = 'dmy')))]
 vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(intersect(x ,bad_dates))>0))]
 
 vac_error_ID <- NULL
-
+time_vac_negative_ID <- NULL
 clin_data$Label[!clin_data$Label %in% vacc_data$Label]
-
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
@@ -557,18 +409,21 @@ for(i in 1:nrow(clin_data)){
     clin_data$Time_since_last_dose[i] =  
       difftime(clin_data$Rand_date_time[i],
                most_recent_vac,units = 'days')
+    if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
+      time_vac_negative_ID <- c(time_vac_negative_ID, id)}
   }
-  
   if(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
-  
 }
-
-vac_error_ID
-
-
-##******************** Log database ***********************
-##*********************************************************
-##*********************************************************
+# No vaccine date details
+writeLines(sprintf('Patient %s flagged to have vaccinated but no details',
+                   vac_error_ID))
+check_data$vacc_detail_missing <- check_data$ID %in% vac_error_ID
+# Negative time since last vaccination
+writeLines(sprintf('Patient %s has a negative time since last vaccination',
+                   time_vac_negative_ID))
+check_data$vacc_time_negative <- check_data$ID %in% time_vac_negative_ID
+#######################################################################################################################
+##########  --- Sample log data --- ########## 
 log_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimSampleLog.dta"))
 log_data$sl_barc[log_data$sl_barc=='']=NA
 log_data = log_data[!is.na(log_data$sl_barc), ]
@@ -576,10 +431,7 @@ log_data = log_data[!is.na(log_data$sl_sampdat), ]
 log_data = log_data[!is.na(log_data$sl_samptim), ]
 log_data$sl_barc = tolower(log_data$sl_barc) # avoids case dependency
 
-
-##******************** Virus Density PCR database *********
-##*********************************************************
-##********************************** ***********************
+##########  --- Viral density data --- ########## 
 fnames = list.files(paste0(prefix_dropbox, "/Data/CSV files"),full.names = T,recursive = T)
 
 # column type specification for each csv file
@@ -680,9 +532,44 @@ range(table(Res$Plate))
 
 range(table(Res$`Lot no.`[grep(pattern = 'std', x = Res$`Sample ID`)]))
 table(Res$`Lot no.`[grep(pattern = 'std', x = Res$`Sample ID`)])
+
+for(i in 1:length(unique(Res$Plate))){
+  tmp <- Res[Res$Plate == unique(Res$Plate)[i],]
+  tmp <- tmp[!duplicated(tmp),]
+  if(nrow(tmp) > 96){
+    writeLines(sprintf('Sample lot %s has more than 96 samples (%s samples) on a single plate!!!',
+                       tmp$`Lot no.`[1],
+                       nrow(tmp)),
+               )
+       # print(c(unique(Res$Plate)[i], tmp$`Lot no.`[1]))}
+  
+}
+}
+
+
 if(max(table(Res$Plate))>96){
   writeLines('**************XXXXXXXXX MORE THAN 96 samples on a single plate!! XXXXXXXX************')
 }
+
+ID_plates <- names(table(Res$Plate)[table(Res$Plate) > 96])
+
+Res$`Lot no.`
+
+Plates <- NULL
+for(i in ID_plates){
+  plates <- data.frame("Plate" = i,
+                       "Lot_no" = unique(Res$`Lot no.`[Res$Plate == i]),
+                       "Sample_no" = nrow(Res[Res$Plate == i,]))
+  
+  Plates <- rbind(Plates, plates)
+}
+Plates
+
+aaa <- Res[Res$Plate == 68,]
+
+a <- Res[Res$Plate == 68,]
+
+aaaaa <- aaa[!duplicated(aaa),]
 
 ## Extract standard curve data by plate ############
 ind = grep('std', Res$`Sample ID`)

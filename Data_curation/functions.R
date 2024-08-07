@@ -1,7 +1,9 @@
 library(dplyr)
 library(tidyr)
-temp_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFUTemp.dta"))
-
+library(seqinr)
+library(readxl)
+library(stringr)
+####################################################################################
 prep_tempdata <- function(temp_data, clin_data){
   x1 = temp_data[, c('Site', 'Label', 'visit', 'fut_amdat', "fut_amtim", "fut_amtemp")]
   x2 = temp_data[, c('Site', 'Label', 'visit', 'fut_pmdat', "fut_pmtim", "fut_pmtemp")]
@@ -43,15 +45,13 @@ prep_tempdata <- function(temp_data, clin_data){
                                           units = 'days'))
   }
   
-
-  
   temp_data = temp_data %>% group_by(Label) %>%
     mutate(Fever_Baseline = ifelse(any(fut_temp>37 & Time<1), 1, 0))
   
   write.csv(x = temp_data, file = '../Analysis_Data/temperature_data.csv', row.names = F, quote = F)
   return(temp_data)
 }
-
+####################################################################################
 check_temp_missing <- function(dat, ampm){
   long_temp <- dat[,c("Label", "visit", "fut_temp")]
   wide_temp <- long_temp %>%
@@ -60,3 +60,72 @@ check_temp_missing <- function(dat, ampm){
   wide_temp[,-1] <- is.na(wide_temp[,-1])
   wide_temp
 }
+####################################################################################
+# Combine all FASTA files for Nextclade analysis
+extract_FASTA <- function(){
+  listfile <- list.files(paste0(prefix_dropbox, "/DATA/PLATCOV_FASTA/"), full.names = T,recursive = T)
+  listfile_fasta <- listfile[-grep(".xlsx", listfile)]
+  
+  all_fasta <- do.call(c, lapply(listfile_fasta, read.fasta))
+  
+  write.fasta(all_fasta, names = names(all_fasta), file = paste0(prefix_analysis_data, "/Analysis_Data/", "all_fasta.fasta"))
+  
+  names <-  listfile[grep(".xlsx", listfile)]
+  # Extract Sequence ID map
+  Sample_ID_map <- NULL
+  for(i in 1:length(names)){
+    if(grepl("Brazil", names[i])){
+      temp <- read_xlsx(names[i])  
+      cols <- c("Subject ID", "sample")
+      temp <- temp[, cols]
+      colnames(temp) <- c("Patient_ID", "Sequence_ID")
+      
+      Sample_ID_map <- rbind(Sample_ID_map, temp)
+    } else if (grepl("Laos", names[i])) {
+      temp <- read_xlsx(names[i])  
+      cols <- c("Patient ID", "GISAID name")
+      temp <- temp[, cols]
+      colnames(temp) <- c("Patient_ID", "Sequence_ID")
+      Sample_ID_map <- rbind(Sample_ID_map, temp)
+    }  else if (grepl("Thailand", names[i])) {
+      temp <- read_xlsx(names[i])
+      if("Patient ID" %in% temp[1,]){colnames(temp) <- temp[1,]; temp <- temp[-1,]}
+      temp <- temp[, cols]
+      colnames(temp) <- c("Patient_ID", "Sequence_ID")
+      temp$Patient_ID <- sapply(str_split(str_trim(temp$Patient_ID, "both"), "-|_"), function(x) paste(x, collapse = "-"))
+      
+      Sample_ID_map <- rbind(Sample_ID_map, temp)
+    }
+  }
+  write.csv(Sample_ID_map, file = paste0(prefix_analysis_data, "/Analysis_Data/", "sequencing_ID_map.csv"), row.names = F)
+  Sample_ID_map
+}
+####################################################################################
+##### run the python script to convert lineage names into a usable set
+
+get_nanopore_data = function(prefix_analysis_data, run_python=F, system_used){
+  if(run_python){  
+    if(system_used == "windows"){
+      shell(run_lineage_classifier) 
+    } else {
+      system("python3 lineage_classifier.py --input ../Analysis_Data/lineages.csv --output ../Analysis_Data/newlineagelist.csv")
+    }
+  }
+  
+  res_update = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"))
+  res_update = res_update[!duplicated(res_update$Original), ]
+  write.csv(x = res_update, file = paste0(prefix_analysis_data, "/Analysis_Data/newlineagelist.csv"),row.names = F)
+  print(unique(res_update$Original))
+  
+  res <- read.csv("../Analysis_Data/lineages.csv")
+  colnames(res) <- c("ID", "Lineages")
+  
+  res$Variant = plyr::mapvalues(res$Lineage, from = res_update$Original, to = res_update$VariantClass)
+  res = res[,c('ID','Variant')]
+  res
+}
+####################################################
+
+
+
+
