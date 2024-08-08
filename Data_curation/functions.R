@@ -122,7 +122,9 @@ get_nanopore_data = function(prefix_analysis_data, run_python=F, system_used){
   
   res$Variant = plyr::mapvalues(res$Lineage, from = res_update$Original, to = res_update$VariantClass)
   res = res[,c('ID','Variant')]
+  write.csv(x = res, file = paste0(prefix_analysis_data, "/Analysis_Data/variant_data.csv"),row.names = F)
   res
+  
 }
 ####################################################
 

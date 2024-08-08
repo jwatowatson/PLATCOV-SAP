@@ -256,6 +256,86 @@ check_data$fever_baseline_missing <- is.na(check_data$Fever_Baseline)
 writeLines(sprintf('Patient %s has no information on baseline fever', 
                    check_data$ID[check_data$fever_baseline_missing]))
 
+##########  --- Symptom data --- ########## 
+vita_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVitalSigns.dta"))
+check_data$vita_missing <- !check_data$ID %in% vita_data$Label
+
+symp=haven::read_dta(paste0(prefix_dropbox, "/Data/InterimSymptoms.dta"))
+check_data$symp_missing <- !check_data$ID %in% symp$Label
+
+symp = symp[!is.na(symp$sq_yn),]
+sort(table(symp$Label),decreasing = T)
+ids_symp_data = names(which(table(symp$Label)>4)) ## need at least 4 records to be included
+
+symp = symp %>% filter(Label %in% ids_symp_data, visit != 'D0H1') %>%
+  mutate(Timepoint_ID = gsub(x=visit, pattern='D',replacement=''))
+
+HR_data = vita_data[, c('Label','visit','vs_hr')]
+HR_data$Timepoint_ID = gsub(pattern = 'D',replacement = '',x = HR_data$visit)
+HR_data$Timepoint_ID = as.numeric(gsub(pattern = 'H1',replacement = '',x = HR_data$Timepoint_ID))
+HR_data = HR_data[!is.na(HR_data$vs_hr), ]
+HR_data$heart_rate = HR_data$vs_hr
+
+HR_data = aggregate(heart_rate ~ Label + Timepoint_ID, data = HR_data, mean)
+
+symp_data = merge(symp, HR_data[, c('Label', 'Timepoint_ID','heart_rate')],
+                  all=T, by = c('Label', "Timepoint_ID"))
+symp_data$Timepoint_ID = as.numeric(symp_data$Timepoint_ID)
+symp_data = symp_data %>% arrange(Label, Timepoint_ID)
+
+write.csv(x = symp_data, file = '../Analysis_Data/symptom_data.csv', row.names = F, quote = F)
+#----------------------------------------------------------------------------------------
+symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
+# cleaning
+symptom_data = symptom_data %>% 
+  mutate(ID = Label,
+         Any_symptom = sq_yn) %>%
+  rename("sq_soreyn" = "sq_sore")
+#----------------------------------------------------------------------------------------
+# Listing 'other symptoms'
+other_symptoms <- symptom_data %>%
+  select(matches("^sq.*des$")) %>%
+  unlist() %>%
+  unname() %>%
+  table()
+
+write.csv(other_symptoms, "../Analysis_Data/other_symptoms.csv", row.names = F)
+#----------------------------------------------------------------------------------------
+# Check if 'other symptoms' have been filled
+col_others <- colnames(symptom_data)[grepl('^sq.*des$', colnames(symptom_data))]
+
+symptom_data <- symptom_data %>%
+  mutate(sq_otheryn = NA) %>%
+  mutate(across(all_of(col_others), ~ifelse(. == "", NA, .)))
+
+for(i in 1:nrow(symptom_data)){
+  if(!all(is.na(symptom_data[i,col_others]))){symptom_data$sq_otheryn[i] <- 1} else {symptom_data$sq_otheryn[i] <- 0}
+}
+
+# Check if 1 in sq_yn always provided details
+columns_to_check <- colnames(symptom_data)[grepl('^sq.*yn$', colnames(symptom_data))]
+columns_to_check <- columns_to_check[-1]
+check_sqyn <- symptom_data %>% 
+  filter(sq_yn == 1) %>%
+  mutate(row_sum = (rowSums(select(., all_of(columns_to_check)), na.rm = TRUE))) %>%
+  filter(row_sum == 0)
+
+write.csv(check_sqyn, "symptoms_no_details.csv", row.names = F) # These entries report the presence of symptoms without providing more details
+#----------------------------------------------------------------------------------------
+col_symptom_gr <- colnames(symptom_data)[grepl('^sq.*gr$', colnames(symptom_data))]
+col_symptom_gr <- col_symptom_gr[!grepl('oth', col_symptom_gr)]
+
+summary(symptom_data[,col_symptom_gr]) #Check if there is any dodgy grade data
+
+symptom_data <- symptom_data %>%
+  mutate(across(.cols = all_of(col_symptom_gr), 
+                .fns = ~ifelse(!is.na(sq_yn) & is.na(.), 0, .)))
+
+write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate', col_symptom_gr)], 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
+            row.names = F, sep=',', quote = F)
+
+#----------------------------------------------------------------------------------------
 ##########  --- Final status data --- ########## 
 final_status = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFinalStatus.dta"))
 final_status = final_status[!is.na(final_status$fs_compyn), ]
@@ -316,7 +396,7 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
 re_download = F
-system_used = "windows"
+system_used = "mac"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -430,6 +510,9 @@ log_data = log_data[!is.na(log_data$sl_barc), ]
 log_data = log_data[!is.na(log_data$sl_sampdat), ]
 log_data = log_data[!is.na(log_data$sl_samptim), ]
 log_data$sl_barc = tolower(log_data$sl_barc) # avoids case dependency
+
+## Per protocol for treatment data
+trt_distcont_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimDrugRescue.dta")) %>% filter(!is.na(dardat))
 
 ##########  --- Viral density data --- ########## 
 fnames = list.files(paste0(prefix_dropbox, "/Data/CSV files"),full.names = T,recursive = T)
@@ -568,14 +651,11 @@ Res$ID_sample = apply(Res, 1, function(x) paste(x[c("SUBJECT ID","Location","TIM
 Res = Res[Res$Location != 'Saliva', ]
 Res <- Res[rowSums(is.na(Res)) != ncol(Res),]
 
-
-
-table(Res$Location, useNA = 'ifany')
-
-
-
 writeLines('Clinical data from the following patients not in database:\n')
 print(unique(Res$`SUBJECT ID`[!Res$`SUBJECT ID` %in%  clin_data$Label]))
+########## NEED TO CHECK WHICH PATIENTS HAVE PCR DATA BUT NOT  CLINICAL DATA ###########
+# "PLT-LA8-011"
+# "PLT-BR3-101"
 Res = Res[Res$`SUBJECT ID` %in% clin_data$Label, ]
 
 writeLines('Number of samples per patient:')
@@ -588,7 +668,6 @@ Res$RNaseP[Res$RNaseP=='Undetermined'] = 40
 Res$`N/S Gene` = as.numeric(Res$`N/S Gene`)
 Res$RNaseP = as.numeric(Res$RNaseP)
 
-
 Res$CT_NS = Res$`N/S Gene`
 Res$`Target conc. c/mL`[Res$`Target conc. c/mL`==0]=10
 Res$log10_viral_load = log10(Res$`Target conc. c/mL`+1)
@@ -600,6 +679,7 @@ Res$Swab_ID = Res$Location
 table(Res$Location)
 # Res$Swab_ID = gsub(Res$Swab_ID, pattern = '1',replacement = '')
 # Res$Swab_ID = gsub(Res$Swab_ID, pattern = '2',replacement = '')
+########### NEED TO FINALIZE WHICH LOCATION BELONGS TO WHICH SUB STUDY GROUP #############
 Res$Swab_ID[grep(Res$Swab_ID, pattern = 'SAL')] = 'Saliva'
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'TLS',replacement = 'TSL')
 
@@ -613,8 +693,10 @@ Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS',replacement = 'Right_tonsil')
 
 table(Res$Swab_ID, useNA = 'ifany')
 
-
 Res$Timepoint_ID = Res$`TIME-POINT`
+#Manual correction
+Res$Timepoint_ID[Res$ID == "PLT-LA8-015"] <- "D0"
+
 table(Res$Timepoint_ID, useNA = 'ifany')
 Res$Timepoint_ID[Res$Timepoint_ID=='D0H0']='0'
 Res$Timepoint_ID[Res$Timepoint_ID=='D0PRE']='0'
@@ -630,7 +712,6 @@ include_cols = c('Label','Site','Rand_date_time',
                  'Any_dose_mRNA','N_dose_mRNA')
 Res = merge(Res, clin_data[,include_cols], all.x = T, by.x = 'ID', by.y = 'Label')
 
-
 Res$Time = NA
 Res$Per_protocol_all = NA
 Res$Per_protocol_sample = NA
@@ -639,11 +720,10 @@ Res$ID_log=Res$Time_log=NA
 
 sampling_time_conflicts = c()
 na_sample_times = c()
-
-
-
+na_time_since_rand = NULL
+negative_time_since_rand = NULL
+timepoint_id_not_matched = NULL
 # manual corrections
-
 log_data$sl_sampdat[log_data$sl_barc=='20sa069'] = '2022-01-23'
 log_data$sl_samptim[log_data$sl_barc=='20sa069'] = '09:11:00'
 log_data$sl_samptim[log_data$sl_barc=='20ra973'] = '11:03:00'
@@ -715,7 +795,11 @@ for(i in 1:nrow(Res)){
                            Res$Timepoint_ID[i],
                            barcode_i,
                            round(difftime(sample_time_log, sample_time, units = 'hours'))))
-        sampling_time_conflicts=c(sampling_time_conflicts,barcode_i)
+        sampling_time_conflicts=rbind(sampling_time_conflicts,
+                                      data.frame("ID" = Res$`SUBJECT ID`[i], "BARCODE" = barcode_i,
+                                                 "Timepoint_ID" = Res$Timepoint_ID[i],
+                                                 "Sample_time_log" =  sample_time_log,
+                                                 "Sample_time" = sample_time))
         my_sample_time = s_times[2] # trust the log as updated by Padd
       } else {
         my_sample_time = s_times[1]
@@ -734,6 +818,12 @@ for(i in 1:nrow(Res)){
        Res$`SUBJECT ID`[i] != 'PLT-TH1-205' &
        Res$`SUBJECT ID`[i] != 'PLT-TH1-208'){
       writeLines(sprintf('Missing sample time for patient %s at timepoint %s',id,Res$Timepoint_ID[i]))
+      
+      na_time_since_rand <- rbind(na_time_since_rand,
+                                  data.frame("ID" = Res$`SUBJECT ID`[i], "BARCODE" = barcode_i,
+                                             "Timepoint_ID" = Res$Timepoint_ID[i],
+                                  "Rand_date_time" =  rand_time,
+                                  "Sample_time" = my_sample_time))
     }
   } else {
     if(Res$Time[i] < -.1 &
@@ -742,7 +832,25 @@ for(i in 1:nrow(Res)){
                          id,Res$Timepoint_ID[i],
                          round(Res$Time[i],1),
                          barcode_i))
+      
+      negative_time_since_rand <- rbind(negative_time_since_rand,
+                                  data.frame("ID" = Res$`SUBJECT ID`[i], "BARCODE" = barcode_i,
+                                             "Timepoint_ID" = Res$Timepoint_ID[i],
+                                             "Time" = Res$Time[i],
+                                  "Rand_date_time" =  rand_time,
+                                  "Sample_time" = my_sample_time
+                                  ))
     }
+  }
+  
+  if(!is.na(Res$Time[i]) & abs(Res$Time[i] - Res$Timepoint_ID[i])>1){
+    timepoint_id_not_matched <- rbind(timepoint_id_not_matched,
+                                      data.frame("ID" = Res$`SUBJECT ID`[i], "BARCODE" = barcode_i,
+                                                 "Timepoint_ID" = Res$Timepoint_ID[i],
+                                                 "Time" = Res$Time[i],
+                                                  "Rand_date_time" =  rand_time,
+                                                 "Sample_time" = my_sample_time
+                                                 ))
   }
   
   if(id %in% trt_distcont_data$Label){
@@ -758,8 +866,15 @@ for(i in 1:nrow(Res)){
   }
 }
 
-writeLines(sprintf('Missing sample times for %s',unique(Res$ID[na_sample_times])))
 
+sampling_time_conflicts #between sample log dataset and PRC dataset > 2 hours
+na_sample_times #Missing data on sampling time
+na_time_since_rand #Missing data on time since randomisation
+negative_time_since_rand #Negative time since randomisation
+timepoint_id_not_matched
+
+
+writeLines(sprintf('Missing sample times for %s',unique(Res$ID[na_sample_times])))
 ind_na_time = is.na(Res$Time)
 writeLines(sprintf('Missing time for following samples: %s',
                    unique(Res$ID[ind_na_time])))
@@ -771,8 +886,6 @@ writeLines(sprintf('Negative time for following samples: %s',
                    unique(Res$ID[ind_neg_time])))
 # use protocol time
 Res$Time[ind_neg_time]=Res$Timepoint_ID[ind_neg_time]
-
-
 
 Res = dplyr::arrange(Res, Rand_date_time, ID, Time)
 
@@ -948,57 +1061,6 @@ write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')],
             file = paste0(prefix_analysis_data, "/Analysis_Data/fever_interim.csv"), 
             row.names = F, sep=',', quote = F)
 ####################################################################################### 
-###### Symptom data------------------------------------------------------------------
-symptom_data = read_csv(paste0(prefix_analysis_data, "/Analysis_Data/symptom_data.csv"))
-# cleaning
-symptom_data = symptom_data %>% 
-  mutate(ID = Label,
-         Any_symptom = sq_yn) %>%
-  rename("sq_soreyn" = "sq_sore")
-
-# Listing 'other symptoms'
-other_symptoms <- symptom_data %>%
-  select(matches("^sq.*des$")) %>%
-  unlist() %>%
-  unname() %>%
-  table()
-
-write.csv(other_symptoms, "../Analysis_Data/other_symptoms.csv", row.names = F)
-#----------------------------------------------------------------------------------------
-# Check if 'other symptoms' have been filled
-col_others <- colnames(symptom_data)[grepl('^sq.*des$', colnames(symptom_data))]
-
-symptom_data <- symptom_data %>%
-  mutate(sq_otheryn = NA) %>%
-  mutate(across(all_of(col_others), ~ifelse(. == "", NA, .)))
-
-for(i in 1:nrow(symptom_data)){
-  if(!all(is.na(symptom_data[i,col_others]))){symptom_data$sq_otheryn[i] <- 1} else {symptom_data$sq_otheryn[i] <- 0}
-}
-
-# Check if 1 in sq_yn always provided details
-columns_to_check <- colnames(symptom_data)[grepl('^sq.*yn$', colnames(symptom_data))]
-columns_to_check <- columns_to_check[-1]
-check_sqyn <- symptom_data %>% 
-  filter(sq_yn == 1) %>%
-  mutate(row_sum = (rowSums(select(., all_of(columns_to_check)), na.rm = TRUE))) %>%
-  filter(row_sum == 0)
-
-write.csv(check_sqyn, "symptoms_no_details.csv", row.names = F) # These entries report the presence of symptoms without providing more details
-#----------------------------------------------------------------------------------------
-col_symptom_gr <- colnames(symptom_data)[grepl('^sq.*gr$', colnames(symptom_data))]
-col_symptom_gr <- col_symptom_gr[!grepl('oth', col_symptom_gr)]
-
-summary(symptom_data[,col_symptom_gr]) #Check if there is any dodgy grade data
-
-symptom_data <- symptom_data %>%
-  mutate(across(.cols = all_of(col_symptom_gr), 
-                .fns = ~ifelse(!is.na(sq_yn) & is.na(.), 0, .)))
-
-write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate', col_symptom_gr)], 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
-            row.names = F, sep=',', quote = F)
-
 ################################################################################################
 #***********************************************************************#
 #*************************      Serology       ************************#
