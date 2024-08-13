@@ -262,6 +262,7 @@ check_data$vita_missing <- !check_data$ID %in% vita_data$Label
 
 symp=haven::read_dta(paste0(prefix_dropbox, "/Data/InterimSymptoms.dta"))
 check_data$symp_missing <- !check_data$ID %in% symp$Label
+check_data$symp_later_missing <- !check_data$ID %in% symp[symp$visit != "D0",]$Label
 
 symp = symp[!is.na(symp$sq_yn),]
 sort(table(symp$Label),decreasing = T)
