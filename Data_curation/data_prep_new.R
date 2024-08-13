@@ -396,7 +396,7 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
 re_download = F
-system_used = "mac"
+system_used = "windows"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -422,7 +422,7 @@ if(system_used == "windows"){
 }
 ##------------------------------------------------------------------------------------
 # Run python to classify varaints
-variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = F, system_used = "mac")
+variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = T, system_used = system_used)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 #To reduce the number of variant groups, as suggested by Liz.
 variant_data$Variant2 <- as.character(variant_data$Variant)
@@ -680,6 +680,15 @@ table(Res$Location)
 # Res$Swab_ID = gsub(Res$Swab_ID, pattern = '1',replacement = '')
 # Res$Swab_ID = gsub(Res$Swab_ID, pattern = '2',replacement = '')
 ########### NEED TO FINALIZE WHICH LOCATION BELONGS TO WHICH SUB STUDY GROUP #############
+Res$extra_swabs <- grepl("_", Res$Location)
+Res$extra_swabs_gr <- NA
+Res$extra_swabs_gr[Res$extra_swabs & grepl("[0-9]", Res$Location)] <- "All_nurses"
+Res$extra_swabs_gr[Res$extra_swabs & !grepl("[0-9]", Res$Location)] <- "Nurse_patient"
+
+Res$extra_swabber <- NA
+Res$extra_swabber[Res$extra_swabs & grepl("_N", Res$Location)] <- "Nurse"
+Res$extra_swabber[Res$extra_swabs & grepl("_P", Res$Location)] <- "Patient"
+
 Res$Swab_ID[grep(Res$Swab_ID, pattern = 'SAL')] = 'Saliva'
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'TLS',replacement = 'TSL')
 
@@ -691,6 +700,7 @@ Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS1',replacement = 'Right_tonsil_1')
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS2',replacement = 'Right_tonsil_2')
 Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'RTS',replacement = 'Right_tonsil')
 
+Res$Swab_ID = gsub(Res$Swab_ID, pattern = 'no location',replacement = 'No location')
 table(Res$Swab_ID, useNA = 'ifany')
 
 Res$Timepoint_ID = Res$`TIME-POINT`
@@ -866,7 +876,6 @@ for(i in 1:nrow(Res)){
   }
 }
 
-
 sampling_time_conflicts #between sample log dataset and PRC dataset > 2 hours
 na_sample_times #Missing data on sampling time
 na_time_since_rand #Missing data on time since randomisation
@@ -906,7 +915,7 @@ cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'Any_dose_mRNA','N_dose_mRNA',
          'Weight','BMI','Plate','Fever_Baseline','BARCODE',
          'Age', 'Sex', 'Symptom_onset','Variant', 'Variant2',
-         'CT_NS','CT_RNaseP', 'Per_protocol_sample','Lab', 'Lot no.')
+         'CT_NS','CT_RNaseP', 'Per_protocol_sample','Lab', 'Lot no.', 'extra_swabs')
 
 writeLines('\n column names:')
 print(cols)
@@ -1047,19 +1056,19 @@ write.table(x = screen_failure, file = paste0(prefix_analysis_data, "/Analysis_D
 
 
 Res = 
-  Res %>% filter(Swab_ID != 'Saliva') %>% # remove the saliva samples
+  Res %>% filter(Swab_ID != 'Saliva' & !extra_swabs) %>% # remove the saliva samples and extra swabs
   mutate(Country= case_when(Site %in% c('th001','th057','th058') ~ 'Thailand',
                             Site == 'br003' ~ 'Brazil',
                             Site == 'la008' ~ 'Laos',
                             Site == 'pk001' ~ 'Pakistan'))
 ###### Fever data------------------------------------------------------------------
-fever_data = read_csv(file = paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
-fever_data = fever_data %>% 
-  mutate(ID = Label,
-         ax_temperature = fut_temp)
-write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
-            file = paste0(prefix_analysis_data, "/Analysis_Data/fever_interim.csv"), 
-            row.names = F, sep=',', quote = F)
+# fever_data = read_csv(file = paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
+# fever_data = fever_data %>% 
+#   mutate(ID = Label,
+#          ax_temperature = fut_temp)
+# write.table(x = fever_data[, c('ID','Time','ax_temperature','Fever_Baseline')], 
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/fever_interim.csv"), 
+#             row.names = F, sep=',', quote = F)
 ####################################################################################### 
 ################################################################################################
 #***********************************************************************#
@@ -1415,22 +1424,22 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 
 #************************* Unblinded arm meta-analysis *************************#
-Res_Unblinded_meta =
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-                            'Molnupiravir',
-                            "No study drug",
-                            'Ivermectin',
-                            'Remdesivir',
-                            'Favipiravir',
-                            'Regeneron'),
-                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-                 Rand_date <= "2023-10-20 00:00:00"
-  ) %>%
-  arrange(Rand_date, ID, Time)
-
-write.table(x = Res_Unblinded_meta,
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
-            row.names = F, sep=',', quote = F)
+# Res_Unblinded_meta =
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+#                             'Molnupiravir',
+#                             "No study drug",
+#                             'Ivermectin',
+#                             'Remdesivir',
+#                             'Favipiravir',
+#                             'Regeneron'),
+#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+#                  Rand_date <= "2023-10-20 00:00:00"
+#   ) %>%
+#   arrange(Rand_date, ID, Time)
+# 
+# write.table(x = Res_Unblinded_meta,
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
+#             row.names = F, sep=',', quote = F)
 
 
 

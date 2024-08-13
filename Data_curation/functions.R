@@ -90,6 +90,7 @@ extract_FASTA <- function(){
     }  else if (grepl("Thailand", names[i])) {
       temp <- read_xlsx(names[i])
       if("Patient ID" %in% temp[1,]){colnames(temp) <- temp[1,]; temp <- temp[-1,]}
+      cols <- c("Patient_ID", "Sequence_ID")
       temp <- temp[, cols]
       colnames(temp) <- c("Patient_ID", "Sequence_ID")
       temp$Patient_ID <- sapply(str_split(str_trim(temp$Patient_ID, "both"), "-|_"), function(x) paste(x, collapse = "-"))
@@ -103,7 +104,7 @@ extract_FASTA <- function(){
 ####################################################################################
 ##### run the python script to convert lineage names into a usable set
 
-get_nanopore_data = function(prefix_analysis_data, run_python=F, system_used){
+get_nanopore_data = function(prefix_analysis_data, run_python=T, system_used){
   if(run_python){  
     if(system_used == "windows"){
       shell(run_lineage_classifier) 
