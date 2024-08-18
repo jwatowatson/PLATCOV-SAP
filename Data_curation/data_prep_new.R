@@ -44,6 +44,15 @@ check_data <- data.frame(rand_app_data[,c("ID", "sex", "age", "Rand_Time_TZ", "T
 clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
 clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
 
+duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
+duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
+
+writeLines(sprintf('This patient %s is duplicated with different screening IDs!!!', 
+                   duplicated_clin_data))
+
+#Manual correction
+ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
+clin_data <- clin_data[-ind,]
 ##########  Extract screening failure data
 table(clin_data$scrpassed, useNA = 'ifany')
 ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
@@ -110,7 +119,11 @@ writeLines(sprintf('Patient %s has mismatched age data: MACRO = %s and Randomisa
                    check_data$age_yr[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
                    check_data$age[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)]
                    ))
-
+# Using age information from randomisation database in further analyses
+age_yr_missing <- clin_data$Label[is.na(clin_data$age_yr)]
+for(i in 1:length(age_yr_missing)){
+    clin_data$age_yr[clin_data$Label == age_yr_missing[i]] <- check_data$age[check_data$ID == age_yr_missing[i]]
+}
 check_data <- check_data[,-which(names(check_data) %in% c("dob_my", "age_yr", "age"))]
 
 ### Check if symptom onset data is missing
@@ -184,6 +197,11 @@ for(i in 1:length(ID_exceed_5mins)){
   clin_data$Rand_date_time[which(clin_data$Label == ID_exceed_5mins[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_exceed_5mins[i]]
 }
 
+ID_missing_date <- check_data$ID[is.na(check_data$Rand_date_time)]
+for(i in 1:length(ID_missing_date)){
+  clin_data$Rand_date_time[which(clin_data$Label == ID_missing_date[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_missing_date[i]]
+}
+
 check_data <- check_data[,-which(names(check_data) %in% c("Rand_date_time", "Rand_Time_TZ", "Rand_diffs"))]
 
 ### Check if randomisation arms matched 
@@ -204,6 +222,12 @@ writeLines(sprintf('Randomisation data mismatched for %s, MACRO = %s and Randomi
 ))
 
 colnames(clin_data)
+
+ID_missing_trt <- check_data$ID[is.na(check_data$rangrp)]
+for(i in 1:length(ID_missing_date)){
+  clin_data$rangrp[which(clin_data$Label == ID_missing_trt[i])] <- rand_app_data$Treatment[rand_app_data$ID == ID_missing_trt[i]]
+}
+
 check_data <- check_data[,-which(names(check_data) %in% c("rangrp"))]
 
 ##########  --- Temperature data --- ########## 
@@ -379,9 +403,11 @@ check_data <- check_data[,-which(names(check_data) %in% c('fs_compyn', 'fs_rsn',
 #######################################################################################################################
 clin_data$Symptom_onset = clin_data$cov_sympday
 clin_data$Trt = clin_data$rangrp
-clin_data$Sex = as.numeric(clin_data$sex)
+clin_data$Sex = as.numeric(as.factor(clin_data$Sex))
 clin_data$Sex[clin_data$Sex == 2] <- 0
 clin_data$Age <- clin_data$age_yr
+
+clin_data <- clin_data[!is.na(clin_data$rangrp) &!is.na(clin_data$randat),]
 
 # Select variables of interest
 clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
@@ -397,7 +423,7 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
 re_download = F
-system_used = "windows"
+system_used = "mac"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -572,7 +598,7 @@ for(i in 1:length(fnames)){
   }
 }
 
-# take out the summary PCR columns
+ # take out the summary PCR columns
 ind_rm = Res$`Sample ID` %in% c('PC','R-squared','Efficiency (%)','Slope (M)')|
   (is.na(Res$`SUBJECT ID`) & is.na(Res$`Sample ID`))
 sum(ind_rm)
@@ -1445,14 +1471,14 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 
 #************************* Unblinded all *************************#
-# Res_Unblinded_all = 
-#   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
-#                             'Nitazoxanide',
-#                             'Ensitrelvir')) %>%
-#   arrange(Rand_date, ID, Time) 
-# 
-# 
-# write.table(x = Res_Unblinded_all, 
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"), 
-#             row.names = F, sep=',', quote = F)
+Res_Unblinded_all =
+  Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
+                            'Nitazoxanide',
+                            'Ensitrelvir')) %>%
+  arrange(Rand_date, ID, Time)
+
+
+write.table(x = Res_Unblinded_all,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
+            row.names = F, sep=',', quote = F)
 
