@@ -8,6 +8,7 @@ library(readr)
 library(ggplot2)
 library(lme4)
 library(lubridate)
+library(anytime)
 ##Define user folder path####################################################################
 source('user_settings.R')
 source('functions.R')
@@ -250,7 +251,49 @@ check_data <-  merge(check_data, fu_temp_pm_missing, by.x = "ID",  by.y = "Label
 
 # Define fever at baseline
 fever_data <- prep_tempdata(temp_data, clin_data)
-fever_data
+class(fever_data$temp_time)
+
+fever_data$temp_time_date <- sub(" .*", "", fever_data$temp_time)
+fever_data$temp_time_time <- sub(".+? ", "", fever_data$temp_time)
+#### MANUAL CORRECTION ####
+# fever_correct <- read.csv("../Analysis_Data/Ensitrelvir_time_not_matched_temperature_Padd.csv")
+# 
+# fever_correct$temp_time_date <- sub(" .*", "", fever_correct$Change.to)
+# fever_correct$temp_time_time <- sub(".+? ", "", fever_correct$Change.to)
+# fever_correct$temp_time_time[grepl("/", fever_correct$temp_time_time)] <- ""
+# 
+# fever_correct$temp_time_date <- as.character(anydate(fever_correct$temp_time_date))
+# fever_correct$temp_time_date[is.na(fever_correct$temp_time_date)] <- ""
+# 
+# fever_correct$temp_time_time[is.na(fever_correct$temp_time_time)] <- ""
+# fever_correct$temp_time_time <- gsub("\\.", ":", fever_correct$temp_time_time)
+# fever_correct$temp_time_time[!fever_correct$temp_time_time == ""] <- paste0(fever_correct$temp_time_time[!fever_correct$temp_time_time == ""], ":00")
+# 
+# 
+# fever_correct$temp_time_date_og <- sub(" .*", "", fever_correct$temp_time)
+# fever_correct$temp_time_time_og <- sub(".+? ", "", fever_correct$temp_time)
+# 
+# fever_correct$temp_time_date_og <- as.character(anydate(fever_correct$temp_time_date_og))
+# fever_correct$temp_time_date[is.na(fever_correct$temp_time_date)] <- ""
+# 
+# fever_correct$temp_time_time[is.na(fever_correct$temp_time_time)] <- ""
+# fever_correct$temp_time_time <- gsub("\\.", ":", fever_correct$temp_time_time)
+# fever_correct$temp_time_time[!fever_correct$temp_time_time == ""] <- paste0(fever_correct$temp_time_time[!fever_correct$temp_time_time == ""], ":00")
+# 
+# 
+
+#ind <- (fever_data$Label %in% fever_correct$Label) & (fever_data$visit %in%  fever_correct$visit)
+
+
+
+
+
+
+
+
+#aaa <- fever_data[ind,]
+
+
 # Check which patients has mismatch temperature time and timepoint ID
 FUtemp_checktime <- fever_data[abs(fever_data$Timepoint_ID - fever_data$Time) > 1, c("Label", "visit", "Rand_date_time", "temp_time", "visit",
                                                                  "Timepoint_ID", "Time")]
@@ -407,7 +450,7 @@ clin_data$Sex = as.numeric(as.factor(clin_data$Sex))
 clin_data$Sex[clin_data$Sex == 2] <- 0
 clin_data$Age <- clin_data$age_yr
 
-clin_data <- clin_data[!is.na(clin_data$rangrp) &!is.na(clin_data$randat),]
+clin_data <- clin_data[!is.na(clin_data$rangrp) &!(is.na(clin_data$randat) & is.na(clin_data$Rand_date_time)),]
 
 # Select variables of interest
 clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
@@ -942,7 +985,7 @@ cols = c('ID','Time','Trt','Site','Timepoint_ID',
          'Any_dose_mRNA','N_dose_mRNA',
          'Weight','BMI','Plate','Fever_Baseline','BARCODE',
          'Age', 'Sex', 'Symptom_onset','Variant', 'Variant2',
-         'CT_NS','CT_RNaseP', 'Per_protocol_sample','Lab', 'Lot no.', 'extra_swabs')
+         'CT_NS','CT_RNaseP', 'Per_protocol_sample','Lab', 'Lot no.', 'extra_swabs', 'Location')
 
 writeLines('\n column names:')
 print(cols)
@@ -1083,7 +1126,7 @@ write.table(x = screen_failure, file = paste0(prefix_analysis_data, "/Analysis_D
 
 
 Res = 
-  Res %>% filter(Swab_ID != 'Saliva' & !extra_swabs) %>% # remove the saliva samples and extra swabs
+  Res %>% filter(Swab_ID != 'Saliva' & !(grepl("_N2", Location)|grepl("_P", Location))) %>% # remove the saliva samples and extra swabs
   mutate(Country= case_when(Site %in% c('th001','th057','th058') ~ 'Thailand',
                             Site == 'br003' ~ 'Brazil',
                             Site == 'la008' ~ 'Laos',
@@ -1401,6 +1444,17 @@ Res_Ensitrelvir =
 write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
 
+symptom_data_Ensitrelvir <- symptom_data %>%
+  filter(Label %in% Res_Ensitrelvir$ID)
+
+write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
+
+fever_data_Ensitrelvir <- fever_data %>%
+  filter(Label %in% Res_Ensitrelvir$ID)
+
+write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
+
+
 # Res_Ensitrelvir_allpax = 
 #   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
 #                  (Country=='Thailand') |
@@ -1473,8 +1527,8 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 #************************* Unblinded all *************************#
 Res_Unblinded_all =
   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
-                            'Nitazoxanide',
-                            'Ensitrelvir')) %>%
+                             'Hydroxychloroquine',
+                            'Nitazoxanide')) %>%
   arrange(Rand_date, ID, Time)
 
 
