@@ -53,7 +53,7 @@ writeLines(sprintf('This patient %s is duplicated with different screening IDs!!
 
 #Manual correction
 ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
-clin_data <- clin_data[-ind,]
+if(length(ind>0)){clin_data <- clin_data[-ind,]}
 ##########  Extract screening failure data
 table(clin_data$scrpassed, useNA = 'ifany')
 ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
@@ -68,9 +68,16 @@ write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
 clin_data <- clin_data[!ind,]
 
 ##########  Preparing data for checkings 
+### Check which screening status are missing
+ind <- is.na(clin_data$scrpassed) & clin_data$Label %in% check_data$ID
+writeLines(sprintf('This patient %s does not have the information about screening status', 
+                   clin_data$scrid[ind]))
+check_data$screen_status_missing <- (check_data$ID %in% clin_data$Label[ind])
+
+
 ##### removing patients that not randomised
-ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
-writeLines(sprintf('This patient %s passed the screening but never randomised', 
+ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
+writeLines(sprintf('This patient %s does not have the information on screening status and not randomised', 
                    clin_data$scrid[ind]))
 clin_data <- clin_data[!ind,]
 
@@ -255,44 +262,6 @@ class(fever_data$temp_time)
 
 fever_data$temp_time_date <- sub(" .*", "", fever_data$temp_time)
 fever_data$temp_time_time <- sub(".+? ", "", fever_data$temp_time)
-#### MANUAL CORRECTION ####
-# fever_correct <- read.csv("../Analysis_Data/Ensitrelvir_time_not_matched_temperature_Padd.csv")
-# 
-# fever_correct$temp_time_date <- sub(" .*", "", fever_correct$Change.to)
-# fever_correct$temp_time_time <- sub(".+? ", "", fever_correct$Change.to)
-# fever_correct$temp_time_time[grepl("/", fever_correct$temp_time_time)] <- ""
-# 
-# fever_correct$temp_time_date <- as.character(anydate(fever_correct$temp_time_date))
-# fever_correct$temp_time_date[is.na(fever_correct$temp_time_date)] <- ""
-# 
-# fever_correct$temp_time_time[is.na(fever_correct$temp_time_time)] <- ""
-# fever_correct$temp_time_time <- gsub("\\.", ":", fever_correct$temp_time_time)
-# fever_correct$temp_time_time[!fever_correct$temp_time_time == ""] <- paste0(fever_correct$temp_time_time[!fever_correct$temp_time_time == ""], ":00")
-# 
-# 
-# fever_correct$temp_time_date_og <- sub(" .*", "", fever_correct$temp_time)
-# fever_correct$temp_time_time_og <- sub(".+? ", "", fever_correct$temp_time)
-# 
-# fever_correct$temp_time_date_og <- as.character(anydate(fever_correct$temp_time_date_og))
-# fever_correct$temp_time_date[is.na(fever_correct$temp_time_date)] <- ""
-# 
-# fever_correct$temp_time_time[is.na(fever_correct$temp_time_time)] <- ""
-# fever_correct$temp_time_time <- gsub("\\.", ":", fever_correct$temp_time_time)
-# fever_correct$temp_time_time[!fever_correct$temp_time_time == ""] <- paste0(fever_correct$temp_time_time[!fever_correct$temp_time_time == ""], ":00")
-# 
-# 
-
-#ind <- (fever_data$Label %in% fever_correct$Label) & (fever_data$visit %in%  fever_correct$visit)
-
-
-
-
-
-
-
-
-#aaa <- fever_data[ind,]
-
 
 # Check which patients has mismatch temperature time and timepoint ID
 FUtemp_checktime <- fever_data[abs(fever_data$Timepoint_ID - fever_data$Time) > 1, c("Label", "visit", "Rand_date_time", "temp_time", "visit",
@@ -491,6 +460,19 @@ if(system_used == "windows"){
   system(arguments) 
 }
 ##------------------------------------------------------------------------------------
+source("functions_query_mutations.R")
+
+nextclade_file <- "../Analysis_Data/Nextclade/output/nextclade.tsv"
+naming_file <- "../Analysis_Data/sequencing_ID_map.csv"
+joined_data <- match_nextclade_ID(nextclade_file, naming_file)
+joined_data_export <- joined_data %>% select(Patient_ID, Nextclade_pango)  
+
+joined_data_export$ID <- lapply(str_split(str_trim(joined_data_export$Patient_ID, "both"), "-"), function(x) paste(x[1], x[2], x[3], sep = "-")) %>% unlist()
+colnames(joined_data_export)[2] <- "Lineage"
+joined_data_export <- joined_data_export %>% select(ID, Lineage)
+
+write.table(joined_data_export, file = "../Analysis_Data/lineages.csv", sep=",", row.names = F, col.names=FALSE)
+
 # Run python to classify varaints
 variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = T, system_used = system_used)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
@@ -1528,7 +1510,8 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 Res_Unblinded_all =
   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
                              'Hydroxychloroquine',
-                            'Nitazoxanide')) %>%
+                            'Nitazoxanide'),
+                 Rand_date < "2024-04-22") %>%
   arrange(Rand_date, ID, Time)
 
 
