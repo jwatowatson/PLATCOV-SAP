@@ -53,7 +53,7 @@ writeLines(sprintf('This patient %s is duplicated with different screening IDs!!
 
 #Manual correction
 ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
-clin_data <- clin_data[-ind,]
+if(length(ind > 0)){ clin_data <- clin_data[-ind,]}
 ##########  Extract screening failure data
 table(clin_data$scrpassed, useNA = 'ifany')
 ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
@@ -65,11 +65,12 @@ screen_failure =
 screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
 write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
 
-clin_data <- clin_data[!ind,]
+if(length(ind > 0)){ clin_data <- clin_data[!ind,]}
 
 ##########  Preparing data for checkings 
 ##### removing patients that not randomised
 ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
+ind[is.na(ind)] <- T
 writeLines(sprintf('This patient %s passed the screening but never randomised', 
                    clin_data$scrid[ind]))
 clin_data <- clin_data[!ind,]
