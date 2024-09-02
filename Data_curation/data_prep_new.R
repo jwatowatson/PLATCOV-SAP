@@ -454,12 +454,14 @@ input_fasta <- "../Analysis_Data/all_fasta.fasta" # path to input fasta files
 arguments <- paste0("nextclade run --input-dataset ", sars_cov_2_data, " --output-all ", output_folder, " ", input_fasta)
 arguments
 
+# This code runs the Nextclade variant/mutation calls, then save it as .tsv file
 if(system_used == "windows"){
   shell(arguments)
 } else {
   system(arguments) 
 }
 ##------------------------------------------------------------------------------------
+# This code reads tsv file, then save the variants called from Nextclade as "lineages.csv" file
 source("functions_query_mutations.R")
 
 nextclade_file <- "../Analysis_Data/Nextclade/output/nextclade.tsv"
@@ -473,7 +475,7 @@ joined_data_export <- joined_data_export %>% select(ID, Lineage)
 
 write.table(joined_data_export, file = "../Analysis_Data/lineages.csv", sep=",", row.names = F, col.names=FALSE)
 
-# Run python to classify varaints
+# Run python to classify varaints from the "lineages.csv" file
 variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = T, system_used = system_used)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 #To reduce the number of variant groups, as suggested by Liz.
