@@ -98,6 +98,8 @@ extract_FASTA <- function(){
       Sample_ID_map <- rbind(Sample_ID_map, temp)
     }
   }
+  
+  #Sample_ID_map$Patient_ID<- str_extract(Sample_ID_map$Patient_ID, '.+?\\d{3,4}')
   write.csv(Sample_ID_map, file = paste0(prefix_analysis_data, "/Analysis_Data/", "sequencing_ID_map.csv"), row.names = F)
   Sample_ID_map
 }

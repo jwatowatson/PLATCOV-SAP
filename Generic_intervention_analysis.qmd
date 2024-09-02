@@ -52,8 +52,8 @@ Set up analysis
 \<\<\<\<\<\<\< HEAD
 
 ```{r load_data}
-#intervention = 'interim_all';ref_arm = 'No study drug'
- intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+intervention = 'interim_all';ref_arm = 'No study drug'
+# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
