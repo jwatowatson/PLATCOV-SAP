@@ -178,6 +178,11 @@ writeLines(sprintf('Weights/heights of patient %s is outlier: Weight = %s kg; He
                    check_data$height[check_data$weight_height_outlier & !(check_data$weight_height_missing)]
                    ))
 
+# Manual correction 
+clin_data$Weight[clin_data$Label == "PLT-TH1-1341"] <- clin_data$height[clin_data$Label == "PLT-TH1-1341"]
+clin_data$height[clin_data$Label == "PLT-TH1-1341"] <- clin_data$weight[clin_data$Label == "PLT-TH1-1341"]
+clin_data$BMI[clin_data$Label == "PLT-TH1-1341"] <- clin_data$Weight[clin_data$Label == "PLT-TH1-1341"]/(clin_data$height[clin_data$Label == "PLT-TH1-1341"]/100)^2
+
 check_data <- check_data[,-which(names(check_data) %in% c("BMI", "weight", "height"))]
 
 ### Check if randomisation date and time is correct
@@ -378,6 +383,9 @@ write.table(x = symptom_data[, c('ID','Timepoint_ID','Any_symptom','heart_rate',
             file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
             row.names = F, sep=',', quote = F)
 
+write.table(x = merge(clin_data[,c("Label", "rangrp", "cov_sympday", "Sex", "Weight", "height", "age_yr")], symptom_data, by = "Label", all.y = T), 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim_details.csv"), 
+            row.names = F, sep=',', quote = F)
 #----------------------------------------------------------------------------------------
 ##########  --- Final status data --- ########## 
 final_status = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFinalStatus.dta"))
