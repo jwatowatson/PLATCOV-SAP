@@ -289,8 +289,8 @@ check_data <-  merge(check_data, FUtemp_checktime_wide, by.x = "ID",  by.y = "La
 check_data[,colnames(FUtemp_checktime_wide)[-1] ][is.na(check_data[,colnames(FUtemp_checktime_wide)[-1] ])] <- F
 
 # Extract fever at baseline
-fever_data = fever_data %>% distinct(Label, .keep_all = T)
-clin_data <- merge(clin_data, fever_data[, c('Label','Fever_Baseline')], by='Label', all = T)
+fever_data_baseline = fever_data %>% distinct(Label, .keep_all = T)
+clin_data <- merge(clin_data, fever_data_baseline[, c('Label','Fever_Baseline')], by='Label', all = T)
 
 # Check if baseline temperature data is available?
 check_data <-  merge(check_data, clin_data[, c('Label','Fever_Baseline')], by.x = "ID",  by.y = "Label", all.x = T)
@@ -422,7 +422,7 @@ check_data <- check_data[,-which(names(check_data) %in% c('fs_compyn', 'fs_rsn',
 clin_data$Symptom_onset = clin_data$cov_sympday
 clin_data$Trt = clin_data$rangrp
 clin_data$Sex = as.numeric(as.factor(clin_data$Sex))
-clin_data$Sex[clin_data$Sex == 2] <- 0
+clin_data$Sex <- clin_data$Sex-1
 clin_data$Age <- clin_data$age_yr
 
 clin_data <- clin_data[!is.na(clin_data$rangrp) &!(is.na(clin_data$randat) & is.na(clin_data$Rand_date_time)),]
@@ -1518,7 +1518,9 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 Res_Unblinded_all =
   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
                              'Hydroxychloroquine',
-                            'Nitazoxanide'),
+                            'Nitazoxanide',
+                            'Evusheld',
+                            'Regeneron'),
                  Rand_date < "2024-04-22") %>%
   arrange(Rand_date, ID, Time)
 
