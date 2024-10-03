@@ -1570,6 +1570,7 @@ Res_Unblinded_all =
                             'Nitazoxanide',
                             'Evusheld',
                             'Regeneron'),
+                 Country %in% c("Thailand"),
                  Rand_date < "2024-04-22") %>%
   arrange(Rand_date, ID, Time)
 
@@ -1577,4 +1578,14 @@ Res_Unblinded_all =
 write.table(x = Res_Unblinded_all,
             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
             row.names = F, sep=',', quote = F)
+
+#************************* Baseline viral loads *************************#
+# Res_baseline_vl <- Res %>%
+#   filter(Timepoint_ID == 0) %>%
+#   group_by(ID) %>%
+#   summarise(Baseline_VL = mean(log10_viral_load))
+# 
+# write.table(x = Res_baseline_vl,
+#             file = "../Analysis_Data/Baseline_VL_all.csv",
+#             row.names = F, sep=',', quote = F)
 
