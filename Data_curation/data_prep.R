@@ -1222,17 +1222,18 @@ write.table(x = Res_Unblinded_meta,
 
 
 #************************* Unblinded all *************************#
-# Res_Unblinded_all =
-#   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
-#                             'Nitazoxanide',
-#                            # 'Ensitrelvir',
-#                             'Hydroxychloroquine',
-#                             "Evusheld",
-#                             "Regeneron")) %>%
-#   arrange(Rand_date, ID, Time)
-# 
-# 
-# write.table(x = Res_Unblinded_all,
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
-#             row.names = F, sep=',', quote = F)
+Res_Unblinded_all =
+  Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
+                            'Nitazoxanide',
+                            'Hydroxychloroquine',
+                            "Evusheld",
+                            "Regeneron"),
+                 Country %in% c("Thailand", "Laos"),
+                 Rand_date < "2024-04-22") %>%
+  arrange(Rand_date, ID, Time)
+
+
+write.table(x = Res_Unblinded_all,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
+            row.names = F, sep=',', quote = F)
 
