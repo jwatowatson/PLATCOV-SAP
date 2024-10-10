@@ -1205,16 +1205,14 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 #************************* Unblinded arm meta-analysis *************************#
 Res_Unblinded_meta =
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-                            'Molnupiravir',
-                            "No study drug",
-                            'Ivermectin',
-                            'Remdesivir',
-                            'Favipiravir',
+  Res %>%filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
+                            'Hydroxychloroquine',
+                            'Nitazoxanide',
+                            'Evusheld',
                             'Regeneron'),
-                 Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-                 Rand_date <= "2023-10-20 00:00:00"
-                 ) %>%
+                 Rand_date < "2024-04-22",
+                 Country %in% c('Thailand')
+                ) %>%
   arrange(Rand_date, ID, Time)
 
 write.table(x = Res_Unblinded_meta,

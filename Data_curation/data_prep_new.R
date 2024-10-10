@@ -490,7 +490,7 @@ joined_data_export <- joined_data_export %>% select(ID, Lineage)
 write.table(joined_data_export, file = "../Analysis_Data/lineages.csv", sep=",", row.names = F, col.names=FALSE)
 
 # Run python to classify varaints from the "lineages.csv" file
-variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = , system_used = system_used)
+variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = T, system_used = system_used)
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 #To reduce the number of variant groups, as suggested by Liz.
 variant_data$Variant2 <- as.character(variant_data$Variant)
