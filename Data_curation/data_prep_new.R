@@ -55,7 +55,7 @@ writeLines(sprintf('This patient %s is duplicated with different screening IDs!!
 ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
 
 if(length(ind>0)){clin_data <- clin_data[-ind,]}
-##########  Extract screening failure data
+ ##########  Extract screening failure data
 table(clin_data$scrpassed, useNA = 'ifany')
 ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
 screen_failure =
@@ -68,7 +68,7 @@ write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
 
 if(length(ind > 0)){ clin_data <- clin_data[!ind,]}
 
-##########  Preparing data for checkings 
+##########  Preparing data for checking
 ### Check which screening status are missing
 ind <- is.na(clin_data$scrpassed) & clin_data$Label %in% check_data$ID
 writeLines(sprintf('This patient %s does not have the information about screening status', 
@@ -161,6 +161,7 @@ writeLines(sprintf('Patient %s has symptom onset greater than 4 days, which is %
                    ))
 
 check_data <- check_data[,-which(names(check_data) %in% c("cov_sympday"))]
+clin_data$cov_sympday[clin_data$cov_sympday > 4] <- 4
 
 ### Check if weight and height data are missing
 clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
@@ -204,10 +205,11 @@ writeLines(sprintf('Patient %s has no information on randomisation date and time
 
 # Check if the differences is more than 5 mins between both databases
 check_data$randtime_diff_exceed <- check_data$Rand_diffs > 5
-writeLines(sprintf('More than 5 min difference in rand time for %s, MACRO = %s and Randomisation = %s', 
+writeLines(sprintf('More than 5 min difference in rand time for %s, MACRO = %s and Randomisation = %s: (%s mins)', 
                    check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
                    check_data$Rand_date_time[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
-                   check_data$Rand_Time_TZ[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)]
+                   check_data$Rand_Time_TZ[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
+                   round(check_data$Rand_diffs[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],1)
 ))
 ID_exceed_5mins <- check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)]
 
@@ -773,7 +775,7 @@ table(Res$Swab_ID, useNA = 'ifany')
 
 Res$Timepoint_ID = Res$`TIME-POINT`
 #Manual correction
-Res$Timepoint_ID[Res$ID == "PLT-LA8-015"] <- "D0"
+#Res$Timepoint_ID[Res$ID == "PLT-LA8-015"] <- "D0"
 
 table(Res$Timepoint_ID, useNA = 'ifany')
 Res$Timepoint_ID[Res$Timepoint_ID=='D0H0']='0'
@@ -963,6 +965,28 @@ writeLines(sprintf('Negative time for following samples: %s',
                    unique(Res$ID[ind_neg_time])))
 # use protocol time
 Res$Time[ind_neg_time]=Res$Timepoint_ID[ind_neg_time]
+
+timepoint_id_not_matched
+writeLines(sprintf('Sampling time not matched with Timepoint ID. Patient %s at Timepoint %s having time %s',
+                   timepoint_id_not_matched$ID,
+                   timepoint_id_not_matched$Timepoint_ID,
+                   round(timepoint_id_not_matched$Time,1)
+           )
+           )
+
+# Manual corrections
+Res$Time[Res$ID == 'PLT-LA8-001' & Res$Time > 300] <- Res$Time[Res$ID == 'PLT-LA8-001' & Res$Time > 300] - 365
+Res$`TIME-POINT`[Res$ID == 'PLT-TH1-1116' & Res$Timepoint_ID == 4 & Res$Time < 3] <- "D3"
+Res$Timepoint_ID[Res$ID == 'PLT-TH1-1116' & Res$Timepoint_ID == 4 & Res$Time < 3] <- 3
+Res$Time[Res$ID == 'PLT-TH1-1331'] <- Res$Time[Res$ID == 'PLT-TH1-1331'] - 10
+Res$Time[Res$ID == 'PLT-TH1-1661'] <- Res$Time[Res$ID == 'PLT-TH1-1661'] - 30
+Res$Timepoint_ID[Res$BARCODE == '20HK232'] <- 4
+Res$`TIME-POINT`[Res$BARCODE == '20HK232'] <- "D4"
+Res$Timepoint_ID[Res$BARCODE == '20HK832'] <- 3
+Res$`TIME-POINT`[Res$BARCODE == '20HK832'] <- "D3"
+
+plot(Res$Timepoint_ID, Res$Time)
+
 
 Res = dplyr::arrange(Res, Rand_date_time, ID, Time)
 
@@ -1570,7 +1594,7 @@ Res_Unblinded_all =
                             'Nitazoxanide',
                             'Evusheld',
                             'Regeneron'),
-                 Country %in% c("Thailand"),
+                 Country %in% c("Thailand", "Laos"),
                  Rand_date < "2024-04-22") %>%
   arrange(Rand_date, ID, Time)
 
