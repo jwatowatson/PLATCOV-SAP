@@ -1,0 +1,29 @@
+Reading clinical database from MACRO...
+
+Clinical database: Checking duplicated patient IDs:
+
+- Patient PLT-TH1-1707 has multiple screening IDs: PLT-TH1-SCR11901, PLT-TH1-SCR11902 
+
+Clinical database: Checking missing screening failure information:
+
+16 patients has missing information on screening results:
+
+# A tibble: 16 × 4
+   scrid            Label        rangrp                                       scrpassed
+   <chr>            <chr>        <dbl+lbl>                                    <dbl+lbl>
+ 1 PLT-LA8-SCR10031 PLT-LA8-019  14 [Ensitrelvir]                             NA       
+ 2 PLT-LA8-SCR10032 PLT-LA8-020   9 [Nirmatrelvir/ritonavir]                  NA       
+ 3 PLT-LA8-SCR10033 PLT-LA8-021  15 [Molnupiravir and Nirmatrelvir/ritonavir] NA       
+ 4 PLT-LA8-SCR10034 PLT-LA8-022   5 [No study drug]                           NA       
+ 5 PLT-LA8-SCR10035 PLT-LA8-023   7 [Nitazoxanide]                            NA       
+ 6 PLT-LA8-SCR10036 PLT-LA8-024   9 [Nirmatrelvir/ritonavir]                  NA       
+ 7 PLT-LA8-SCR10037 PLT-LA8-025  14 [Ensitrelvir]                             NA       
+ 8 PLT-LA8-SCR10038 PLT-LA8-026   7 [Nitazoxanide]                            NA       
+ 9 PLT-LA8-SCR10039 PLT-LA8-027   5 [No study drug]                           NA       
+10 PLT-LA8-SCR10040 PLT-LA8-028  16 [Hydroxychloroquine]                      NA       
+11 PLT-LA8-SCR10041 PLT-LA8-029   5 [No study drug]                           NA       
+12 PLT-LA8-SCR10042 PLT-LA8-030   5 [No study drug]                           NA       
+13 PLT-LA8-SCR10043 PLT-LA8-031   9 [Nirmatrelvir/ritonavir]                  NA       
+14 PLT-LA8-SCR10044 PLT-LA8-032  16 [Hydroxychloroquine]                      NA       
+15 PLT-LA8-SCR10045 PLT-LA8-033   9 [Nirmatrelvir/ritonavir]                  NA       
+16 PLT-TH1-SCR11175 PLT-TH1-1018 14 [Ensitrelvir]                             NA       
