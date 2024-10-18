@@ -48,14 +48,17 @@ clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
 duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
 duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
 
-writeLines(sprintf('This patient %s is duplicated with different screening IDs!!!', 
-                   duplicated_clin_data))
+for(i in duplicated_clin_data){
+  writeLines(sprintf('This patient %s is duplicated with different screening IDs: %s', 
+                     i,
+                     paste(clin_data$scrid[clin_data$Label == i], collapse = " ")))
+}
 
 #Manual correction
 ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
 
 if(length(ind>0)){clin_data <- clin_data[-ind,]}
- ##########  Extract screening failure data
+##########  Extract screening failure data
 table(clin_data$scrpassed, useNA = 'ifany')
 ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
 screen_failure =
