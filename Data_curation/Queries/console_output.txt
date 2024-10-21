@@ -1,11 +1,13 @@
+##########################################################################
+##########################################################################
 Reading clinical database from MACRO...
-
-Clinical database: Checking duplicated patient IDs:
-
-- Patient PLT-TH1-1707 has multiple screening IDs: PLT-TH1-SCR11901, PLT-TH1-SCR11902 
-
-Clinical database: Checking missing screening failure information:
-
+Clinical dataset contains 2329 rows with 2329 unique Screening IDs and 2092 unique Patient IDs
+##########################################################################
+### Clinical database: Checking multiple screening IDs:
+1 patients have multiple screening ID
+- Patient PLT-TH1-1707 has multiple screening IDs: PLT-TH1-SCR11901, PLT-TH1-SCR11902
+##########################################################################
+### Clinical database: Checking missing screening failure information:
 16 patients has missing information on screening results:
 
 # A tibble: 16 × 4
@@ -27,3 +29,19 @@ Clinical database: Checking missing screening failure information:
 14 PLT-LA8-SCR10044 PLT-LA8-032  16 [Hydroxychloroquine]                      NA       
 15 PLT-LA8-SCR10045 PLT-LA8-033   9 [Nirmatrelvir/ritonavir]                  NA       
 16 PLT-TH1-SCR11175 PLT-TH1-1018 14 [Ensitrelvir]                             NA       
+##########################################################################
+### Clinical database: Checking randomisation information:
+3 patients marked as passed the screening but have not been randomised:
+
+# A tibble: 3 × 4
+  scrid            scrpassed Label rangrp   
+  <chr>            <dbl+lbl> <chr> <dbl+lbl>
+1 PLT-TH1-SCR11665 1 [Yes]   ""    NA       
+2 PLT-TH1-SCR11996 1 [Yes]   ""    NA       
+3 PLT-TH1-SCR11999 1 [Yes]   ""    NA       
+##########################################################################
+### Clinical database: Checking randomisation information:
+This patient 0 does not have the information on screening status and not randomised:
+
+# A tibble: 0 × 4
+# ℹ 4 variables: scrid <chr>, scrpassed <dbl+lbl>, Label <chr>, rangrp <dbl+lbl>

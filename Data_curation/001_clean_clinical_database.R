@@ -1,28 +1,38 @@
 ##*********************************************************
 ##******************* Clinical database *******************
 ##*********************************************************
-library(dplyr)
-library(tidyr)
-
-
 ######################################################################
 # 1. Loading clinical data
 load_clinical_data <- function(){
   # load the clinical data
-  writeLines('Reading clinical database from MACRO...\n')
+  writeLines('##########################################################################')
+  writeLines('##########################################################################')
+  
+  writeLines('Reading clinical database from MACRO...')
   clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
   clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
   
+  writeLines(sprintf('Clinical dataset contains %s rows with %s unique Screening IDs and %s unique Patient IDs',
+                     nrow(clin_data),
+                     length(unique(clin_data$scrid)),
+                     length(unique(clin_data$Label))
+  ))
+  writeLines('##########################################################################')
+  
   # check duplications
-  writeLines('Clinical database: Checking duplicated patient IDs:\n')
+  writeLines('### Clinical database: Checking multiple screening IDs:')
   duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
   duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
   duplicated_clin_data
+  writeLines(sprintf('%s patients have multiple screening ID',
+                     length(duplicated_clin_data)))
   for(i in duplicated_clin_data){
-    writeLines(sprintf('- Patient %s has multiple screening IDs: %s \n', 
+    writeLines(sprintf('- Patient %s has multiple screening IDs: %s', 
                        duplicated_clin_data,
                        paste(clin_data$scrid[clin_data$Label == i], collapse = ", ")
                        ))
+  writeLines('##########################################################################')
+    
   }
 
   # manual correction for duplications
@@ -31,19 +41,45 @@ load_clinical_data <- function(){
   
   return(clin_data)
 }
+# -----------------------------------------------------------------------------------------------
 
-# 2. Check screening failure (Clinical data)
+check_MACRO_clinical_database <- function(clin_data, rand_app_data){
+  writeLines('### Clinical database: Checking MACRO data entry progress for baseline information:')
+  on_macro_yn <- rand_app_data$ID %in% clin_data$Label
+  
+  writeLines(sprintf('Number of randomised patient: %s\nNumber of randomised patient baseline data on MACRO: %s', 
+                     nrow(rand_app_data),
+                     clin_data %>% filter(!is.na(Label)) %>% distinct(Label) %>% nrow()
+                     )
+             )
+  writeLines(sprintf('Baseline data entries for the following patients are pending: %s\n', 
+                     rand_app_data %>% filter(!on_macro_yn) %>% pull(ID) %>% paste(collapse = "\n")
+  )
+  )
+  
+  
+  
+}
+
+
+check_data$on_macro_yn <- (check_data$ID %in% clin_data$Label)
+writeLines(sprintf('Patient %s has no data on MACRO', 
+                   check_data$ID[!check_data$on_macro_yn]))
+
+
+# -----------------------------------------------------------------------------------------------
+# 2. Check screening failure (Clinical data) + Exporting the patients who failed the screening
 check_screen_failure <- function(clin_data){
   # check screening failure
-  writeLines('Clinical database: Checking missing screening failure information:\n')
+  writeLines('### Clinical database: Checking missing screening failure information:')
   
   missing_scr_failure <- clin_data %>% filter(is.na(scrpassed)) %>% select(scrid, Label, rangrp, scrpassed)
   
-  writeLines(sprintf('%s patients has missing information on screening results:\n',  # they are currently removed from further analyses
+  writeLines(sprintf('%s patients have missing information on screening results:\n',  # they are currently removed from further analyses
                      nrow(missing_scr_failure)
                      ))
   print(missing_scr_failure)
-  
+  writeLines('##########################################################################')
   
   # exporting screening failure data
   ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
@@ -56,19 +92,53 @@ check_screen_failure <- function(clin_data){
   
   return(clin_data)
 }
+# -----------------------------------------------------------------------------------------------
+# 3. Check randomisation information
+check_randomisation_info <- function(clin_data){
+  # Passed the screening but not randomised?
+  writeLines('### Clinical database: Checking randomisation information:')
+  ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
+  ind[is.na(ind)] <- T
+  writeLines(sprintf('%s patients marked as passed the screening but have not been randomised:\n', 
+                    sum(ind)))
+  clin_data[ind,] %>% select(scrid, scrpassed, Label, rangrp) %>% print()
+  clin_data <- clin_data[!ind,]
+  writeLines('##########################################################################')
+  
+  # Not randomised with missing screening status?
+  writeLines('### Clinical database: Checking randomisation information:')
+  ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
+  ind[is.na(ind)] <- T
+  writeLines(sprintf('This patient %s does not have the information on screening status and not randomised:\n', 
+                     sum(ind)))
+  clin_data[ind,] %>% select(scrid, scrpassed, Label, rangrp) %>% print()
+  clin_data <- clin_data[!ind,]
+  
+  return(clin_data)
+}
+# -----------------------------------------------------------------------------------------------
+# 3. Check sex data
+check_sex <- function(clin_data){
+  clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
+                                   from = c(1,2),
+                                   to = c('Male','Female'))
+  
+  
+  
+}
 
 
 
-sink("Queries/console_output.txt", split = T)
-clin_data <- load_clinical_data()
-clin_data <- check_screen_failure(clin_data)
-sink()
+######################################################################
 
 
 
 
 
-
+clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
+                                 from = c(1,2),
+                                 to = c('Male','Female'))
+### Check which patients has the data entered to the clinical database
 
 
 
@@ -77,31 +147,7 @@ sink()
 
 
 ######################################################################
-clin_data <- load_clinical_data()
 
-
-
-
-
-
-##########  Preparing data for checking
-### Check which screening status are missing
-ind <- is.na(clin_data$scrpassed) & clin_data$Label %in% check_data$ID
-writeLines(sprintf('This patient %s does not have the information about screening status', 
-                   clin_data$scrid[ind]))
-check_data$screen_status_missing <- (check_data$ID %in% clin_data$Label[ind])
-
-
-##### removing patients that not randomised
-ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
-ind[is.na(ind)] <- T
-writeLines(sprintf('This patient %s passed the screening but never randomised', 
-                   clin_data$scrid[ind]))
-
-ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
-writeLines(sprintf('This patient %s does not have the information on screening status and not randomised', 
-                   clin_data$scrid[ind]))
-clin_data <- clin_data[!ind,]
 
 clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
                                  from = c(1,2),
