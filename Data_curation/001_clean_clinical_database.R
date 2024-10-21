@@ -42,7 +42,6 @@ load_clinical_data <- function(){
   return(clin_data)
 }
 # -----------------------------------------------------------------------------------------------
-
 check_MACRO_clinical_database <- function(clin_data, rand_app_data){
   writeLines('### Clinical database: Checking MACRO data entry progress for baseline information:')
   on_macro_yn <- rand_app_data$ID %in% clin_data$Label
@@ -53,18 +52,12 @@ check_MACRO_clinical_database <- function(clin_data, rand_app_data){
                      )
              )
   writeLines(sprintf('Baseline data entries for the following patients are pending:'))
-  rand_app_data %>% filter(!on_macro_yn) %>% pull(ID) %>% print()
-  
+  IDs_pending <- rand_app_data %>% filter(!on_macro_yn) %>% pull(ID)
+  print(IDs_pending)
   writeLines('##########################################################################')
   
-  
+  return(IDs_pending)
 }
-
-
-check_data$on_macro_yn <- (check_data$ID %in% clin_data$Label)
-writeLines(sprintf('Patient %s has no data on MACRO', 
-                   check_data$ID[!check_data$on_macro_yn]))
-
 
 # -----------------------------------------------------------------------------------------------
 # 2. Check screening failure (Clinical data) + Exporting the patients who failed the screening
@@ -108,7 +101,7 @@ check_randomisation_info <- function(clin_data){
   writeLines('### Clinical database: Checking randomisation information:')
   ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
   ind[is.na(ind)] <- T
-  writeLines(sprintf('This patient %s does not have the information on screening status and not randomised:\n', 
+  writeLines(sprintf('Patient %s does not have the information on screening status and not randomised:\n', 
                      sum(ind)))
   clin_data[ind,] %>% select(scrid, scrpassed, Label, rangrp) %>% print()
   clin_data <- clin_data[!ind,]
@@ -117,11 +110,34 @@ check_randomisation_info <- function(clin_data){
 }
 # -----------------------------------------------------------------------------------------------
 # 3. Check sex data
-check_sex <- function(clin_data){
+check_sex <- function(clin_data, IDs_pending, rand_app_data){
   clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
                                    from = c(1,2),
                                    to = c('Male','Female'))
+  # Missing Sex data?
+  ind <- is.na(clin_data$Sex) & (clin_data$Label %in% IDs_pending)
+  writeLines('### Clinical database: Checking missing sex information:')
+  writeLines(sprintf('%s patients with data on MACRO have missing sex information:', 
+                     sum(ind)))
+  clin_data[ind,] %>% select(scrid, Label, rangrp, Sex) %>% print()
   
+  # Mismatched Sex data?
+  check_data <- merge(clin_data[,c("Label", "Sex")], rand_app_data, by.y = "ID",  by.x = "Label", all.x = T)
+  check_data <- check_data %>% filter(!check_data$Label %in% IDs_pending)
+  
+  
+  
+  
+  ### Check if sex information matched between randomisation database and clinical database
+  check_data <- merge(check_data, clin_data[,c("Label", "Sex")], by.x = "ID",  by.y = "Label", all.x = T)
+  check_data$sex_agree_yn <- check_data$sex == check_data$Sex
+  writeLines(sprintf('Patient %s has mismatched sex data: MACRO = %s and Randomisation = %s', 
+                     check_data$ID[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
+                     check_data$Sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
+                     check_data$sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)]))
+  writeLines(sprintf('Patient %s has missing sex data on MACRO', 
+                     check_data$ID[is.na(check_data$sex_agree_yn)]))
+  sex_problem_ID <- check_data$ID[check_data$on_macro_yn & (!check_data$sex_agree_yn | is.na(check_data$sex_agree_yn))]
   
   
 }

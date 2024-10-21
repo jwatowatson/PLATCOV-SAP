@@ -7,8 +7,18 @@ Clinical dataset contains 2329 rows with 2329 unique Screening IDs and 2092 uniq
 1 patients have multiple screening ID
 - Patient PLT-TH1-1707 has multiple screening IDs: PLT-TH1-SCR11901, PLT-TH1-SCR11902
 ##########################################################################
+### Clinical database: Checking MACRO data entry progress for baseline information:
+Number of randomised patient: 2125
+Number of randomised patient baseline data on MACRO: 2092
+Baseline data entries for the following patients are pending:
+ [1] "PLT-TH1-1706" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902" "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910"
+[14] "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923"
+[27] "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936"
+[40] "PLT-TH1-1937" "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036" 
+[53] "PLT-LA8-037" 
+##########################################################################
 ### Clinical database: Checking missing screening failure information:
-16 patients has missing information on screening results:
+16 patients have missing information on screening results:
 
 # A tibble: 16 × 4
    scrid            Label        rangrp                                       scrpassed
