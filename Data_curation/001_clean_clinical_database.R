@@ -52,11 +52,10 @@ check_MACRO_clinical_database <- function(clin_data, rand_app_data){
                      clin_data %>% filter(!is.na(Label)) %>% distinct(Label) %>% nrow()
                      )
              )
-  writeLines(sprintf('Baseline data entries for the following patients are pending: %s\n', 
-                     rand_app_data %>% filter(!on_macro_yn) %>% pull(ID) %>% paste(collapse = "\n")
-  )
-  )
+  writeLines(sprintf('Baseline data entries for the following patients are pending:'))
+  rand_app_data %>% filter(!on_macro_yn) %>% pull(ID) %>% print()
   
+  writeLines('##########################################################################')
   
   
 }
