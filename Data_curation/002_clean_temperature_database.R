@@ -149,6 +149,15 @@ check_time_temp <- function(fever_data){
   ))
   missing_temp_time %>% arrange(Label, Timepoint_ID)  %>%  print(n = Inf)
   
+  
+  G <- fever_data %>%
+    ggplot() +
+    geom_jitter(aes(x = Timepoint_ID, y = Timepoint_ID-Time), size = 3, alpha = 0.5, width = 0.05) +
+    geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
+    theme_bw(base_size = 13) +
+    scale_x_continuous(breaks = 0:14)
+  
+  return(G)
 }
 # -----------------------------------------------------------------------------------------------
 #4. Merging baseline fever

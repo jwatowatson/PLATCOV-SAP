@@ -16,7 +16,9 @@ source('functions.R')
 source("000_load_randomisation_database.R")
 source("001_clean_clinical_database.R")
 source("002_clean_temperature_database.R")
+source("003_clean_vital_database.R")
 
+options(max.print = 5000)
 #############################################################################################
 # 000 Randomization database
 rand_app_data <- load_randomisation_data()
@@ -43,10 +45,16 @@ fever_data <- prep_tempdata(temp_data, clin_data)
 check_time_temp(fever_data)
 clin_data <- add_baseline_fever(clin_data, fever_data)
 sink()
+#############################################################################################
+## 003 Vital sign database
+sink("Queries/03_queries_vital_sign_database.txt", split = T)
+
+vita_data <- load_vital_data(rand_app_data)
+vita_data <- prep_vitadata(vita_data, clin_data)
+check_vita_time(vita_data)
 
 
-
-
+sink()
 
 
 
