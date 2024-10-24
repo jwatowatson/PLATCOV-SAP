@@ -1,0 +1,394 @@
+##########################################################################
+##########################################################################
+Reading clinical database from MACRO...
+Clinical dataset contains 2329 rows with 2329 unique Screening IDs and 2092 unique Patient IDs
+##########################################################################
+### Clinical database: Checking multiple screening IDs:
+1 patients have multiple screening ID
+- Patient PLT-TH1-1707 has multiple screening IDs: PLT-TH1-SCR11901, PLT-TH1-SCR11902
+##########################################################################
+### Clinical database: Checking MACRO data entry progress for baseline information:
+Number of randomised patient: 2156
+Number of randomised patient baseline data on MACRO: 2092
+Baseline data entries for the following 65 patients are pending:
+ [1] "PLT-TH1-1706" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902" "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905"
+ [9] "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913"
+[17] "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921"
+[25] "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929"
+[33] "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937"
+[41] "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944" "PLT-TH1-1945"
+[49] "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951" "PLT-BR3-131"  "PLT-BR3-132" 
+[57] "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136"  "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037" 
+[65] "PLT-LA8-038" 
+##########################################################################
+### Clinical database: Checking missing screening failure information:
+16 patients have missing information on screening results:
+
+# A tibble: 16 × 4
+   scrid            Label        rangrp                                       scrpassed
+   <chr>            <chr>        <dbl+lbl>                                    <dbl+lbl>
+ 1 PLT-LA8-SCR10031 PLT-LA8-019  14 [Ensitrelvir]                             NA       
+ 2 PLT-LA8-SCR10032 PLT-LA8-020   9 [Nirmatrelvir/ritonavir]                  NA       
+ 3 PLT-LA8-SCR10033 PLT-LA8-021  15 [Molnupiravir and Nirmatrelvir/ritonavir] NA       
+ 4 PLT-LA8-SCR10034 PLT-LA8-022   5 [No study drug]                           NA       
+ 5 PLT-LA8-SCR10035 PLT-LA8-023   7 [Nitazoxanide]                            NA       
+ 6 PLT-LA8-SCR10036 PLT-LA8-024   9 [Nirmatrelvir/ritonavir]                  NA       
+ 7 PLT-LA8-SCR10037 PLT-LA8-025  14 [Ensitrelvir]                             NA       
+ 8 PLT-LA8-SCR10038 PLT-LA8-026   7 [Nitazoxanide]                            NA       
+ 9 PLT-LA8-SCR10039 PLT-LA8-027   5 [No study drug]                           NA       
+10 PLT-LA8-SCR10040 PLT-LA8-028  16 [Hydroxychloroquine]                      NA       
+11 PLT-LA8-SCR10041 PLT-LA8-029   5 [No study drug]                           NA       
+12 PLT-LA8-SCR10042 PLT-LA8-030   5 [No study drug]                           NA       
+13 PLT-LA8-SCR10043 PLT-LA8-031   9 [Nirmatrelvir/ritonavir]                  NA       
+14 PLT-LA8-SCR10044 PLT-LA8-032  16 [Hydroxychloroquine]                      NA       
+15 PLT-LA8-SCR10045 PLT-LA8-033   9 [Nirmatrelvir/ritonavir]                  NA       
+16 PLT-TH1-SCR11175 PLT-TH1-1018 14 [Ensitrelvir]                             NA       
+##########################################################################
+### Clinical database: Checking randomisation information:
+3 patients marked as passed the screening but have not been randomised:
+
+# A tibble: 3 × 4
+  scrid            scrpassed Label rangrp   
+  <chr>            <dbl+lbl> <chr> <dbl+lbl>
+1 PLT-TH1-SCR11665 1 [Yes]   ""    NA       
+2 PLT-TH1-SCR11996 1 [Yes]   ""    NA       
+3 PLT-TH1-SCR11999 1 [Yes]   ""    NA       
+##########################################################################
+### Clinical database: Checking randomisation information:
+Patient 0 does not have the information on screening status and not randomised:
+
+# A tibble: 0 × 4
+# ℹ 4 variables: scrid <chr>, scrpassed <dbl+lbl>, Label <chr>, rangrp <dbl+lbl>
+##########################################################################
+### Clinical database: Checking missing sex information:
+225 patients with data on MACRO have missing sex information:
+  [1] "PLT-TH1-1336" "PLT-TH1-1367" "PLT-TH1-1490" "PLT-TH1-1552" "PLT-TH1-1558" "PLT-TH1-1595" "PLT-TH1-1602" "PLT-TH1-1605"
+  [9] "PLT-TH1-1606" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1627" "PLT-TH1-1628" "PLT-TH1-1629"
+ [17] "PLT-TH1-1630" "PLT-TH1-1631" "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640" "PLT-TH1-1641" "PLT-TH1-1642"
+ [25] "PLT-TH1-1643" "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648" "PLT-TH1-1649" "PLT-TH1-1650"
+ [33] "PLT-TH1-1653" "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663" "PLT-TH1-1665" "PLT-TH1-1669" "PLT-TH1-1670" "PLT-TH1-1671"
+ [41] "PLT-TH1-1672" "PLT-TH1-1673" "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683" "PLT-TH1-1686" "PLT-TH1-1687"
+ [49] "PLT-TH1-1688" "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1698" "PLT-TH1-1699" "PLT-TH1-1700" "PLT-TH1-1701"
+ [57] "PLT-TH1-1702" "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705" "PLT-TH1-1708" "PLT-TH1-1709" "PLT-TH1-1720" "PLT-TH1-1721"
+ [65] "PLT-TH1-1722" "PLT-TH1-1723" "PLT-TH1-1724" "PLT-TH1-1725" "PLT-TH1-1726" "PLT-TH1-1731" "PLT-TH1-1732" "PLT-TH1-1733"
+ [73] "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738" "PLT-TH1-1740" "PLT-TH1-1741" "PLT-TH1-1743" "PLT-TH1-1745" "PLT-TH1-1746"
+ [81] "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749" "PLT-TH1-1750" "PLT-TH1-1751" "PLT-TH1-1752" "PLT-TH1-1753" "PLT-TH1-1754"
+ [89] "PLT-TH1-1755" "PLT-TH1-1756" "PLT-TH1-1757" "PLT-TH1-1758" "PLT-TH1-1759" "PLT-TH1-1760" "PLT-TH1-1761" "PLT-TH1-1762"
+ [97] "PLT-TH1-1763" "PLT-TH1-1765" "PLT-TH1-1766" "PLT-TH1-1767" "PLT-TH1-1768" "PLT-TH1-1770" "PLT-TH1-1771" "PLT-TH1-1774"
+[105] "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777" "PLT-TH1-1778" "PLT-TH1-1779" "PLT-TH1-1780" "PLT-TH1-1781" "PLT-TH1-1782"
+[113] "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785" "PLT-TH1-1786" "PLT-TH1-1787" "PLT-TH1-1788" "PLT-TH1-1789" "PLT-TH1-1790"
+[121] "PLT-TH1-1791" "PLT-TH1-1792" "PLT-TH1-1793" "PLT-TH1-1794" "PLT-TH1-1795" "PLT-TH1-1796" "PLT-TH1-1797" "PLT-TH1-1798"
+[129] "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801" "PLT-TH1-1802" "PLT-TH1-1803" "PLT-TH1-1804" "PLT-TH1-1805" "PLT-TH1-1806"
+[137] "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809" "PLT-TH1-1810" "PLT-TH1-1811" "PLT-TH1-1812" "PLT-TH1-1813" "PLT-TH1-1814"
+[145] "PLT-TH1-1815" "PLT-TH1-1816" "PLT-TH1-1817" "PLT-TH1-1818" "PLT-TH1-1819" "PLT-TH1-1821" "PLT-TH1-1822" "PLT-TH1-1823"
+[153] "PLT-TH1-1825" "PLT-TH1-1826" "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829" "PLT-TH1-1830" "PLT-TH1-1831" "PLT-TH1-1832"
+[161] "PLT-TH1-1833" "PLT-TH1-1834" "PLT-TH1-1835" "PLT-TH1-1836" "PLT-TH1-1837" "PLT-TH1-1838" "PLT-TH1-1839" "PLT-TH1-1840"
+[169] "PLT-TH1-1841" "PLT-TH1-1842" "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845" "PLT-TH1-1846" "PLT-TH1-1847" "PLT-TH1-1848"
+[177] "PLT-TH1-1849" "PLT-TH1-1850" "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854" "PLT-TH1-1855" "PLT-TH1-1856" "PLT-TH1-1857"
+[185] "PLT-TH1-1858" "PLT-TH1-1859" "PLT-TH1-1860" "PLT-TH1-1861" "PLT-TH1-1862" "PLT-TH1-1863" "PLT-TH1-1864" "PLT-TH1-1865"
+[193] "PLT-TH1-1866" "PLT-TH1-1867" "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870" "PLT-TH1-1871" "PLT-TH1-1872" "PLT-TH1-1873"
+[201] "PLT-TH1-1874" "PLT-TH1-1875" "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878" "PLT-TH1-1879" "PLT-TH1-1880" "PLT-TH1-1881"
+[209] "PLT-TH1-1882" "PLT-TH1-1883" "PLT-TH1-1884" "PLT-TH1-1885" "PLT-TH1-1886" "PLT-TH1-1887" "PLT-TH1-1888" "PLT-TH1-1889"
+[217] "PLT-TH1-1890" "PLT-TH1-1891" "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894" "PLT-TH1-1895" "PLT-TH1-1896" "PLT-TH1-1897"
+[225] "PLT-TH1-1898"
+attr(,"label")
+[1] "Subject Label"
+attr(,"format.stata")
+[1] "%12s"
+##########################################################################
+### Clinical database: Checking mismatched sex information from Randomisation database:
+11 patients have mismatched sex data:
+          Label                               Treatment  MACRO Randomisation_DB
+1   PLT-LA8-032                      Hydroxychloroquine Female             Male
+2  PLT-TH1-1302                             Ensitrelvir   Male           Female
+3  PLT-TH1-1369                      Hydroxychloroquine Female             Male
+4  PLT-TH1-1398                             Ensitrelvir Female             Male
+5  PLT-TH1-1405                           No study drug Female             Male
+6  PLT-TH1-1481                           No study drug Female             Male
+7  PLT-TH1-1487                             Ensitrelvir Female             Male
+8  PLT-TH1-1489                Nirmatrelvir + Ritonavir   Male           Female
+9  PLT-TH1-1529                           No study drug   Male           Female
+10 PLT-TH1-1560                Nirmatrelvir + Ritonavir Female             Male
+11 PLT-TH1-1667 Nirmatrelvir + Ritonavir + Molnupiravir Female             Male
+##########################################################################
+### [MANUAL CORRECTIONS]: Subsequent analyses use sex information from the randomisation database
+##########################################################################
+### Clinical database: Checking missing age information:
+##########################################################################
+228 patients have no information on age/date of birth on MACRO:
+  [1] "PLT-TH1-1367" "PLT-TH1-1490" "PLT-TH1-1536" "PLT-TH1-1551" "PLT-TH1-1552" "PLT-TH1-1553" "PLT-TH1-1558" "PLT-TH1-1595"
+  [9] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1606" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1627"
+ [17] "PLT-TH1-1628" "PLT-TH1-1629" "PLT-TH1-1630" "PLT-TH1-1631" "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640"
+ [25] "PLT-TH1-1641" "PLT-TH1-1642" "PLT-TH1-1643" "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648"
+ [33] "PLT-TH1-1649" "PLT-TH1-1650" "PLT-TH1-1653" "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663" "PLT-TH1-1665" "PLT-TH1-1669"
+ [41] "PLT-TH1-1670" "PLT-TH1-1671" "PLT-TH1-1672" "PLT-TH1-1673" "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683"
+ [49] "PLT-TH1-1686" "PLT-TH1-1687" "PLT-TH1-1688" "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1697" "PLT-TH1-1698"
+ [57] "PLT-TH1-1699" "PLT-TH1-1700" "PLT-TH1-1701" "PLT-TH1-1702" "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705" "PLT-TH1-1708"
+ [65] "PLT-TH1-1709" "PLT-TH1-1720" "PLT-TH1-1721" "PLT-TH1-1722" "PLT-TH1-1723" "PLT-TH1-1724" "PLT-TH1-1725" "PLT-TH1-1726"
+ [73] "PLT-TH1-1731" "PLT-TH1-1732" "PLT-TH1-1733" "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738" "PLT-TH1-1740" "PLT-TH1-1741"
+ [81] "PLT-TH1-1743" "PLT-TH1-1745" "PLT-TH1-1746" "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749" "PLT-TH1-1750" "PLT-TH1-1751"
+ [89] "PLT-TH1-1752" "PLT-TH1-1753" "PLT-TH1-1754" "PLT-TH1-1755" "PLT-TH1-1756" "PLT-TH1-1757" "PLT-TH1-1758" "PLT-TH1-1759"
+ [97] "PLT-TH1-1760" "PLT-TH1-1761" "PLT-TH1-1762" "PLT-TH1-1763" "PLT-TH1-1765" "PLT-TH1-1766" "PLT-TH1-1767" "PLT-TH1-1768"
+[105] "PLT-TH1-1770" "PLT-TH1-1771" "PLT-TH1-1774" "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777" "PLT-TH1-1778" "PLT-TH1-1779"
+[113] "PLT-TH1-1780" "PLT-TH1-1781" "PLT-TH1-1782" "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785" "PLT-TH1-1786" "PLT-TH1-1787"
+[121] "PLT-TH1-1788" "PLT-TH1-1789" "PLT-TH1-1790" "PLT-TH1-1791" "PLT-TH1-1792" "PLT-TH1-1793" "PLT-TH1-1794" "PLT-TH1-1795"
+[129] "PLT-TH1-1796" "PLT-TH1-1797" "PLT-TH1-1798" "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801" "PLT-TH1-1802" "PLT-TH1-1803"
+[137] "PLT-TH1-1804" "PLT-TH1-1805" "PLT-TH1-1806" "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809" "PLT-TH1-1810" "PLT-TH1-1811"
+[145] "PLT-TH1-1812" "PLT-TH1-1813" "PLT-TH1-1814" "PLT-TH1-1815" "PLT-TH1-1816" "PLT-TH1-1817" "PLT-TH1-1818" "PLT-TH1-1819"
+[153] "PLT-TH1-1821" "PLT-TH1-1822" "PLT-TH1-1823" "PLT-TH1-1825" "PLT-TH1-1826" "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829"
+[161] "PLT-TH1-1830" "PLT-TH1-1831" "PLT-TH1-1832" "PLT-TH1-1833" "PLT-TH1-1834" "PLT-TH1-1835" "PLT-TH1-1836" "PLT-TH1-1837"
+[169] "PLT-TH1-1838" "PLT-TH1-1839" "PLT-TH1-1840" "PLT-TH1-1841" "PLT-TH1-1842" "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845"
+[177] "PLT-TH1-1846" "PLT-TH1-1847" "PLT-TH1-1848" "PLT-TH1-1849" "PLT-TH1-1850" "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854"
+[185] "PLT-TH1-1855" "PLT-TH1-1856" "PLT-TH1-1857" "PLT-TH1-1858" "PLT-TH1-1859" "PLT-TH1-1860" "PLT-TH1-1861" "PLT-TH1-1862"
+[193] "PLT-TH1-1863" "PLT-TH1-1864" "PLT-TH1-1865" "PLT-TH1-1866" "PLT-TH1-1867" "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870"
+[201] "PLT-TH1-1871" "PLT-TH1-1872" "PLT-TH1-1873" "PLT-TH1-1874" "PLT-TH1-1875" "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878"
+[209] "PLT-TH1-1879" "PLT-TH1-1880" "PLT-TH1-1881" "PLT-TH1-1882" "PLT-TH1-1883" "PLT-TH1-1884" "PLT-TH1-1885" "PLT-TH1-1886"
+[217] "PLT-TH1-1887" "PLT-TH1-1888" "PLT-TH1-1889" "PLT-TH1-1890" "PLT-TH1-1891" "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894"
+[225] "PLT-TH1-1895" "PLT-TH1-1896" "PLT-TH1-1897" "PLT-TH1-1898"
+##########################################################################
+11 patients have mismatched information on age/date with the randomisation database:
+          Label                               Treatment     randat  dob_my MACRO Randomisation_DB
+1   PLT-LA8-013                            Nitazoxanide 2023-06-26 09/1992    30               31
+2   PLT-LA8-014                Nirmatrelvir + Ritonavir 2023-06-26 07/1993    29               30
+3   PLT-LA8-018                             Ensitrelvir 2023-07-19 12/1992    30               31
+4  PLT-TH1-1238 Nirmatrelvir + Ritonavir + Molnupiravir 2024-01-03            35               37
+5  PLT-TH1-1467                             Ensitrelvir 2024-04-06            37               31
+6  PLT-TH1-1489                Nirmatrelvir + Ritonavir 2024-04-14            47               38
+7  PLT-TH1-1529                           No study drug 2024-04-22            26               24
+8  PLT-TH1-1582                           No study drug 2024-05-01            38               28
+9  PLT-TH1-1594                      Hydroxychloroquine 2024-05-03            29               27
+10 PLT-TH1-1684                      Hydroxychloroquine 2024-05-27            22               24
+11 PLT-TH1-1744                           No study drug 2024-06-09            29               28
+##########################################################################
+### [MANUAL CORRECTIONS]: Subsequent analyses use age information from the randomisation database
+##########################################################################
+### Clinical database: Checking distributions of age:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+  18.00   25.00   30.00   31.99   38.00   59.00     228 
+##########################################################################
+### Clinical database: Checking missing symptom onset information:
+239 patients have no information on symptom onset (in hours or days) on MACRO:
+  [1] "PLT-TH1-1336" "PLT-TH1-1373" "PLT-TH1-1403" "PLT-TH1-1407" "PLT-TH1-1408" "PLT-TH1-1417" "PLT-TH1-1490" "PLT-TH1-1532"
+  [9] "PLT-TH1-1540" "PLT-TH1-1551" "PLT-TH1-1552" "PLT-TH1-1553" "PLT-TH1-1556" "PLT-TH1-1601" "PLT-TH1-1602" "PLT-TH1-1605"
+ [17] "PLT-TH1-1606" "PLT-TH1-1607" "PLT-TH1-1610" "PLT-TH1-1612" "PLT-TH1-1615" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1627"
+ [25] "PLT-TH1-1628" "PLT-TH1-1629" "PLT-TH1-1630" "PLT-TH1-1631" "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640"
+ [33] "PLT-TH1-1641" "PLT-TH1-1642" "PLT-TH1-1643" "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648"
+ [41] "PLT-TH1-1649" "PLT-TH1-1650" "PLT-TH1-1653" "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663" "PLT-TH1-1665" "PLT-TH1-1669"
+ [49] "PLT-TH1-1670" "PLT-TH1-1671" "PLT-TH1-1672" "PLT-TH1-1673" "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683"
+ [57] "PLT-TH1-1686" "PLT-TH1-1687" "PLT-TH1-1688" "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1696" "PLT-TH1-1697"
+ [65] "PLT-TH1-1698" "PLT-TH1-1699" "PLT-TH1-1700" "PLT-TH1-1701" "PLT-TH1-1702" "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705"
+ [73] "PLT-TH1-1708" "PLT-TH1-1709" "PLT-TH1-1720" "PLT-TH1-1721" "PLT-TH1-1722" "PLT-TH1-1723" "PLT-TH1-1724" "PLT-TH1-1725"
+ [81] "PLT-TH1-1726" "PLT-TH1-1730" "PLT-TH1-1731" "PLT-TH1-1732" "PLT-TH1-1733" "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738"
+ [89] "PLT-TH1-1740" "PLT-TH1-1741" "PLT-TH1-1743" "PLT-TH1-1745" "PLT-TH1-1746" "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749"
+ [97] "PLT-TH1-1750" "PLT-TH1-1751" "PLT-TH1-1752" "PLT-TH1-1753" "PLT-TH1-1754" "PLT-TH1-1755" "PLT-TH1-1756" "PLT-TH1-1757"
+[105] "PLT-TH1-1758" "PLT-TH1-1759" "PLT-TH1-1760" "PLT-TH1-1761" "PLT-TH1-1762" "PLT-TH1-1763" "PLT-TH1-1765" "PLT-TH1-1766"
+[113] "PLT-TH1-1767" "PLT-TH1-1768" "PLT-TH1-1770" "PLT-TH1-1771" "PLT-TH1-1774" "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777"
+[121] "PLT-TH1-1778" "PLT-TH1-1779" "PLT-TH1-1780" "PLT-TH1-1781" "PLT-TH1-1782" "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785"
+[129] "PLT-TH1-1786" "PLT-TH1-1787" "PLT-TH1-1788" "PLT-TH1-1789" "PLT-TH1-1790" "PLT-TH1-1791" "PLT-TH1-1792" "PLT-TH1-1793"
+[137] "PLT-TH1-1794" "PLT-TH1-1795" "PLT-TH1-1796" "PLT-TH1-1797" "PLT-TH1-1798" "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801"
+[145] "PLT-TH1-1802" "PLT-TH1-1803" "PLT-TH1-1804" "PLT-TH1-1805" "PLT-TH1-1806" "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809"
+[153] "PLT-TH1-1810" "PLT-TH1-1811" "PLT-TH1-1812" "PLT-TH1-1813" "PLT-TH1-1814" "PLT-TH1-1815" "PLT-TH1-1816" "PLT-TH1-1817"
+[161] "PLT-TH1-1818" "PLT-TH1-1819" "PLT-TH1-1820" "PLT-TH1-1821" "PLT-TH1-1822" "PLT-TH1-1823" "PLT-TH1-1825" "PLT-TH1-1826"
+[169] "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829" "PLT-TH1-1830" "PLT-TH1-1831" "PLT-TH1-1832" "PLT-TH1-1833" "PLT-TH1-1834"
+[177] "PLT-TH1-1835" "PLT-TH1-1836" "PLT-TH1-1837" "PLT-TH1-1838" "PLT-TH1-1839" "PLT-TH1-1840" "PLT-TH1-1841" "PLT-TH1-1842"
+[185] "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845" "PLT-TH1-1846" "PLT-TH1-1847" "PLT-TH1-1848" "PLT-TH1-1849" "PLT-TH1-1850"
+[193] "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854" "PLT-TH1-1855" "PLT-TH1-1856" "PLT-TH1-1857" "PLT-TH1-1858" "PLT-TH1-1859"
+[201] "PLT-TH1-1860" "PLT-TH1-1861" "PLT-TH1-1862" "PLT-TH1-1863" "PLT-TH1-1864" "PLT-TH1-1865" "PLT-TH1-1866" "PLT-TH1-1867"
+[209] "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870" "PLT-TH1-1871" "PLT-TH1-1872" "PLT-TH1-1873" "PLT-TH1-1874" "PLT-TH1-1875"
+[217] "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878" "PLT-TH1-1879" "PLT-TH1-1880" "PLT-TH1-1881" "PLT-TH1-1882" "PLT-TH1-1883"
+[225] "PLT-TH1-1884" "PLT-TH1-1885" "PLT-TH1-1886" "PLT-TH1-1887" "PLT-TH1-1888" "PLT-TH1-1889" "PLT-TH1-1890" "PLT-TH1-1891"
+[233] "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894" "PLT-TH1-1895" "PLT-TH1-1896" "PLT-TH1-1897" "PLT-TH1-1898"
+##########################################################################
+2 patients have symptom onset on MACRO greater than 4 days:
+           Label     Treatment           Rand_Time cov_sympday
+353 PLT-TH1-1072 No study drug 2023-10-30 06:04:20           9
+682 PLT-TH1-1371   Ensitrelvir 2024-02-29 04:53:24           5
+##########################################################################
+### [MANUAL CORRECTIONS]: Symptom onset of 2 days are assigned for missing data
+### [MANUAL CORRECTIONS]: Symptom onset of 4 days are assigned for onset > 4 days
+##########################################################################
+### Clinical database: Checking distributions of symptom onset:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.04167 1.00000 2.00000 1.97489 2.00000 4.00000 
+##########################################################################
+### Clinical database: Checking missing symptom onset information:
+0 patients have no information on symptom onset (in hours or days) on MACRO:
+character(0)
+##########################################################################
+0 patients have symptom onset on MACRO greater than 4 days:
+[1] Label       Treatment   Rand_Time   cov_sympday
+<0 rows> (or 0-length row.names)
+##########################################################################
+### [MANUAL CORRECTIONS]: Symptom onset of 2 days are assigned for missing data
+### [MANUAL CORRECTIONS]: Symptom onset of 4 days are assigned for onset > 4 days
+##########################################################################
+### Clinical database: Checking distributions of symptom onset:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.04167 1.00000 2.00000 1.97489 2.00000 4.00000 
+##########################################################################
+### Clinical database: Checking missing data for weight/height:
+235 patients have no information on weights or heights on MACRO:
+  [1] "PLT-TH1-1277" "PLT-TH1-1294" "PLT-TH1-1336" "PLT-TH1-1367" "PLT-TH1-1369" "PLT-TH1-1490" "PLT-TH1-1536" "PLT-TH1-1549"
+  [9] "PLT-TH1-1551" "PLT-TH1-1552" "PLT-TH1-1553" "PLT-TH1-1558" "PLT-TH1-1595" "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1606"
+ [17] "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1615" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1627" "PLT-TH1-1628" "PLT-TH1-1629"
+ [25] "PLT-TH1-1630" "PLT-TH1-1631" "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640" "PLT-TH1-1641" "PLT-TH1-1642"
+ [33] "PLT-TH1-1643" "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648" "PLT-TH1-1649" "PLT-TH1-1650"
+ [41] "PLT-TH1-1653" "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663" "PLT-TH1-1665" "PLT-TH1-1669" "PLT-TH1-1670" "PLT-TH1-1671"
+ [49] "PLT-TH1-1672" "PLT-TH1-1673" "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683" "PLT-TH1-1686" "PLT-TH1-1687"
+ [57] "PLT-TH1-1688" "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1696" "PLT-TH1-1697" "PLT-TH1-1698" "PLT-TH1-1699"
+ [65] "PLT-TH1-1700" "PLT-TH1-1701" "PLT-TH1-1702" "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705" "PLT-TH1-1708" "PLT-TH1-1709"
+ [73] "PLT-TH1-1720" "PLT-TH1-1721" "PLT-TH1-1722" "PLT-TH1-1723" "PLT-TH1-1724" "PLT-TH1-1725" "PLT-TH1-1726" "PLT-TH1-1731"
+ [81] "PLT-TH1-1732" "PLT-TH1-1733" "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738" "PLT-TH1-1740" "PLT-TH1-1741" "PLT-TH1-1743"
+ [89] "PLT-TH1-1745" "PLT-TH1-1746" "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749" "PLT-TH1-1750" "PLT-TH1-1751" "PLT-TH1-1752"
+ [97] "PLT-TH1-1753" "PLT-TH1-1754" "PLT-TH1-1755" "PLT-TH1-1756" "PLT-TH1-1757" "PLT-TH1-1758" "PLT-TH1-1759" "PLT-TH1-1760"
+[105] "PLT-TH1-1761" "PLT-TH1-1762" "PLT-TH1-1763" "PLT-TH1-1765" "PLT-TH1-1766" "PLT-TH1-1767" "PLT-TH1-1768" "PLT-TH1-1770"
+[113] "PLT-TH1-1771" "PLT-TH1-1774" "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777" "PLT-TH1-1778" "PLT-TH1-1779" "PLT-TH1-1780"
+[121] "PLT-TH1-1781" "PLT-TH1-1782" "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785" "PLT-TH1-1786" "PLT-TH1-1787" "PLT-TH1-1788"
+[129] "PLT-TH1-1789" "PLT-TH1-1790" "PLT-TH1-1791" "PLT-TH1-1792" "PLT-TH1-1793" "PLT-TH1-1794" "PLT-TH1-1795" "PLT-TH1-1796"
+[137] "PLT-TH1-1797" "PLT-TH1-1798" "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801" "PLT-TH1-1802" "PLT-TH1-1803" "PLT-TH1-1804"
+[145] "PLT-TH1-1805" "PLT-TH1-1806" "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809" "PLT-TH1-1810" "PLT-TH1-1811" "PLT-TH1-1812"
+[153] "PLT-TH1-1813" "PLT-TH1-1814" "PLT-TH1-1815" "PLT-TH1-1816" "PLT-TH1-1817" "PLT-TH1-1818" "PLT-TH1-1819" "PLT-TH1-1821"
+[161] "PLT-TH1-1822" "PLT-TH1-1823" "PLT-TH1-1825" "PLT-TH1-1826" "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829" "PLT-TH1-1830"
+[169] "PLT-TH1-1831" "PLT-TH1-1832" "PLT-TH1-1833" "PLT-TH1-1834" "PLT-TH1-1835" "PLT-TH1-1836" "PLT-TH1-1837" "PLT-TH1-1838"
+[177] "PLT-TH1-1839" "PLT-TH1-1840" "PLT-TH1-1841" "PLT-TH1-1842" "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845" "PLT-TH1-1846"
+[185] "PLT-TH1-1847" "PLT-TH1-1848" "PLT-TH1-1849" "PLT-TH1-1850" "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854" "PLT-TH1-1855"
+[193] "PLT-TH1-1856" "PLT-TH1-1857" "PLT-TH1-1858" "PLT-TH1-1859" "PLT-TH1-1860" "PLT-TH1-1861" "PLT-TH1-1862" "PLT-TH1-1863"
+[201] "PLT-TH1-1864" "PLT-TH1-1865" "PLT-TH1-1866" "PLT-TH1-1867" "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870" "PLT-TH1-1871"
+[209] "PLT-TH1-1872" "PLT-TH1-1873" "PLT-TH1-1874" "PLT-TH1-1875" "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878" "PLT-TH1-1879"
+[217] "PLT-TH1-1880" "PLT-TH1-1881" "PLT-TH1-1882" "PLT-TH1-1883" "PLT-TH1-1884" "PLT-TH1-1885" "PLT-TH1-1886" "PLT-TH1-1887"
+[225] "PLT-TH1-1888" "PLT-TH1-1889" "PLT-TH1-1890" "PLT-TH1-1891" "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894" "PLT-TH1-1895"
+[233] "PLT-TH1-1896" "PLT-TH1-1897" "PLT-TH1-1898"
+##########################################################################
+### Clinical database: Checking outliers for weight/height:
+Weights/heights of 1 patients are outliers:
+# A tibble: 1 × 5
+  Label        Sex    weight height   BMI
+  <chr>        <chr>   <dbl>  <dbl> <dbl>
+1 PLT-TH1-1341 Female    153     47  693.
+##########################################################################
+### [MANUAL CORRECTIONS]: Outliers are likely from switching weights and heights
+##########################################################################
+### Clinical database: Checking distributions of BMI after manual corrections:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+  13.11   20.22   22.82   23.31   25.88   45.56     235 
+##########################################################################
+### Clinical database: Checking randomisation date and time:
+### Clinical database: Checking if randomisation date and time are missing:
+286 patients have no information on randomisation date and time on MACRO:
+  [1] "PLT-BR3-101"  "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136"  "PLT-LA8-006" 
+  [9] "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038"  "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1606"
+ [17] "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1627" "PLT-TH1-1628" "PLT-TH1-1629" "PLT-TH1-1630"
+ [25] "PLT-TH1-1631" "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640" "PLT-TH1-1641" "PLT-TH1-1642" "PLT-TH1-1643"
+ [33] "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648" "PLT-TH1-1649" "PLT-TH1-1650" "PLT-TH1-1653"
+ [41] "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663" "PLT-TH1-1665" "PLT-TH1-1669" "PLT-TH1-1670" "PLT-TH1-1671" "PLT-TH1-1672"
+ [49] "PLT-TH1-1673" "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683" "PLT-TH1-1686" "PLT-TH1-1687" "PLT-TH1-1688"
+ [57] "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1698" "PLT-TH1-1699" "PLT-TH1-1700" "PLT-TH1-1701" "PLT-TH1-1702"
+ [65] "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705" "PLT-TH1-1706" "PLT-TH1-1708" "PLT-TH1-1709" "PLT-TH1-1720" "PLT-TH1-1721"
+ [73] "PLT-TH1-1722" "PLT-TH1-1723" "PLT-TH1-1724" "PLT-TH1-1725" "PLT-TH1-1726" "PLT-TH1-1731" "PLT-TH1-1732" "PLT-TH1-1733"
+ [81] "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738" "PLT-TH1-1740" "PLT-TH1-1741" "PLT-TH1-1743" "PLT-TH1-1745" "PLT-TH1-1746"
+ [89] "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749" "PLT-TH1-1750" "PLT-TH1-1751" "PLT-TH1-1752" "PLT-TH1-1753" "PLT-TH1-1754"
+ [97] "PLT-TH1-1755" "PLT-TH1-1756" "PLT-TH1-1757" "PLT-TH1-1758" "PLT-TH1-1759" "PLT-TH1-1760" "PLT-TH1-1761" "PLT-TH1-1762"
+[105] "PLT-TH1-1763" "PLT-TH1-1765" "PLT-TH1-1766" "PLT-TH1-1767" "PLT-TH1-1768" "PLT-TH1-1770" "PLT-TH1-1771" "PLT-TH1-1774"
+[113] "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777" "PLT-TH1-1778" "PLT-TH1-1779" "PLT-TH1-1780" "PLT-TH1-1781" "PLT-TH1-1782"
+[121] "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785" "PLT-TH1-1786" "PLT-TH1-1787" "PLT-TH1-1788" "PLT-TH1-1789" "PLT-TH1-1790"
+[129] "PLT-TH1-1791" "PLT-TH1-1792" "PLT-TH1-1793" "PLT-TH1-1794" "PLT-TH1-1795" "PLT-TH1-1796" "PLT-TH1-1797" "PLT-TH1-1798"
+[137] "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801" "PLT-TH1-1802" "PLT-TH1-1803" "PLT-TH1-1804" "PLT-TH1-1805" "PLT-TH1-1806"
+[145] "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809" "PLT-TH1-1810" "PLT-TH1-1811" "PLT-TH1-1812" "PLT-TH1-1813" "PLT-TH1-1814"
+[153] "PLT-TH1-1815" "PLT-TH1-1816" "PLT-TH1-1817" "PLT-TH1-1818" "PLT-TH1-1819" "PLT-TH1-1821" "PLT-TH1-1822" "PLT-TH1-1823"
+[161] "PLT-TH1-1825" "PLT-TH1-1826" "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829" "PLT-TH1-1830" "PLT-TH1-1831" "PLT-TH1-1832"
+[169] "PLT-TH1-1833" "PLT-TH1-1834" "PLT-TH1-1835" "PLT-TH1-1836" "PLT-TH1-1837" "PLT-TH1-1838" "PLT-TH1-1839" "PLT-TH1-1840"
+[177] "PLT-TH1-1841" "PLT-TH1-1842" "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845" "PLT-TH1-1846" "PLT-TH1-1847" "PLT-TH1-1848"
+[185] "PLT-TH1-1849" "PLT-TH1-1850" "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854" "PLT-TH1-1855" "PLT-TH1-1856" "PLT-TH1-1857"
+[193] "PLT-TH1-1858" "PLT-TH1-1859" "PLT-TH1-1860" "PLT-TH1-1861" "PLT-TH1-1862" "PLT-TH1-1863" "PLT-TH1-1864" "PLT-TH1-1865"
+[201] "PLT-TH1-1866" "PLT-TH1-1867" "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870" "PLT-TH1-1871" "PLT-TH1-1872" "PLT-TH1-1873"
+[209] "PLT-TH1-1874" "PLT-TH1-1875" "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878" "PLT-TH1-1879" "PLT-TH1-1880" "PLT-TH1-1881"
+[217] "PLT-TH1-1882" "PLT-TH1-1883" "PLT-TH1-1884" "PLT-TH1-1885" "PLT-TH1-1886" "PLT-TH1-1887" "PLT-TH1-1888" "PLT-TH1-1889"
+[225] "PLT-TH1-1890" "PLT-TH1-1891" "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894" "PLT-TH1-1895" "PLT-TH1-1896" "PLT-TH1-1897"
+[233] "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902" "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905"
+[241] "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913"
+[249] "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921"
+[257] "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929"
+[265] "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937"
+[273] "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944" "PLT-TH1-1945"
+[281] "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951"
+##########################################################################
+### Clinical database: Checking if more than 5 min difference in randomisation date/time between MACRO and Randomisation database
+10 patients have more than 5 minutes difference in randomisation date/time:
+               ID                               Treatment               MACRO    Randomisation_DB  Rand_diffs
+692  PLT-TH1-1369                      Hydroxychloroquine 2024-03-13 14:44:00 2024-02-28 15:57:14 20086.76667
+761  PLT-TH1-1431                      Hydroxychloroquine 2024-03-26 13:10:00 2024-03-26 13:01:27     8.55000
+846  PLT-TH1-1509 Nirmatrelvir + Ritonavir + Molnupiravir 2024-04-18 14:36:00 2024-04-18 13:28:00    68.00000
+851  PLT-TH1-1513                      Hydroxychloroquine 2024-04-19 15:15:00 2024-04-19 14:04:26    70.56667
+914  PLT-TH1-1570                Nirmatrelvir + Ritonavir 2024-04-29 14:43:00 2024-04-29 12:44:18   118.70000
+936  PLT-TH1-1590                      Hydroxychloroquine 2024-05-02 13:36:00 2024-05-02 12:59:40    36.33333
+938  PLT-TH1-1592 Nirmatrelvir + Ritonavir + Molnupiravir 2024-05-02 14:15:00 2024-05-02 13:45:06    29.90000
+958  PLT-TH1-1610                           No study drug 2024-05-08 16:56:00 2024-05-08 12:56:30   239.50000
+985  PLT-TH1-1635 Nirmatrelvir + Ritonavir + Molnupiravir 2024-05-13 14:44:00 2024-05-13 14:05:44    38.26667
+1071 PLT-TH1-1713                Nirmatrelvir + Ritonavir 2024-06-01 17:28:00 2024-06-01 14:28:00   180.00000
+##########################################################################
+### [MANUAL CORRECTIONS]: Using randomisation date and time from randomisation database in further analyses
+##########################################################################
+### Clinical database: Checking if randomisation arms are missing:
+286 patients have no information on treatment arms on MACRO:
+  [1] "PLT-BR3-101"  "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136"  "PLT-LA8-006" 
+  [9] "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038"  "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1606"
+ [17] "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1627" "PLT-TH1-1628" "PLT-TH1-1629" "PLT-TH1-1630"
+ [25] "PLT-TH1-1631" "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640" "PLT-TH1-1641" "PLT-TH1-1642" "PLT-TH1-1643"
+ [33] "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648" "PLT-TH1-1649" "PLT-TH1-1650" "PLT-TH1-1653"
+ [41] "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663" "PLT-TH1-1665" "PLT-TH1-1669" "PLT-TH1-1670" "PLT-TH1-1671" "PLT-TH1-1672"
+ [49] "PLT-TH1-1673" "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683" "PLT-TH1-1686" "PLT-TH1-1687" "PLT-TH1-1688"
+ [57] "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1698" "PLT-TH1-1699" "PLT-TH1-1700" "PLT-TH1-1701" "PLT-TH1-1702"
+ [65] "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705" "PLT-TH1-1706" "PLT-TH1-1708" "PLT-TH1-1709" "PLT-TH1-1720" "PLT-TH1-1721"
+ [73] "PLT-TH1-1722" "PLT-TH1-1723" "PLT-TH1-1724" "PLT-TH1-1725" "PLT-TH1-1726" "PLT-TH1-1731" "PLT-TH1-1732" "PLT-TH1-1733"
+ [81] "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738" "PLT-TH1-1740" "PLT-TH1-1741" "PLT-TH1-1743" "PLT-TH1-1745" "PLT-TH1-1746"
+ [89] "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749" "PLT-TH1-1750" "PLT-TH1-1751" "PLT-TH1-1752" "PLT-TH1-1753" "PLT-TH1-1754"
+ [97] "PLT-TH1-1755" "PLT-TH1-1756" "PLT-TH1-1757" "PLT-TH1-1758" "PLT-TH1-1759" "PLT-TH1-1760" "PLT-TH1-1761" "PLT-TH1-1762"
+[105] "PLT-TH1-1763" "PLT-TH1-1765" "PLT-TH1-1766" "PLT-TH1-1767" "PLT-TH1-1768" "PLT-TH1-1770" "PLT-TH1-1771" "PLT-TH1-1774"
+[113] "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777" "PLT-TH1-1778" "PLT-TH1-1779" "PLT-TH1-1780" "PLT-TH1-1781" "PLT-TH1-1782"
+[121] "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785" "PLT-TH1-1786" "PLT-TH1-1787" "PLT-TH1-1788" "PLT-TH1-1789" "PLT-TH1-1790"
+[129] "PLT-TH1-1791" "PLT-TH1-1792" "PLT-TH1-1793" "PLT-TH1-1794" "PLT-TH1-1795" "PLT-TH1-1796" "PLT-TH1-1797" "PLT-TH1-1798"
+[137] "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801" "PLT-TH1-1802" "PLT-TH1-1803" "PLT-TH1-1804" "PLT-TH1-1805" "PLT-TH1-1806"
+[145] "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809" "PLT-TH1-1810" "PLT-TH1-1811" "PLT-TH1-1812" "PLT-TH1-1813" "PLT-TH1-1814"
+[153] "PLT-TH1-1815" "PLT-TH1-1816" "PLT-TH1-1817" "PLT-TH1-1818" "PLT-TH1-1819" "PLT-TH1-1821" "PLT-TH1-1822" "PLT-TH1-1823"
+[161] "PLT-TH1-1825" "PLT-TH1-1826" "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829" "PLT-TH1-1830" "PLT-TH1-1831" "PLT-TH1-1832"
+[169] "PLT-TH1-1833" "PLT-TH1-1834" "PLT-TH1-1835" "PLT-TH1-1836" "PLT-TH1-1837" "PLT-TH1-1838" "PLT-TH1-1839" "PLT-TH1-1840"
+[177] "PLT-TH1-1841" "PLT-TH1-1842" "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845" "PLT-TH1-1846" "PLT-TH1-1847" "PLT-TH1-1848"
+[185] "PLT-TH1-1849" "PLT-TH1-1850" "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854" "PLT-TH1-1855" "PLT-TH1-1856" "PLT-TH1-1857"
+[193] "PLT-TH1-1858" "PLT-TH1-1859" "PLT-TH1-1860" "PLT-TH1-1861" "PLT-TH1-1862" "PLT-TH1-1863" "PLT-TH1-1864" "PLT-TH1-1865"
+[201] "PLT-TH1-1866" "PLT-TH1-1867" "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870" "PLT-TH1-1871" "PLT-TH1-1872" "PLT-TH1-1873"
+[209] "PLT-TH1-1874" "PLT-TH1-1875" "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878" "PLT-TH1-1879" "PLT-TH1-1880" "PLT-TH1-1881"
+[217] "PLT-TH1-1882" "PLT-TH1-1883" "PLT-TH1-1884" "PLT-TH1-1885" "PLT-TH1-1886" "PLT-TH1-1887" "PLT-TH1-1888" "PLT-TH1-1889"
+[225] "PLT-TH1-1890" "PLT-TH1-1891" "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894" "PLT-TH1-1895" "PLT-TH1-1896" "PLT-TH1-1897"
+[233] "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902" "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905"
+[241] "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913"
+[249] "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921"
+[257] "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929"
+[265] "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937"
+[273] "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944" "PLT-TH1-1945"
+[281] "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951"
+##########################################################################
+### Clinical database: Checking if randomisation arms matched with the randomisation database:
+2 patients have mismatched treatment arms:
+              ID    sex                    MACRO                        randomisation_DB
+873 PLT-TH1-1533   Male Nirmatrelvir + Ritonavir Nirmatrelvir + Ritonavir + Molnupiravir
+920 PLT-TH1-1576 Female Nirmatrelvir + Ritonavir Nirmatrelvir + Ritonavir + Molnupiravir
+##########################################################################
+### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses
+##########################################################################
+### Clinical database: Checking frequencies of randomisation arms after manual corrections:
+                                      Var1 Freq
+1                              Ensitrelvir  202
+2                                 Evusheld   96
+3                              Favipiravir  116
+4                               Fluoxetine  120
+5                       Hydroxychloroquine  175
+6                               Ivermectin   46
+7                             Molnupiravir   66
+8                 Nirmatrelvir + Ritonavir  389
+9  Nirmatrelvir + Ritonavir + Molnupiravir  199
+10                            Nitazoxanide   42
+11                           No study drug  483
+12                               Regeneron   88
+13                              Remdesivir   67
+14                                    <NA>    0
+##########################################################################

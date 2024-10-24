@@ -14,34 +14,35 @@ source('user_settings.R')
 source('functions.R')
 
 source("000_load_randomisation_database.R")
+source("001_clean_clinical_database.R")
+source("002_clean_temperature_database.R")
+
 #############################################################################################
+# 000 Randomization database
 rand_app_data <- load_randomisation_data()
-
-
-
-
-sink("Queries/console_output.txt", split = T)
-clin_data <- load_clinical_data()
-
-IDs_pending <- check_MACRO_clinical_database(clin_data, rand_app_data)
-
-clin_data <- check_screen_failure(clin_data)
-clin_data <-check_randomisation_info(clin_data)
-
-
-
-
-
-
-sink()
-
-
-
-
-
 #############################################################################################
-
-
+# 001 Clinical database
+sink("Queries/01_queries_clinical_database.txt", split = T)
+clin_data <- load_clinical_data()
+IDs_pending <- check_MACRO_clinical_database(clin_data, rand_app_data)
+clin_data <- check_screen_failure(clin_data)
+clin_data <- check_randomisation_info(clin_data)
+clin_data <- check_sex(clin_data, IDs_pending, rand_app_data)
+clin_data <- check_age(clin_data, IDs_pending, rand_app_data)
+clin_data <- check_symptom_onset(clin_data, IDs_pending, rand_app_data)
+clin_data <- check_symptom_onset(clin_data, IDs_pending, rand_app_data)
+clin_data <- check_weight_height(clin_data, IDs_pending)
+clin_data <- check_rand_date_time(clin_data, IDs_pending, rand_app_data)
+clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data)
+sink()
+#############################################################################################
+## 002 Temperature database
+sink("Queries/02_queries_temperature_database.txt", split = T)
+temp_data <- load_temp_data(rand_app_data)
+fever_data <- prep_tempdata(temp_data, clin_data)
+check_time_temp(fever_data)
+clin_data <- add_baseline_fever(clin_data, fever_data)
+sink()
 
 
 
