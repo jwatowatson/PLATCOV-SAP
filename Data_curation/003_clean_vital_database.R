@@ -139,8 +139,7 @@ return(G)
 
 check_vital_signs <- function(vita_data){
   writeLines('##########################################################################')
-  writeLines('### Vital sign database: Checking respiratory rate')
-  
+  writeLines('### Vital sign database: Checking outliers at 6 sd')
   RR_outliers <- abs(vita_data$vs_rr - mean(vita_data$vs_rr, na.rm = T)) > 6*sd(vita_data$vs_rr, na.rm = T) & !is.na(vita_data$vs_rr)
   HR_outliers <- abs(vita_data$vs_hr - mean(vita_data$vs_hr, na.rm = T)) > 6*sd(vita_data$vs_hr, na.rm = T) & !is.na(vita_data$vs_hr)
   SBP_outliers <- abs(vita_data$vs_sbp - mean(vita_data$vs_sbp, na.rm = T)) > 6*sd(vita_data$vs_sbp, na.rm = T) & !is.na(vita_data$vs_sbp)
@@ -148,15 +147,39 @@ check_vital_signs <- function(vita_data){
   VStemp_outliers <- abs(vita_data$vs_temp - mean(vita_data$vs_temp, na.rm = T)) > 6*sd(vita_data$vs_temp, na.rm = T) & !is.na(vita_data$vs_temp)
   
   
+  writeLines('##########################################################################')
+  writeLines(sprintf('%s rows contain an outlier in respiratory rate:', 
+                     nrow(vita_data[RR_outliers,]))
+  )
+  vita_data[RR_outliers,] %>% select(Label, visit, rangrp, vs_rr) %>% print()
+  
+  writeLines('##########################################################################')
+  writeLines(sprintf('%s rows contain an outlier in heart rate:', 
+                     nrow(vita_data[HR_outliers,]))
+  )
+  vita_data[HR_outliers,] %>% select(Label, visit, rangrp, vs_hr ) %>% print()
+  
+  writeLines('##########################################################################')
+  writeLines(sprintf('%s rows contain an outlier in systolic blood pressure:', 
+                     nrow(vita_data[SBP_outliers,]))
+  )
+  vita_data[SBP_outliers,] %>% select(Label, visit, rangrp, vs_sbp ) %>% print()
+  
+  writeLines('##########################################################################')
+  writeLines(sprintf('%s rows contain an outlier in diastolic blood pressure:', 
+                     nrow(vita_data[DBP_outliers,]))
+  )
+  vita_data[DBP_outliers,] %>% select(Label, visit, rangrp,  vs_dbp ) %>% print()
+
   DBP_outrace_SBP <- vita_data$vs_dbp > vita_data$vs_sbp & !is.na(vita_data$vs_sbp) & !is.na(vita_data$vs_dbp)
+  writeLines('##########################################################################')
+  writeLines(sprintf('%s rows has a higher diastolic than systolic blood pressure:', 
+                     nrow(vita_data[DBP_outrace_SBP,]))
+  )
+  vita_data[DBP_outrace_SBP,] %>% select(Label, visit, rangrp,  vs_dbp, vs_sbp ) %>% print()
   
   
-  vita_data[VStemp_outliers,]
-  
-  plot(vita_data$vs_hr, vita_data$vs_rr )
-  plot(vita_data$vs_sbp, vita_data$vs_dbp)
-  
-  ggplot(vita_data, aes(x = vs_sbp, y = vs_dbp)) +
+  G1 <- ggplot(vita_data, aes(x = vs_sbp, y = vs_dbp)) +
     geom_point(alpha = 0.5, size = 3) +
     geom_abline(slope=1, intercept = 0, col = "red", linetype = "dashed") +
     xlim(20,200) +
@@ -166,15 +189,13 @@ check_vital_signs <- function(vita_data){
     ylab("Diastolic blood pressure")
   
   
-  ggplot(vita_data, aes(x = vs_hr, y = vs_rr)) +
+  G2 <- ggplot(vita_data, aes(x = vs_hr, y = vs_rr)) +
     geom_point(alpha = 0.5, size = 3) +
-  #  geom_abline(slope=1, intercept = 0, col = "red", linetype = "dashed") +
-   # xlim(20,200) +
-  #  ylim(20,200) +
     theme_bw(base_size = 13) +
     xlab("Heart rate") +
     ylab("Respiratory rate")
   
-  
+return(ggarrange(G1, G2, ncol = 2) %>% suppressWarnings())  
+
 }
 

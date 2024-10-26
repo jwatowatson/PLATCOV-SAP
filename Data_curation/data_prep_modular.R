@@ -9,6 +9,7 @@ library(ggplot2)
 library(lme4)
 library(lubridate)
 library(anytime)
+library(ggpubr)
 ##Define user folder path####################################################################
 source('user_settings.R')
 source('functions.R')
@@ -48,12 +49,10 @@ sink()
 #############################################################################################
 ## 003 Vital sign database
 sink("Queries/03_queries_vital_sign_database.txt", split = T)
-
 vita_data <- load_vital_data(rand_app_data)
 vita_data <- prep_vitadata(vita_data, clin_data)
 check_vita_time(vita_data)
-
-
+check_vital_signs(vita_data)
 sink()
 
 

@@ -3,16 +3,21 @@
 Reading vital sign database from MACRO...
 ##########################################################################
 ### Vital sign database: Checking MACRO data entry progress:
-Number of randomised patient: 2156
+Number of randomised patient: 2157
 Number of randomised patient vital sign data on MACRO: 2082
 ##########################################################################
-74 patients have no vital sign data on any visits:
- [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1897" "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901"
-[14] "PLT-TH1-1902" "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914"
-[27] "PLT-TH1-1915" "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927"
-[40] "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937" "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940"
-[53] "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944" "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951" "PLT-BR3-131"  "PLT-BR3-132" 
-[66] "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136"  "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
+75 patients have no vital sign data on any visits:
+ [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1638"
+ [8] "PLT-TH1-1639" "PLT-TH1-1897" "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902"
+[15] "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909"
+[22] "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916"
+[29] "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923"
+[36] "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930"
+[43] "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937"
+[50] "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944"
+[57] "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951"
+[64] "PLT-TH1-1952" "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136" 
+[71] "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
 ##########################################################################
 ### Vital sign database: Missing data by visits:
 # A tibble: 12 × 2
@@ -248,3 +253,35 @@ On visit D10 and D14, 150 patients have mismatched time of vital sign measuremen
  0 patients have missing time of temperature measurement:
 [1] Label          visit          Rand_date_time vita_time      Timepoint_ID   Time           expected_date 
 <0 rows> (or 0-length row.names)
+##########################################################################
+### Vital sign database: Checking outliers at 6 sd
+##########################################################################
+6 rows contain an outlier in respiratory rate:
+            Label visit                                  rangrp vs_rr
+325   PLT-BR3-034    D7                            Nitazoxanide    99
+453   PLT-BR3-049    D4                             Favipiravir    80
+797   PLT-BR3-086    D4                           No study drug    96
+1490  PLT-PK1-012    D4                            Nitazoxanide    91
+1866  PLT-TH1-038    D2                               Regeneron    78
+2934 PLT-TH1-1046    D6 Nirmatrelvir + Ritonavir + Molnupiravir    93
+##########################################################################
+0 rows contain an outlier in heart rate:
+[1] Label  visit  rangrp vs_hr 
+<0 rows> (or 0-length row.names)
+##########################################################################
+0 rows contain an outlier in systolic blood pressure:
+[1] Label  visit  rangrp vs_sbp
+<0 rows> (or 0-length row.names)
+##########################################################################
+3 rows contain an outlier in diastolic blood pressure:
+            Label visit       rangrp vs_dbp
+1458  PLT-PK1-009    D5 Nitazoxanide    185
+1481  PLT-PK1-011    D6 Nitazoxanide    473
+11615 PLT-TH1-478    D3    Regeneron    176
+##########################################################################
+4 rows has a higher diastolic than systolic blood pressure:
+            Label visit       rangrp vs_dbp vs_sbp
+1458  PLT-PK1-009    D5 Nitazoxanide    185    108
+1481  PLT-PK1-011    D6 Nitazoxanide    473    107
+9778  PLT-TH1-288    D6  Favipiravir     78     75
+11615 PLT-TH1-478    D3    Regeneron    176    116
