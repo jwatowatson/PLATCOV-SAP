@@ -1,0 +1,711 @@
+##########################################################################
+Reading symptom database from MACRO...
+##########################################################################
+### Symptom database: Checking MACRO data entry progress:
+Number of randomised patient: 2158
+Number of randomised patient symptom data on MACRO: 2082
+##########################################################################
+76 patients have no vital sign data on any visits:
+ [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1897" "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902"
+[15] "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916"
+[29] "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930"
+[43] "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937" "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944"
+[57] "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951" "PLT-TH1-1952" "PLT-TH1-1953" "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135" 
+[71] "PLT-BR3-136"  "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
+##########################################################################
+### Symptom database: Missing data by visits:
+# A tibble: 12 × 2
+   visit missing
+   <chr>   <int>
+ 1 D0        208
+ 2 D0H1      208
+ 3 D1        371
+ 4 D10       970
+ 5 D14       404
+ 6 D2        377
+ 7 D28       470
+ 8 D3        383
+ 9 D4        391
+10 D5        398
+11 D6        401
+12 D7        403
+##########################################################################
+### Symptom database: Checking symptom data mismatched:
+20 rows have sq_yn column = 1, but no details explained:
+          Label Timepoint_ID sq_yn symptom_counts
+1   PLT-BR3-101            7     1              0
+2   PLT-TH1-030            1     1              0
+3  PLT-TH1-1119            3     1              0
+4   PLT-TH1-118            1     1              0
+5  PLT-TH1-1251            4     1              0
+6  PLT-TH1-1341           28     1              0
+7   PLT-TH1-254            7     1              0
+8   PLT-TH1-268           14     1              0
+9   PLT-TH1-305            3     1              0
+10  PLT-TH1-317            7     1              0
+11  PLT-TH1-341            3     1              0
+12  PLT-TH1-349            3     1              0
+13  PLT-TH1-369            3     1              0
+14  PLT-TH1-391            7     1              0
+15  PLT-TH1-662           10     1              0
+16  PLT-TH1-708           10     1              0
+17  PLT-TH1-712            2     1              0
+18  PLT-TH1-769           10     1              0
+19  PLT-TH1-784            6     1              0
+20  PLT-TH1-890           10     1              0
+##########################################################################
+3 rows have sq_yn column = 0, but indicated of having at least 1 symptom:
+         Label Timepoint_ID sq_yn symptom_counts
+1  PLT-LA8-001            3     0              1
+2 PLT-TH1-1416           14     0              1
+3 PLT-TH1-1507            1     0              1
+##########################################################################
+282 rows have missing data on the sq_yn column:
+           Label Timepoint_ID sq_yn symptom_counts
+1    PLT-BR3-031            0    NA              0
+2    PLT-BR3-037            0    NA              0
+3    PLT-BR3-048            0    NA              0
+4    PLT-BR3-058            0    NA              0
+5    PLT-BR3-120            0    NA              0
+6    PLT-BR3-124            0    NA              0
+7    PLT-LA8-012            0    NA              0
+8    PLT-LA8-012            1    NA              0
+9    PLT-PK1-004            0    NA              0
+10   PLT-TH1-056            0    NA              0
+11  PLT-TH1-1024            0    NA              0
+12  PLT-TH1-1024            1    NA              0
+13  PLT-TH1-1024            2    NA              0
+14  PLT-TH1-1024            3    NA              0
+15  PLT-TH1-1024            4    NA              0
+16  PLT-TH1-1024            5    NA              0
+17  PLT-TH1-1024            6    NA              0
+18  PLT-TH1-1024            7    NA              0
+19  PLT-TH1-1024           14    NA              0
+20  PLT-TH1-1028            0    NA              0
+21  PLT-TH1-1028            1    NA              0
+22  PLT-TH1-1035            0    NA              0
+23  PLT-TH1-1039            0    NA              0
+24  PLT-TH1-1045           14    NA              0
+25  PLT-TH1-1047           14    NA              0
+26  PLT-TH1-1050            6    NA              0
+27  PLT-TH1-1050            7    NA              0
+28  PLT-TH1-1050           14    NA              0
+29  PLT-TH1-1087            4    NA              0
+30  PLT-TH1-1087            5    NA              0
+31  PLT-TH1-1087            6    NA              0
+32  PLT-TH1-1087            7    NA              0
+33  PLT-TH1-1087           14    NA              0
+34  PLT-TH1-1090            0    NA              0
+35  PLT-TH1-1090            1    NA              0
+36  PLT-TH1-1090            2    NA              0
+37  PLT-TH1-1090            3    NA              0
+38  PLT-TH1-1090            4    NA              0
+39  PLT-TH1-1090            5    NA              0
+40  PLT-TH1-1090            6    NA              0
+41  PLT-TH1-1090            7    NA              0
+42  PLT-TH1-1090           14    NA              0
+43  PLT-TH1-1095            0    NA              0
+44  PLT-TH1-1095            1    NA              0
+45  PLT-TH1-1095            2    NA              0
+46  PLT-TH1-1095            3    NA              0
+47  PLT-TH1-1095            4    NA              0
+48  PLT-TH1-1095            5    NA              0
+49  PLT-TH1-1095            6    NA              0
+50  PLT-TH1-1095            7    NA              0
+51  PLT-TH1-1095           10    NA              0
+52  PLT-TH1-1095           14    NA              0
+53  PLT-TH1-1096            0    NA              0
+54  PLT-TH1-1098            6    NA              0
+55  PLT-TH1-1098            7    NA              0
+56  PLT-TH1-1098           10    NA              0
+57  PLT-TH1-1100            0    NA              0
+58  PLT-TH1-1100            1    NA              0
+59  PLT-TH1-1100            2    NA              0
+60  PLT-TH1-1100            3    NA              0
+61  PLT-TH1-1100            4    NA              0
+62  PLT-TH1-1100            5    NA              0
+63  PLT-TH1-1100            6    NA              0
+64  PLT-TH1-1100            7    NA              0
+65  PLT-TH1-1100           14    NA              0
+66  PLT-TH1-1107            0    NA              0
+67  PLT-TH1-1107            1    NA              0
+68  PLT-TH1-1107            2    NA              0
+69  PLT-TH1-1107            3    NA              0
+70  PLT-TH1-1107            4    NA              0
+71  PLT-TH1-1107            5    NA              0
+72  PLT-TH1-1107            6    NA              0
+73  PLT-TH1-1107            7    NA              0
+74  PLT-TH1-1107           14    NA              0
+75  PLT-TH1-1122            0    NA              0
+76  PLT-TH1-1122            1    NA              0
+77  PLT-TH1-1122            2    NA              0
+78  PLT-TH1-1122            3    NA              0
+79  PLT-TH1-1122            4    NA              0
+80  PLT-TH1-1122            5    NA              0
+81  PLT-TH1-1122            6    NA              0
+82  PLT-TH1-1122            7    NA              0
+83  PLT-TH1-1122           10    NA              0
+84  PLT-TH1-1122           14    NA              0
+85  PLT-TH1-1126            0    NA              0
+86  PLT-TH1-1126            1    NA              0
+87  PLT-TH1-1126            2    NA              0
+88  PLT-TH1-1126            3    NA              0
+89  PLT-TH1-1126            4    NA              0
+90  PLT-TH1-1126            5    NA              0
+91  PLT-TH1-1126            6    NA              0
+92  PLT-TH1-1126            7    NA              0
+93  PLT-TH1-1126           14    NA              0
+94  PLT-TH1-1152            0    NA              0
+95   PLT-TH1-116            0    NA              0
+96   PLT-TH1-116            1    NA              0
+97   PLT-TH1-116            2    NA              0
+98   PLT-TH1-116           14    NA              0
+99  PLT-TH1-1163            0    NA              0
+100 PLT-TH1-1167            0    NA              0
+101 PLT-TH1-1190            0    NA              0
+102 PLT-TH1-1254            3    NA              0
+103 PLT-TH1-1267            0    NA              0
+104 PLT-TH1-1288            0    NA              0
+105 PLT-TH1-1293            0    NA              0
+106 PLT-TH1-1297            0    NA              0
+107 PLT-TH1-1331            0    NA              0
+108 PLT-TH1-1333            0    NA              0
+109 PLT-TH1-1334            0    NA              0
+110 PLT-TH1-1344            0    NA              0
+111 PLT-TH1-1441            0    NA              0
+112 PLT-TH1-1441            1    NA              0
+113 PLT-TH1-1461            0    NA              0
+114 PLT-TH1-1470            5    NA              0
+115 PLT-TH1-1490            1    NA              0
+116 PLT-TH1-1490            2    NA              0
+117 PLT-TH1-1490            3    NA              0
+118 PLT-TH1-1490            4    NA              0
+119 PLT-TH1-1490            6    NA              0
+120 PLT-TH1-1490            7    NA              0
+121 PLT-TH1-1490           10    NA              0
+122 PLT-TH1-1490           14    NA              0
+123 PLT-TH1-1512            0    NA              0
+124 PLT-TH1-1513            0    NA              0
+125 PLT-TH1-1515            0    NA              0
+126 PLT-TH1-1529            0    NA              0
+127 PLT-TH1-1530            0    NA              0
+128 PLT-TH1-1531            0    NA              0
+129 PLT-TH1-1532            0    NA              0
+130 PLT-TH1-1533            0    NA              0
+131 PLT-TH1-1534            0    NA              0
+132 PLT-TH1-1535            0    NA              0
+133 PLT-TH1-1536            0    NA              0
+134 PLT-TH1-1537            0    NA              0
+135 PLT-TH1-1538            0    NA              0
+136 PLT-TH1-1539            0    NA              0
+137 PLT-TH1-1540            0    NA              0
+138 PLT-TH1-1541            0    NA              0
+139 PLT-TH1-1542            0    NA              0
+140 PLT-TH1-1544            0    NA              0
+141 PLT-TH1-1545            0    NA              0
+142 PLT-TH1-1546            0    NA              0
+143 PLT-TH1-1547            0    NA              0
+144 PLT-TH1-1548            0    NA              0
+145 PLT-TH1-1550            0    NA              0
+146 PLT-TH1-1554            0    NA              0
+147 PLT-TH1-1555            0    NA              0
+148 PLT-TH1-1556            0    NA              0
+149 PLT-TH1-1557            0    NA              0
+150 PLT-TH1-1558            0    NA              0
+151 PLT-TH1-1559            0    NA              0
+152 PLT-TH1-1560            0    NA              0
+153 PLT-TH1-1561            0    NA              0
+154 PLT-TH1-1562            0    NA              0
+155 PLT-TH1-1563            0    NA              0
+156 PLT-TH1-1564            0    NA              0
+157 PLT-TH1-1565            0    NA              0
+158 PLT-TH1-1566            0    NA              0
+159 PLT-TH1-1567            0    NA              0
+160 PLT-TH1-1568            0    NA              0
+161 PLT-TH1-1569            0    NA              0
+162 PLT-TH1-1570            0    NA              0
+163 PLT-TH1-1571            0    NA              0
+164 PLT-TH1-1572            0    NA              0
+165 PLT-TH1-1573            0    NA              0
+166 PLT-TH1-1574            0    NA              0
+167 PLT-TH1-1575            0    NA              0
+168 PLT-TH1-1576            0    NA              0
+169 PLT-TH1-1577            0    NA              0
+170 PLT-TH1-1578            0    NA              0
+171 PLT-TH1-1579            0    NA              0
+172 PLT-TH1-1580            0    NA              0
+173 PLT-TH1-1581            0    NA              0
+174 PLT-TH1-1582            0    NA              0
+175 PLT-TH1-1583            0    NA              0
+176 PLT-TH1-1584            0    NA              0
+177 PLT-TH1-1585            0    NA              0
+178 PLT-TH1-1586            0    NA              0
+179 PLT-TH1-1587            0    NA              0
+180 PLT-TH1-1588            0    NA              0
+181 PLT-TH1-1588            1    NA              0
+182 PLT-TH1-1588            2    NA              0
+183 PLT-TH1-1588            3    NA              0
+184 PLT-TH1-1589            0    NA              0
+185 PLT-TH1-1590            0    NA              0
+186 PLT-TH1-1591            0    NA              0
+187 PLT-TH1-1592            0    NA              0
+188 PLT-TH1-1593            1    NA              0
+189 PLT-TH1-1593            2    NA              0
+190 PLT-TH1-1593            3    NA              0
+191 PLT-TH1-1594            0    NA              0
+192 PLT-TH1-1595            0    NA              0
+193 PLT-TH1-1596            0    NA              0
+194 PLT-TH1-1597            0    NA              0
+195 PLT-TH1-1598            0    NA              0
+196 PLT-TH1-1598            1    NA              0
+197 PLT-TH1-1599            0    NA              0
+198 PLT-TH1-1599            1    NA              0
+199 PLT-TH1-1599            2    NA              0
+200 PLT-TH1-1601            0    NA              0
+201 PLT-TH1-1603            0    NA              0
+202 PLT-TH1-1604            0    NA              0
+203 PLT-TH1-1608            0    NA              0
+204 PLT-TH1-1609            0    NA              0
+205 PLT-TH1-1609            1    NA              0
+206 PLT-TH1-1609            2    NA              0
+207 PLT-TH1-1609            3    NA              0
+208 PLT-TH1-1609            4    NA              0
+209 PLT-TH1-1610            0    NA              0
+210 PLT-TH1-1611            0    NA              0
+211 PLT-TH1-1616            0    NA              0
+212 PLT-TH1-1616            1    NA              0
+213 PLT-TH1-1616            2    NA              0
+214 PLT-TH1-1616            3    NA              0
+215 PLT-TH1-1619            1    NA              0
+216 PLT-TH1-1619            2    NA              0
+217 PLT-TH1-1619            3    NA              0
+218 PLT-TH1-1620            0    NA              0
+219 PLT-TH1-1621            0    NA              0
+220 PLT-TH1-1622            0    NA              0
+221 PLT-TH1-1623            0    NA              0
+222 PLT-TH1-1624            0    NA              0
+223 PLT-TH1-1625            0    NA              0
+224 PLT-TH1-1626            0    NA              0
+225 PLT-TH1-1626            1    NA              0
+226 PLT-TH1-1626            2    NA              0
+227 PLT-TH1-1626            3    NA              0
+228 PLT-TH1-1633            0    NA              0
+229 PLT-TH1-1633            1    NA              0
+230 PLT-TH1-1634            0    NA              0
+231 PLT-TH1-1635            0    NA              0
+232 PLT-TH1-1636            0    NA              0
+233 PLT-TH1-1637            0    NA              0
+234 PLT-TH1-1651            0    NA              0
+235 PLT-TH1-1652            0    NA              0
+236 PLT-TH1-1654            0    NA              0
+237 PLT-TH1-1655            0    NA              0
+238 PLT-TH1-1657            0    NA              0
+239 PLT-TH1-1658            0    NA              0
+240 PLT-TH1-1659            0    NA              0
+241 PLT-TH1-1660            0    NA              0
+242 PLT-TH1-1664            0    NA              0
+243 PLT-TH1-1664            1    NA              0
+244 PLT-TH1-1664            2    NA              0
+245 PLT-TH1-1664            3    NA              0
+246 PLT-TH1-1664            4    NA              0
+247 PLT-TH1-1667            0    NA              0
+248 PLT-TH1-1668            0    NA              0
+249 PLT-TH1-1677            0    NA              0
+250 PLT-TH1-1678            0    NA              0
+251 PLT-TH1-1679            0    NA              0
+252 PLT-TH1-1680            0    NA              0
+253 PLT-TH1-1681            0    NA              0
+254 PLT-TH1-1684            0    NA              0
+255 PLT-TH1-1684            1    NA              0
+256 PLT-TH1-1684            2    NA              0
+257 PLT-TH1-1685            0    NA              0
+258 PLT-TH1-1689            0    NA              0
+259 PLT-TH1-1690            0    NA              0
+260 PLT-TH1-1694            0    NA              0
+261 PLT-TH1-1707            4    NA              0
+262 PLT-TH1-1710            0    NA              0
+263 PLT-TH1-1711            0    NA              0
+264 PLT-TH1-1712            0    NA              0
+265 PLT-TH1-1716            0    NA              0
+266 PLT-TH1-1717            0    NA              0
+267 PLT-TH1-1718            0    NA              0
+268 PLT-TH1-1737            0    NA              0
+269 PLT-TH1-1739            0    NA              0
+270 PLT-TH1-1742            0    NA              0
+271 PLT-TH1-1744            0    NA              0
+272 PLT-TH1-1764            0    NA              0
+273 PLT-TH1-1772            0    NA              0
+274 PLT-TH1-1773            0    NA              0
+275 PLT-TH1-1824            0    NA              0
+276 PLT-TH1-1853            0    NA              0
+277  PLT-TH1-260            0    NA              0
+278  PLT-TH1-388            0    NA              0
+279  PLT-TH1-450            0    NA              0
+280  PLT-TH1-628            0    NA              0
+281  PLT-TH1-628            1    NA              0
+282  PLT-TH1-906            2    NA              0
+##########################################################################
+### [Export] A list of free-text other symptoms...
+##########################################################################
+##########################################################################
+Checking symptom sq_fevyn: 1 rows reported this symptom without grades:
+            Label Timepoint_ID sq_fevyn sq_fevgr
+8935 PLT-TH1-1661            1        1       NA
+#--------------------------------------------------------------------------
+Checking symptom sq_fevyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_fevyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_headyn: 1 rows reported this symptom without grades:
+            Label Timepoint_ID sq_headyn sq_headgr
+8935 PLT-TH1-1661            1         1        NA
+#--------------------------------------------------------------------------
+Checking symptom sq_headyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_headyn    sq_headgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_headyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_headyn    sq_headgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_dizzyn: 1 rows reported this symptom without grades:
+            Label Timepoint_ID sq_dizzyn sq_dizzgr
+8849 PLT-TH1-1614            1         1        NA
+#--------------------------------------------------------------------------
+Checking symptom sq_dizzyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_dizzyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_bluryn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_bluryn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_bluryn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_fatigyn: 2 rows reported this symptom without grades:
+            Label Timepoint_ID sq_fatigyn sq_fatiggr
+8849 PLT-TH1-1614            1          1         NA
+8850 PLT-TH1-1614            2          1         NA
+#--------------------------------------------------------------------------
+Checking symptom sq_fatigyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_fatigyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_coughyn: 5 rows reported this symptom without grades:
+            Label Timepoint_ID sq_coughyn sq_coughgr
+8849 PLT-TH1-1614            1          1         NA
+8935 PLT-TH1-1661            1          1         NA
+8936 PLT-TH1-1661            2          1         NA
+8937 PLT-TH1-1661            3          1         NA
+9003 PLT-TH1-1707            1          1         NA
+#--------------------------------------------------------------------------
+Checking symptom sq_coughyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_coughyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_difbreayn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_difbreayn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_difbreayn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_chpainyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_chpainyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_chpainyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_runnoseyn: 3 rows reported this symptom without grades:
+            Label Timepoint_ID sq_runnoseyn sq_runnosegr
+5310 PLT-TH1-1230            4            1           NA
+6220 PLT-TH1-1311            5            1           NA
+8935 PLT-TH1-1661            1            1           NA
+#--------------------------------------------------------------------------
+Checking symptom sq_runnoseyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_runnoseyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_lossmellyn: 2 rows reported this symptom without grades:
+            Label Timepoint_ID sq_lossmellyn sq_lossmellgr
+3402 PLT-TH1-1063           14             1            NA
+8937 PLT-TH1-1661            3             1            NA
+#--------------------------------------------------------------------------
+Checking symptom sq_lossmellyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_lossmellyn: 0 rows reported this symptom with grade not in the range:
+[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_abdpainyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_abdpainyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_abdpainyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_losappetyn: 0 rows reported this symptom without grades:
+[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_losappetyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_losappetyn: 0 rows reported this symptom with grade not in the range:
+[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_nausyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_nausyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_nausyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_vomyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_vomyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_vomyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_diaryn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_diaryn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_diaryn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_arthyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_arthyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_arthyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_myalyn: 6 rows reported this symptom without grades:
+            Label Timepoint_ID sq_myalyn sq_myalgr
+1894  PLT-TH1-020            4         1        NA
+8849 PLT-TH1-1614            1         1        NA
+8850 PLT-TH1-1614            2         1        NA
+8851 PLT-TH1-1614            3         1        NA
+8852 PLT-TH1-1614            4         1        NA
+9003 PLT-TH1-1707            1         1        NA
+#--------------------------------------------------------------------------
+Checking symptom sq_myalyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_myalyn    sq_myalgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_myalyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_myalyn    sq_myalgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_itchyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_itchyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_itchyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_skrashyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_skrashyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_skrashyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_soreyn: 6 rows reported this symptom without grades:
+            Label Timepoint_ID sq_soreyn sq_soregr
+8846 PLT-TH1-1613            3         1        NA
+8847 PLT-TH1-1613            4         1        NA
+8850 PLT-TH1-1614            2         1        NA
+9003 PLT-TH1-1707            1         1        NA
+9004 PLT-TH1-1707            2         1        NA
+9005 PLT-TH1-1707            3         1        NA
+#--------------------------------------------------------------------------
+Checking symptom sq_soreyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_soreyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+##########################################################################
+Checking other symptom sq_oth1des: 35 rows reported a symptom without grades:
+             Label Timepoint_ID              sq_oth1des sq_oth1gr
+343    PLT-BR3-036            1 INTESTINAL CONSTIPATION        NA
+1159   PLT-BR3-121            2       PAINT IN THE LEGS        NA
+1242   PLT-BR3-129            7                  SHIVER        NA
+1259   PLT-LA8-001            3                 Nothing        NA
+1831   PLT-TH1-014            1            Muffled ears        NA
+1918   PLT-TH1-022           14       throat irritation        NA
+1977   PLT-TH1-028            7             Sore throat        NA
+2011   PLT-TH1-032            1       throat irritation        NA
+2062   PLT-TH1-037            2             Stuffy nose        NA
+2092   PLT-TH1-040            2                  SPUTUM        NA
+2100   PLT-TH1-041            0                  Sputum        NA
+2361   PLT-TH1-068            0             SORE THROAT        NA
+3371  PLT-TH1-1060           28       Throat Irritation        NA
+3379  PLT-TH1-1061            7            Voice change        NA
+3765  PLT-TH1-1094           28            SHORTNESS OF        NA
+5276  PLT-TH1-1228            1            TASTE BITTER        NA
+6830  PLT-TH1-1368            1            BITTER TASTE        NA
+7402  PLT-TH1-1416           14                       .        NA
+7663  PLT-TH1-1439            1                  SPUTUM        NA
+8846  PLT-TH1-1613            3             STUFFY NOSE        NA
+8849  PLT-TH1-1614            1                  SPUTUM        NA
+8850  PLT-TH1-1614            2                  SPUTUM        NA
+8935  PLT-TH1-1661            1             STUFFY NOSE        NA
+8936  PLT-TH1-1661            2             STUFFY NOSE        NA
+8937  PLT-TH1-1661            3                  SPUTUM        NA
+8938  PLT-TH1-1661            4             STUFFY NOSE        NA
+9179   PLT-TH1-185            7                  Sputum        NA
+9803   PLT-TH1-248            0                  Sputum        NA
+10067  PLT-TH1-274            5            Bitter taste        NA
+10636  PLT-TH1-331            5                  Sputum        NA
+10821  PLT-TH1-350            0                  Sputum        NA
+10982  PLT-TH1-366            1      Daytime sleepiness        NA
+11103  PLT-TH1-378            2             Stuffy nose        NA
+11339  PLT-TH1-402            7 Post-exertional fatigue        NA
+12111  PLT-TH1-481            0               dry mouth        NA
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth1des: 6 rows reported grades with no symptom details:
+            Label Timepoint_ID sq_oth1des sq_oth1gr
+9983  PLT-TH1-266            0       <NA>         1
+11013 PLT-TH1-369            2       <NA>         1
+11014 PLT-TH1-369            3       <NA>         1
+11561 PLT-TH1-424           28       <NA>         1
+12151 PLT-TH1-485            0       <NA>         1
+16466 PLT-TH1-921            7       <NA>         0
+##########################################################################
+Checking other symptom sq_oth2des: 8 rows reported a symptom without grades:
+             Label Timepoint_ID       sq_oth2des sq_oth2gr
+1242   PLT-BR3-129            7 PAIN IN THE EYES        NA
+2011   PLT-TH1-032            1      stuffy nose        NA
+2624   PLT-TH1-094            4           Sputum        NA
+8468  PLT-TH1-1509            2     BITTER TASTE        NA
+8936  PLT-TH1-1661            2           SPUTUM        NA
+8937  PLT-TH1-1661            3      STUFFY NOSE        NA
+11103  PLT-TH1-378            2           Sputum        NA
+14831  PLT-TH1-757            0        Dysphagia        NA
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth2des: 0 rows reported grades with no symptom details:
+[1] Label        Timepoint_ID sq_oth2des   sq_oth2gr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking other symptom sq_oth3des: 1 rows reported a symptom without grades:
+            Label Timepoint_ID           sq_oth3des sq_oth3gr
+12080 PLT-TH1-477           28 Delayed menstruation        NA
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth3des: 0 rows reported grades with no symptom details:
+[1] Label        Timepoint_ID sq_oth3des   sq_oth3gr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking other symptom sq_oth4des: 0 rows reported a symptom without grades:
+[1] Label        Timepoint_ID sq_oth4des   sq_oth4gr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth4des: 0 rows reported grades with no symptom details:
+[1] Label        Timepoint_ID sq_oth4des   sq_oth4gr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking other symptom sq_oth5des: 0 rows reported a symptom without grades:
+[1] Label        Timepoint_ID sq_oth5des   sq_oth5gr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth5des: 0 rows reported grades with no symptom details:
+[1] Label        Timepoint_ID sq_oth5des   sq_oth5gr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking other symptom sq_oth6des: 0 rows reported a symptom without grades:
+[1] Label        Timepoint_ID sq_oth6des   sq_oth6gr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth6des: 0 rows reported grades with no symptom details:
+[1] Label        Timepoint_ID sq_oth6des   sq_oth6gr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking other symptom sq_oth7des: 0 rows reported a symptom without grades:
+[1] Label        Timepoint_ID sq_oth7des   sq_oth7gr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking other symptom sq_oth7des: 0 rows reported grades with no symptom details:
+[1] Label        Timepoint_ID sq_oth7des   sq_oth7gr   
+<0 rows> (or 0-length row.names)
+##########################################################################

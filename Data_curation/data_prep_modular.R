@@ -18,6 +18,7 @@ source("000_load_randomisation_database.R")
 source("001_clean_clinical_database.R")
 source("002_clean_temperature_database.R")
 source("003_clean_vital_database.R")
+source("004_clean_symptom_database.R")
 
 options(max.print = 5000)
 #############################################################################################
@@ -54,6 +55,17 @@ vita_data <- prep_vitadata(vita_data, clin_data)
 check_vita_time(vita_data)
 check_vital_signs(vita_data)
 sink()
-
-
-
+#############################################################################################
+## 004 Symptom database
+sink("Queries/04_queries_symptom_database.txt", split = T)
+symp <- load_symptom_data(rand_app_data)
+symp_data <- prep_symptom_data(symp, vita_data)
+symptom_data <- check_symptom_data(symp_data)
+check_symptom_grades(symptom_data)
+check_other_symptom_grades(symptom_data)
+sink()
+## ------------------------------------------------------------------------------------------
+write.table(x = merge(clin_data[,c("Label", "rangrp", "cov_sympday", "Sex", "Weight", "height", "age_yr")], symptom_data, by = "Label", all.y = T), 
+            file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim_details.csv"), 
+            row.names = F, sep=',', quote = F)
+#############################################################################################

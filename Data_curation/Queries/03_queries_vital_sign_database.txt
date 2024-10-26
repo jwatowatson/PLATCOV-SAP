@@ -3,21 +3,16 @@
 Reading vital sign database from MACRO...
 ##########################################################################
 ### Vital sign database: Checking MACRO data entry progress:
-Number of randomised patient: 2157
+Number of randomised patient: 2158
 Number of randomised patient vital sign data on MACRO: 2082
 ##########################################################################
-75 patients have no vital sign data on any visits:
- [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1638"
- [8] "PLT-TH1-1639" "PLT-TH1-1897" "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902"
-[15] "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909"
-[22] "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916"
-[29] "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923"
-[36] "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930"
-[43] "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937"
-[50] "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944"
-[57] "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951"
-[64] "PLT-TH1-1952" "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136" 
-[71] "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
+76 patients have no vital sign data on any visits:
+ [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1897" "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902"
+[15] "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914" "PLT-TH1-1915" "PLT-TH1-1916"
+[29] "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930"
+[43] "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937" "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944"
+[57] "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951" "PLT-TH1-1952" "PLT-TH1-1953" "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135" 
+[71] "PLT-BR3-136"  "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
 ##########################################################################
 ### Vital sign database: Missing data by visits:
 # A tibble: 12 × 2
@@ -279,7 +274,7 @@ On visit D10 and D14, 150 patients have mismatched time of vital sign measuremen
 1481  PLT-PK1-011    D6 Nitazoxanide    473
 11615 PLT-TH1-478    D3    Regeneron    176
 ##########################################################################
-4 rows has a higher diastolic than systolic blood pressure:
+4 rows have a higher diastolic than systolic blood pressure:
             Label visit       rangrp vs_dbp vs_sbp
 1458  PLT-PK1-009    D5 Nitazoxanide    185    108
 1481  PLT-PK1-011    D6 Nitazoxanide    473    107

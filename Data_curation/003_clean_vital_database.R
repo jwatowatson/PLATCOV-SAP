@@ -173,7 +173,7 @@ check_vital_signs <- function(vita_data){
 
   DBP_outrace_SBP <- vita_data$vs_dbp > vita_data$vs_sbp & !is.na(vita_data$vs_sbp) & !is.na(vita_data$vs_dbp)
   writeLines('##########################################################################')
-  writeLines(sprintf('%s rows has a higher diastolic than systolic blood pressure:', 
+  writeLines(sprintf('%s rows have a higher diastolic than systolic blood pressure:', 
                      nrow(vita_data[DBP_outrace_SBP,]))
   )
   vita_data[DBP_outrace_SBP,] %>% select(Label, visit, rangrp,  vs_dbp, vs_sbp ) %>% print()
