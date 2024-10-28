@@ -319,3 +319,8 @@ ind_missing_MONOPER <- is.na(CBC_data$fb_monoper)
 ind_missing_BASOPER <- is.na(CBC_data$fb_basoper)
 
 hist(CBC_data[,c('fb_neuper', 'fb_lympper', 'fb_eosper', 'fb_monoper', 'fb_basoper')] %>% rowSums())
+
+
+ggplot(CBC_data, aes(x = fb_basoper, y = fb_monoper, col = Site)) +
+  geom_point(size = 3, alpha = 0.5) +
+  theme_bw()
