@@ -10,6 +10,7 @@ library(lme4)
 library(lubridate)
 library(anytime)
 library(ggpubr)
+#library(plyr)
 ##Define user folder path####################################################################
 source('user_settings.R')
 source('functions.R')
@@ -19,6 +20,9 @@ source("001_clean_clinical_database.R")
 source("002_clean_temperature_database.R")
 source("003_clean_vital_database.R")
 source("004_clean_symptom_database.R")
+source("005_clean_final_status_database.R")
+source("006_clean_CBC_database.R")
+
 
 options(max.print = 5000)
 #############################################################################################
@@ -69,3 +73,47 @@ write.table(x = merge(clin_data[,c("Label", "rangrp", "cov_sympday", "Sex", "Wei
             file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim_details.csv"), 
             row.names = F, sep=',', quote = F)
 #############################################################################################
+## 005 Final status database
+sink("Queries/05_queries_final_status_database.txt", split = T)
+final_status <- load_final_status_data(rand_app_data)
+check_final_status(final_status)
+sink()
+
+#############################################################################################
+## 006 Final status database
+sink("Queries/06_queries_cbc_database.txt", split = T)
+CBC_data <- load_CBC_data(rand_app_data)
+CBC_data <-  check_date_time_cbc(CBC_data, clin_data)
+CBC_data <- check_RBC_HB_PLT(CBC_data)
+CBC_data <- check_WBCs(CBC_data)
+sink()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# #############################################################################################
+# clin_data$Symptom_onset = clin_data$cov_sympday
+# clin_data$Trt = clin_data$rangrp
+# clin_data$Sex = as.numeric(as.factor(clin_data$Sex))
+# clin_data$Sex <- clin_data$Sex-1
+# clin_data$Age <- clin_data$age_yr
+# 
+# clin_data <- clin_data[!is.na(clin_data$rangrp) &!(is.na(clin_data$randat) & is.na(clin_data$Rand_date_time)),]
+# 
+# # Select variables of interest
+# clin_data = clin_data[, c('Label','Trt','Sex','Age','randat',
+#                           "Rand_date_time",'BMI','Weight',
+#                           'Symptom_onset','Site','Fever_Baseline')]
+# #############################################################################################
+
+
