@@ -18,7 +18,7 @@ load_symptom_data <- function(rand_app_data){
   )
   writeLines('##########################################################################')
   id_missing <- rand_app_data$ID[which(!rand_app_data$ID %in% id_data)]
-  writeLines(sprintf('%s patients have no vital sign data on any visits:', 
+  writeLines(sprintf('%s patients have no symptom data on any visits:', 
                      length(id_missing))
   )
   print(id_missing)
