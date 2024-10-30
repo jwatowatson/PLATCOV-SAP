@@ -123,7 +123,11 @@ check_sex <- function(clin_data, IDs_pending, rand_app_data){
   writeLines('### Clinical database: Checking missing sex information:')
   writeLines(sprintf('%s patients with data on MACRO have missing sex information:', 
                      sum(ind)))
-  clin_data[ind,] %>% pull(Label) %>% print()# select(scrid, Label, rangrp, sex) %>% print(n = Inf)
+  id_sex_missing <- clin_data[ind,] %>% pull(Label) %>% as.character() # select(scrid, Label, rangrp, sex) %>% print(n = Inf)
+  id_sex_missing %>% print()
+  #manual correction
+  writeLines('### [MANUAL CORRECTIONS]: Subsequent analyses use sex information from the randomisation database')
+  for(i in id_sex_missing){clin_data$Sex[clin_data$Label == i] <- rand_app_data$sex[rand_app_data$ID == i]}
   
   writeLines('##########################################################################')
   # Mismatched Sex data?
@@ -172,8 +176,8 @@ check_age <- function(clin_data, IDs_pending, rand_app_data){
   
   writeLines(sprintf('%s patients have no information on age/date of birth on MACRO:', 
                      sum(check_data$age_dob_missing)))
-  check_data %>% filter(age_dob_missing ) %>% pull(Label) %>%  as.character() %>% print()
-  
+  id_age_missing <- check_data %>% filter(age_dob_missing ) %>% pull(Label) %>%  as.character() 
+  id_age_missing %>% print()  
   writeLines('##########################################################################')
   writeLines(sprintf('%s patients have mismatched information on age/date with the randomisation database:', 
                      sum(!check_data$age_agree_yn, na.rm = T)               
@@ -185,6 +189,7 @@ check_age <- function(clin_data, IDs_pending, rand_app_data){
   writeLines('##########################################################################')
   #manual correction
   writeLines('### [MANUAL CORRECTIONS]: Subsequent analyses use age information from the randomisation database')
+  for(i in id_age_missing){clin_data$age_yr[clin_data$Label == i] <- rand_app_data$age[rand_app_data$ID == i]}
   for(i in id_age_mismatched){clin_data$age_yr[clin_data$Label == i] <- rand_app_data$age[rand_app_data$ID == i]}
   writeLines('##########################################################################')
   clin_data$age_yr <- as.numeric(clin_data$age_yr)
@@ -197,7 +202,7 @@ check_age <- function(clin_data, IDs_pending, rand_app_data){
   return(clin_data)
 }
 ######################################################################
-# 6. Check symptom onset data
+# 7. Check symptom onset data
 check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data){
   writeLines('### Clinical database: Checking missing symptom onset information:')
   ### Check if symptom onset data is missing
@@ -236,7 +241,7 @@ check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data){
   return(clin_data)
 }
 ######################################################################
-# 6. Check weight and height data
+# 8. Check weight and height data
 check_weight_height <- function(clin_data, IDs_pending){
   writeLines('### Clinical database: Checking missing data for weight/height:')
   ### Check if weight and height data are missing
@@ -276,7 +281,7 @@ check_weight_height <- function(clin_data, IDs_pending){
 }
 
 ######################################################################
-#7. Check randomisation date and time data
+#9. Check randomisation date and time data
 check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data){
   writeLines('### Clinical database: Checking randomisation date and time:')
   ### Check if randomisation date and time is correct
@@ -317,7 +322,7 @@ check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data){
   return(clin_data)
 }
 ######################################################################
-#8. Check randomisation arms
+#10. Check randomisation arms
 check_rand_arms <- function(clin_data, IDs_pending, rand_app_data){
   
   ### Check if randomisation arms matched 
