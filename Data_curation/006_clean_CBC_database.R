@@ -331,6 +331,12 @@ which(round(CBC_data$fb_allWBCper) < 100)
 
 table(CBC_data$fb_bandper, useNA = 'always')
 
+CBC_data$wbc_percentage_sum <- CBC_data[,c('fb_neuper', 'fb_lympper', 'fb_eosper', 'fb_monoper', 'fb_basoper')] %>% rowSums()
+
+CBC_data %>% 
+  filter(Label %in% c('PLT-TH1-495', 'PLT-TH1-496', 'PLT-TH1-638', 'PLT-TH1-639')) %>%
+  select(Label, visit, fb_neuper, fb_lympper, fb_eosper, fb_monoper, , fb_basoper, wbc_percentage_sum)
+
 
 CBC_data[6627,]
 
