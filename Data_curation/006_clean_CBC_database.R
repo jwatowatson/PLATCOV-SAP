@@ -311,16 +311,31 @@ check_WBCs <- function(CBC_data){
 
 
 
+# 
+# ind_missing_NEUPER <- is.na(CBC_data$fb_neuper)
+# ind_missing_LYMPPER <- is.na(CBC_data$fb_lympper)
+# ind_missing_EOSPER <- is.na(CBC_data$fb_eosper)
+# ind_missing_MONOPER <- is.na(CBC_data$fb_monoper)
+# ind_missing_BASOPER <- is.na(CBC_data$fb_basoper)
+# 
+CBC_data <- CBC_data %>%
+  mutate(fb_allWBCper = CBC_data[,c('fb_neuper', 'fb_lympper', 'fb_eosper', 'fb_monoper', 'fb_basoper')] %>% rowSums())
+  
+ggplot(CBC_data) +
+  geom_point(aes(x = fb_dat, y = fb_allWBCper)) +
+  facet_grid(.~Site)
 
-ind_missing_NEUPER <- is.na(CBC_data$fb_neuper)
-ind_missing_LYMPPER <- is.na(CBC_data$fb_lympper)
-ind_missing_EOSPER <- is.na(CBC_data$fb_eosper)
-ind_missing_MONOPER <- is.na(CBC_data$fb_monoper)
-ind_missing_BASOPER <- is.na(CBC_data$fb_basoper)
+colnames(CBC_data)
 
-hist(CBC_data[,c('fb_neuper', 'fb_lympper', 'fb_eosper', 'fb_monoper', 'fb_basoper')] %>% rowSums())
+which(round(CBC_data$fb_allWBCper) < 100)
+
+table(CBC_data$fb_bandper, useNA = 'always')
 
 
-ggplot(CBC_data, aes(x = fb_basoper, y = fb_monoper, col = Site)) +
-  geom_point(size = 3, alpha = 0.5) +
-  theme_bw()
+CBC_data[6627,]
+
+
+# 
+# ggplot(CBC_data, aes(x = fb_basoper, y = fb_monoper, col = Site)) +
+#   geom_point(size = 3, alpha = 0.5) +
+#   theme_bw()

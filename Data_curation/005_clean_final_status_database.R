@@ -65,6 +65,7 @@ check_final_status <- function(final_status){
   writeLines('### Final status database: Checking adversed events:')
   writeLines(sprintf('%s patients have missing AE information:', 
                      sum(is.na(final_status$fs_ae))))
+  final_status %>% filter(is.na(fs_ae)) %>% pull(Label) %>% as.character() %>% print()
   writeLines('##########################################################################')
   AE <- final_status %>% filter(fs_ae == 1)
   writeLines(sprintf('%s patients reported AEs, %s of which were SAEs and %s do not have information:', 
