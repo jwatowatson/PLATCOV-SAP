@@ -31,7 +31,12 @@ rand_app_data <- load_randomisation_data()
 #############################################################################################
 # 001 Clinical database
 sink("Queries/01_queries_clinical_database.txt", split = T)
+
+
 clin_data <- load_clinical_data()
+
+
+
 IDs_pending <- check_MACRO_clinical_database(clin_data, rand_app_data)
 clin_data <- check_screen_failure(clin_data)
 clin_data <- check_randomisation_info(clin_data)
