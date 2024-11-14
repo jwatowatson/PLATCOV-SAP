@@ -474,16 +474,19 @@ arguments <- paste0("nextclade run --input-dataset ", sars_cov_2_data, " --outpu
 arguments
 
 # This code runs the Nextclade variant/mutation calls, then save it as .tsv file
-if(system_used == "windows"){
-  shell(arguments)
-} else {
-  system(arguments) 
+if(re_download){
+  if(system_used == "windows"){
+    shell(arguments)
+  } else {
+    system(arguments) 
+  }
 }
+
 ##------------------------------------------------------------------------------------
 # This code reads tsv file, then save the variants called from Nextclade as "lineages.csv" file
 source("functions_query_mutations.R")
 
-nextclade_file <- "../Analysis_Data/Nextclade/output/nextclade.tsv"
+nextclade_file <- paste0(prefix_dropbox, "/Analysis_Data/Nextclade/output/nextclade.tsv")
 naming_file <- "../Analysis_Data/sequencing_ID_map.csv"
 joined_data <- match_nextclade_ID(nextclade_file, naming_file)
 joined_data_export <- joined_data %>% select(Patient_ID, Nextclade_pango)  
@@ -495,7 +498,7 @@ joined_data_export <- joined_data_export %>% select(ID, Lineage)
 write.table(joined_data_export, file = "../Analysis_Data/lineages.csv", sep=",", row.names = F, col.names=FALSE)
 
 # Run python to classify varaints from the "lineages.csv" file
-variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = T, system_used = system_used)
+variant_data = get_nanopore_data(prefix_analysis_data = prefix_analysis_data, run_python = F, system_used = system_used) # Output = "/Analysis_Data/variant_data.csv"
 variant_data = merge(variant_data, clin_data, by.x='ID', by.y = 'Label', all.y = T)
 #To reduce the number of variant groups, as suggested by Liz.
 variant_data$Variant2 <- as.character(variant_data$Variant)
