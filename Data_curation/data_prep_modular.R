@@ -47,12 +47,20 @@ sink()
 
 #############################################################################################
 ## 002 Temperature database
+query_file_name <-  'Queries/02_PLATCOV_queries_temperature_database.csv'
+
+
 sink("Queries/02_queries_temperature_database.txt", split = T)
-temp_data <- load_temp_data(rand_app_data)
+temp_data <- load_temp_data(rand_app_data, query_file_name)
 fever_data <- prep_tempdata(temp_data, clin_data)
 check_time_temp(fever_data)
-clin_data <- add_baseline_fever(clin_data, fever_data)
 sink()
+
+
+
+
+clin_data <- add_baseline_fever(clin_data, fever_data)
+
 #############################################################################################
 ## 003 Vital sign database
 sink("Queries/03_queries_vital_sign_database.txt", split = T)

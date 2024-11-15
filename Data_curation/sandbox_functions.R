@@ -1,63 +1,75 @@
-check_rand_arms <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
-  clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
-  clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
-  clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
+check_time_temp <- function(fever_data){
+  writeLines('##########################################################################')
+  writeLines('### Temperature database: Checking temperature data and time')
   
-  check_data <- merge(rand_app_data, clin_data, by.x = "ID",  by.y = "Label", all.x = T)
+  fever_data <- fever_data %>%
+    mutate(time_diff = abs(Timepoint_ID - Time)) %>%
+    mutate(expected_date = as.Date(Rand_date_time) + Timepoint_ID) 
   
-  ### Check missing data
-  writeLines('### Clinical database: Checking if randomisation arms are missing:')
-  rangrp_missing <- is.na(check_data$rangrp)
-  rangrp_missing <- check_data %>% filter(rangrp_missing) %>% select(ID, rangrp) %>% rename("Label" = "ID")
+  FUtemp_checktime <- fever_data %>%
+    filter(time_diff > 1) %>%
+    select(Label, visit, Timepoint_ID, Time, time_diff, randat, rantim, fut_dat, fut_tim, expected_date) %>%
+    rename("temp_time" = "Time") %>%
+    mutate(temp_time = round(temp_time, 1),
+           time_diff = round(time_diff, 1))
   
-  if(nrow(rangrp_missing) > 0){
-    rangrp_missing <- data.frame("Dataset" = data_name, #Dataset
-                                       "CRF form/Topic" = "Baseline", #'CRF form/Topic'
-                                       "Question/Variable" = "Randomisation arm", #'Question/Variable'
-                                       "Query message" = paste0(nrow(rangrp_missing), " patients have missing randomisation arm information"), #'Query message'
-                                 rangrp_missing #'Example data'
+  writeLines('##########################################################################')
+  
+  # Negative time of temperature measurement
+  negative_time <-   FUtemp_checktime %>% filter(temp_time < 0)
+  
+  if(nrow(negative_time) > 0){
+    negative_time <- data.frame("Dataset" = data_name, #Dataset
+                                "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
+                                "Question/Variable" = "Follow-up temperature", #'Question/Variable'
+                                 "Query message" = paste0(nrow(negative_time), " patients have negative time of temperature measurement. [randomised time (randat and rantime) after temperature measurement (fut_dat and fut_tim; combined am and pm)]. Please see expected date in the 'expected_date' column"), #'Query message'
+                                negative_time #'Example data'
     ) %>%
       mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
     
-    write.table(rangrp_missing, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    write.table(negative_time, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
     cat("\n", file=query_file_name, append=TRUE)
     
     writeLines(sprintf('Query: %s\n',
-                       rangrp_missing$Query.message[1])
+                       negative_time$Query.message[1])
     )
-    print(rangrp_missing[,-(1:4)])
+    print(negative_time[,-(1:4)])
     writeLines('##########################################################################')
-    writeLines('### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses')
-    for(i in rangrp_missing$Label){clin_data$rangrp[clin_data$Label == i] <- rand_app_data$Treatment[rand_app_data$ID == i]}
-    writeLines('##########################################################################')
+    
   }
   
-  ### Check mismatched data
-  writeLines('### Clinical database: Checking if randomisation arms matched with the randomisation database:')
-  rangrp_disagree <- (check_data$Treatment != check_data$rangrp) & !is.na(check_data$rangrp)
-  rangrp_disagree <- check_data %>% filter(rangrp_disagree) %>% select(ID, rangrp, Treatment) %>% rename("Trt_SHINY" = "Treatment")
-  
-  if(nrow(rangrp_disagree) > 0){
-    rangrp_disagree <- data.frame("Dataset" = data_name, #Dataset
-                                 "CRF form/Topic" = "Baseline", #'CRF form/Topic'
-                                 "Question/Variable" = "Randomisation arm", #'Question/Variable'
-                                 "Query message" = paste0(nrow(rangrp_disagree), " patients mismatched randomisation arm information with the randomisation database (SHINY). Please check."), #'Query message'
-                                 rangrp_disagree #'Example data'
-    ) %>%
-      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
-    
-    write.table(rangrp_disagree, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
-    cat("\n", file=query_file_name, append=TRUE)
-    
-    writeLines(sprintf('Query: %s\n',
-                       rangrp_disagree$Query.message[1])
-    )
-    print(rangrp_disagree[,-(1:4)])
-    writeLines('##########################################################################')
-    writeLines('### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses')
-    for(i in rangrp_disagree$Label){clin_data$rangrp[clin_data$Label == i] <- rand_app_data$Treatment[rand_app_data$ID == i]}
-    writeLines('##########################################################################')
+  # Check time mismatched
+  for(i in c(0:7, 10, 14)){
+    temp_time_mismatched <- FUtemp_checktime %>% filter(Timepoint_ID  == i & temp_time > 0)
+    if(nrow(temp_time_mismatched) > 0){
+      temp_time_mismatched <- data.frame("Dataset" = data_name, #Dataset
+                                  "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
+                                  "Question/Variable" = "Follow-up temperature", #'Question/Variable'
+                                  "Query message" = paste0(nrow(temp_time_mismatched), " patients have mismatched time of temperature measurement (fut_dat and fut_tim) with randomisation time (randat and rantime), which is greater than 1 day. Please see expected date in the 'expected_date' column"), #'Query message'
+                                  temp_time_mismatched #'Example data'
+      ) %>%
+        mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+      
+      write.table(temp_time_mismatched, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+      cat("\n", file=query_file_name, append=TRUE)
+      
+      writeLines(sprintf('Query: %s\n',
+                         temp_time_mismatched$Query.message[1])
+      )
+      print(temp_time_mismatched[,-(1:4)])
+      writeLines('##########################################################################')
+      
+    }
   }
   
-  return(clin_data)
+  # Check the mismatches between randomisation date and temperature date
+  G <- fever_data %>%
+    ggplot() +
+    geom_jitter(aes(x = Timepoint_ID, y = time_diff), size = 3, alpha = 0.5, width = 0.05) +
+    geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
+    theme_bw(base_size = 13) +
+    scale_x_continuous(breaks = 0:14)
+  
+  return(G)
 }
+# ---------------------------------------------

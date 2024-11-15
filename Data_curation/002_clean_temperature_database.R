@@ -3,39 +3,93 @@
 ##*********************************************************
 ###########################################################################
 # 1. Load temperature data
-load_temp_data <- function(rand_app_data){
-  ##########  --- Temperature data --- ########## 
-  writeLines('##########################################################################')
-  writeLines('##########################################################################')
-  writeLines('Reading temperature database from MACRO...')
-  writeLines('##########################################################################')
-  temp_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFUTemp.dta"))
-  id_data = temp_data %>% distinct(Label) %>% pull(Label) %>% as.character()
+  load_temp_data <- function(rand_app_data, query_file_name){
+    # load the clinical data
+    data_name <- 'InterimFUTemp.dta'
+    file_name <- paste0(prefix_dropbox, "/Data/", data_name)
+    version <- file.info(file_name)$ctime %>% as.Date()
+    today <- Sys.Date()
+    temp_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFUTemp.dta"))
+    
+    sink(query_file_name, split = T)
+    writeLines(sprintf('PLATCOV data queries\nData: %s\nReceived date: %s\nQuery date: %s\n',
+                       data_name,
+                       version,
+                       today)
+    )
+    sink()
+    writeLines('##########################################################################')
+    write.table(data.frame('Dataset' = "",
+                           'CRF form/Topic' = "",
+                           'Question/Variable' = "",
+                           'Query message' = "",
+                           'Example data' = ""), 
+                query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    
+    id_data = temp_data %>% distinct(Label) %>% pull(Label) %>% as.character()
+    
+    writeLines('### Temperature database: Checking MACRO data entry progress:')
+    writeLines(sprintf('Number of randomised patient: %s\nNumber of randomised patient temperature data on MACRO: %s', 
+                       nrow(rand_app_data) + 19, # 19 = number of patients from site 057 and 058
+                       length(id_data)
+    )
+    )
+    writeLines('##########################################################################')
+    
+    # Missing temperature follow-up data?
+    id_missing <- rand_app_data$ID[which(!rand_app_data$ID %in% id_data)]
+    
+    if(length(id_missing) > 0){
+      id_missing_matrix <- matrix(id_missing, ncol = 5)
+      
+      id_missing_matrix <- data.frame("Dataset" = data_name, #Dataset
+                                      "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
+                                      "Question/Variable" = "Follow-up temperature", #'Question/Variable'
+                                      "Query message" = paste0(length(id_missing), " patients have no data on MACRO about follow-up temperature (D1 to D7, D10, and D14). IDs are listed here:"), #'Query message'
+                                      id_missing_matrix #'Example data'
+      ) %>%
+        mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+      
+      write.table(id_missing_matrix, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+      cat("\n", file=query_file_name, append=TRUE)
+      
+      writeLines(sprintf('Query: %s\n',
+                         id_missing_matrix$Query.message[1])
+      )
+      print(id_missing_matrix[,-(1:4)])
+      writeLines('##########################################################################')
+    }
+    
+    
+    # Missing at any visit??
+    for(i in paste0("D", c(0:7, 10, 14))){
+      
+      fu_temp_missing <- temp_data %>% filter(visit == i) %>% mutate(AM = is.na(fut_amdat), PM = is.na(fut_pmdat)) %>% 
+        filter(AM & PM) %>%
+        select(Label, visit, fut_amdat, fut_amtim, fut_amtemp,
+               fut_pmdat, fut_pmtim, fut_pmtemp)
+      
+      fu_temp_missing <- data.frame("Dataset" = data_name, #Dataset
+                                    "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
+                                    "Question/Variable" = "Follow-up temperature", #'Question/Variable'
+                                    "Query message" = paste0(nrow(fu_temp_missing), " patients have missing follow-up temperature on ", i), #'Query message'
+                                    fu_temp_missing #'Example data'
+      ) %>%
+        mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+      
+      write.table(fu_temp_missing, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+      cat("\n", file=query_file_name, append=TRUE)
+      
+      writeLines(sprintf('Query: %s\n',
+                         fu_temp_missing$Query.message[1])
+      )
+      print(fu_temp_missing[,-(1:4)])
+      writeLines('##########################################################################')
+      
+    }
+    return(temp_data)
+  }
   
-  writeLines('### Temperature database: Checking MACRO data entry progress:')
-  writeLines(sprintf('Number of randomised patient: %s\nNumber of randomised patient temperature data on MACRO: %s', 
-                     nrow(rand_app_data) + 19, # 19 = number of patients from site 057 and 058
-                     length(id_data)
-  )
-  )
-  writeLines('##########################################################################')
-  id_missing <- rand_app_data$ID[which(!rand_app_data$ID %in% id_data)]
-  
-  writeLines(sprintf('%s patients have no temperature data on any visits:', 
-                     length(id_missing))
-  )
-  print(id_missing)
-  writeLines('##########################################################################')
-  writeLines('### Temperature database: Missing data by visits:')
-  temp_data %>%
-    group_by(visit) %>%
-    summarise(missing_AM = sum(is.na(fut_amdat)),
-              missing_PM = sum(is.na(fut_pmdat))) %>% print()
-  writeLines('##########################################################################')
-  
-  return(temp_data)
-  
-}
 # -----------------------------------------------------------------------------------------------
 # 2. Preparing temperature data
 prep_tempdata <- function(temp_data, clin_data){
@@ -108,51 +162,70 @@ check_time_temp <- function(fever_data){
   writeLines('##########################################################################')
   writeLines('### Temperature database: Checking temperature data and time')
   
-  FUtemp_checktime <- fever_data[abs(fever_data$Timepoint_ID - fever_data$Time) > 1, c("Label", "visit", "Rand_date_time", "temp_time", 
-                                                                                       "Timepoint_ID", "Time")]
+  fever_data <- fever_data %>%
+    mutate(time_diff = abs(Timepoint_ID - Time)) %>%
+    mutate(expected_date = as.Date(Rand_date_time) + Timepoint_ID) 
   
-  FUtemp_checktime <- FUtemp_checktime %>% mutate(expected_date = as.Date(Rand_date_time) + Timepoint_ID)
-  
-  writeLines('##########################################################################')
-  
-  negative_time <-   FUtemp_checktime %>% filter(Time < 0)
-  writeLines(sprintf('%s patients have negative time of temperature measurement:',
-                     nrow(negative_time)
-  ))
-  negative_time %>% arrange(Label) %>% print()
+  FUtemp_checktime <- fever_data %>%
+    filter(time_diff > 1) %>%
+    select(Label, visit, Timepoint_ID, Time, time_diff, randat, rantim, fut_dat, fut_tim, expected_date) %>%
+    rename("temp_time" = "Time") %>%
+    mutate(temp_time = round(temp_time, 1),
+           time_diff = round(time_diff, 1))
   
   writeLines('##########################################################################')
-  D0 <-  FUtemp_checktime %>% filter(Timepoint_ID  == 0 & Time > 0)
-  writeLines(sprintf('On visit D0, %s patients have mismatched time of temperature measurement:',
-                     nrow(D0)
-  ))
-  D0 %>% arrange(Label, Timepoint_ID)  %>%  print(n = Inf)
   
-  writeLines('##########################################################################')
-  D1_D7 <-  FUtemp_checktime %>% filter(Timepoint_ID  %in% 1:7 & Time > 0)
-  writeLines(sprintf('On visit D1 to D7, %s patients have mismatched time of temperature measurement:',
-                     nrow(D1_D7)
-  ))
-  D1_D7 %>% arrange(Label, Timepoint_ID)  %>%  print(n = Inf)
+  # Negative time of temperature measurement
+  negative_time <-   FUtemp_checktime %>% filter(temp_time < 0)
   
-  writeLines('##########################################################################')
-  D10_D14 <-  FUtemp_checktime %>% filter(Timepoint_ID   >=10)
-  writeLines(sprintf('On visit D10 and D14, %s patients have mismatched time of temperature measurement:',
-                     nrow(D10_D14)
-  ))
-  D10_D14 %>% arrange(Label, Timepoint_ID)  %>%  print(n = Inf)
+  if(nrow(negative_time) > 0){
+    negative_time <- data.frame("Dataset" = data_name, #Dataset
+                                "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
+                                "Question/Variable" = "Follow-up temperature", #'Question/Variable'
+                                "Query message" = paste0(nrow(negative_time), " patients have negative time of temperature measurement. [randomised time (randat and rantime) after temperature measurement (fut_dat and fut_tim; combined am and pm)]. Please see expected date in the 'expected_date' column"), #'Query message'
+                                negative_time #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(negative_time, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       negative_time$Query.message[1])
+    )
+    print(negative_time[,-(1:4)])
+    writeLines('##########################################################################')
+    
+  }
   
-  writeLines('##########################################################################')
-  missing_temp_time <-  FUtemp_checktime %>% filter(is.na(Time))
-  writeLines(sprintf(' %s patients have missing time of temperature measurement:',
-                     nrow(missing_temp_time)
-  ))
-  missing_temp_time %>% arrange(Label, Timepoint_ID)  %>%  print(n = Inf)
+  # Check time mismatched
+  for(i in c(0:7, 10, 14)){
+    temp_time_mismatched <- FUtemp_checktime %>% filter(Timepoint_ID  == i & temp_time > 0)
+    if(nrow(temp_time_mismatched) > 0){
+      temp_time_mismatched <- data.frame("Dataset" = data_name, #Dataset
+                                         "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
+                                         "Question/Variable" = "Follow-up temperature", #'Question/Variable'
+                                         "Query message" = paste0(nrow(temp_time_mismatched), " patients have mismatched time of temperature measurement (fut_dat and fut_tim) with randomisation time (randat and rantime), which is greater than 1 day. Please see expected date in the 'expected_date' column"), #'Query message'
+                                         temp_time_mismatched #'Example data'
+      ) %>%
+        mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+      
+      write.table(temp_time_mismatched, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+      cat("\n", file=query_file_name, append=TRUE)
+      
+      writeLines(sprintf('Query: %s\n',
+                         temp_time_mismatched$Query.message[1])
+      )
+      print(temp_time_mismatched[,-(1:4)])
+      writeLines('##########################################################################')
+      
+    }
+  }
   
-  
+  # Check the mismatches between randomisation date and temperature date
   G <- fever_data %>%
     ggplot() +
-    geom_jitter(aes(x = Timepoint_ID, y = Timepoint_ID-Time), size = 3, alpha = 0.5, width = 0.05) +
+    geom_jitter(aes(x = Timepoint_ID, y = time_diff), size = 3, alpha = 0.5, width = 0.05) +
     geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
     theme_bw(base_size = 13) +
     scale_x_continuous(breaks = 0:14)
