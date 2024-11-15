@@ -29,8 +29,8 @@ options(max.print = 5000)
 # 000 Randomization database
 rand_app_data <- load_randomisation_data()
 #############################################################################################
-query_file_name <-  'Queries/01_queries_clinical_database.csv'
-
+## 001 Clinical database
+query_file_name <-  'Queries/01_PLATCOV_queries_clinical_database.csv'
 
 sink("Queries/01_queries_clinical_database.txt", split = T)
 clin_data <- load_clinical_data(query_file_name)
@@ -40,32 +40,11 @@ clin_data <- check_randomisation_info(clin_data, query_file_name)
 clin_data <- check_sex(clin_data, IDs_pending, rand_app_data, query_file_name)
 clin_data <- check_age(clin_data, IDs_pending, rand_app_data, query_file_name)
 clin_data <- check_symptom_onset(clin_data, IDs_pending, rand_app_data, query_file_name)
-
-
-
+clin_data <- check_weight_height(clin_data, IDs_pending, query_file_name)
+clin_data <- check_rand_date_time(clin_data, IDs_pending, rand_app_data, query_file_name)
+clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data, query_file_name)
 sink()
 
-
-clin_data <- check_randomisation_info(clin_data)
-
-
-
-
-# 001 Clinical database
-sink("Queries/01_queries_clinical_database.txt", split = T)
-
-
-
-
-
-clin_data <- check_randomisation_info(clin_data)
-clin_data <- check_sex(clin_data, IDs_pending, rand_app_data)
-clin_data <- check_age(clin_data, IDs_pending, rand_app_data)
-clin_data <- check_symptom_onset(clin_data, IDs_pending, rand_app_data)
-clin_data <- check_weight_height(clin_data, IDs_pending)
-clin_data <- check_rand_date_time(clin_data, IDs_pending, rand_app_data)
-clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data)
-sink()
 #############################################################################################
 ## 002 Temperature database
 sink("Queries/02_queries_temperature_database.txt", split = T)

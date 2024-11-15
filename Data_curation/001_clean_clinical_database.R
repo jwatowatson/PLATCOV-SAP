@@ -322,12 +322,13 @@ check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
   
   clin_data$ v <- as.numeric(clin_data$age_yr)
   
-  # writeLines('### Clinical database: Checking distributions of age:')
-  # ggplot(clin_data, aes(x = randat, y =  age_yr)) +
-  #   geom_point(size = 3, alpha = 0.25) +
-  #   theme_bw(base_size = 13) +
-  #   xlab("Randomisation date") +
-  #   ylab("Age (years)")
+  writeLines('### Clinical database: Checking distributions of age:')
+  G <- ggplot(clin_data, aes(x = randat, y =  age_yr)) +
+    geom_point(size = 3, alpha = 0.25) +
+    theme_bw(base_size = 13) +
+    xlab("Randomisation date") +
+    ylab("Age (years)")
+  print(G)
   writeLines('##########################################################################')
   
   return(clin_data)
@@ -392,13 +393,13 @@ check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_fil
     clin_data$cov_sympday[clin_data$Label %in% long_symptom_onset$Label] <- 4
   }
   
-  # writeLines('### Clinical database: Checking distributions of symptom onset:')
-  # ggplot(clin_data, aes(x = randat, y = as.numeric(cov_sympday))) +
-  #   geom_point(size = 3, alpha = 0.25) +
-  #   theme_bw(base_size = 13) +
-  #   xlab("Randomisation date") +
-  #   ylab("Time from Symptom onset to randomisation (days)")
-  
+  writeLines('### Clinical database: Checking distributions of symptom onset:')
+  G <- ggplot(clin_data, aes(x = randat, y = as.numeric(cov_sympday))) +
+    geom_point(size = 3, alpha = 0.25) +
+    theme_bw(base_size = 13) +
+    xlab("Randomisation date") +
+    ylab("Time from Symptom onset to randomisation (days)")
+  print(G)
   writeLines('##########################################################################')
   
   return(clin_data)
@@ -406,47 +407,82 @@ check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_fil
 
 ######################################################################
 # 8. Check weight and height data
-check_weight_height <- function(clin_data, IDs_pending){
+check_weight_height <- function(clin_data, IDs_pending, query_file_name){
   writeLines('### Clinical database: Checking missing data for weight/height:')
   ### Check if weight and height data are missing
   clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
   clin_data$Weight = clin_data$weight
   
   ind_weight_height_missing <- is.na(clin_data$BMI)
-  writeLines(sprintf('%s patients have no information on weights or heights on MACRO:', 
-                     sum(ind_weight_height_missing)))
-  clin_data[ind_weight_height_missing, ] %>% pull(Label) %>% as.character() %>% print()
-  writeLines('##########################################################################')
+  weight_height_missing <- clin_data %>% filter(ind_weight_height_missing) %>% select(Label, weight, height)
   
-  
-  writeLines('### Clinical database: Checking outliers for weight/height:')
-  weight_height_outlier <- abs(clin_data$BMI - mean(clin_data$BMI, na.rm = T)) > 6*sd(clin_data$BMI, na.rm = T) & !is.na(clin_data$BMI)
-  writeLines(sprintf('Weights/heights of %s patients are outliers:', 
-                     sum(weight_height_outlier)))
-  clin_data[weight_height_outlier, ] %>% select(Label, Sex, weight, height,BMI) %>% print()
-  writeLines('##########################################################################')
-  writeLines('### [MANUAL CORRECTIONS]: Outliers are likely from switching weights and heights')
-  for(i in clin_data[weight_height_outlier, ] %>% pull(Label) %>% as.character()){
-    weight_correct <- clin_data$height[clin_data$Label == i]
-    height_correct  <- clin_data$weight[clin_data$Label == i]
-    clin_data$height[clin_data$Label == i] <- height_correct
-    clin_data$weight[clin_data$Label == i] <- weight_correct
+  if(nrow(weight_height_missing) > 0){
+    weight_height_missing <- data.frame("Dataset" = data_name, #Dataset
+                                        "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                                        "Question/Variable" = "Demographics", #'Question/Variable'
+                                        "Query message" = paste0(nrow(weight_height_missing), " patients have missing information on weight OR height."), #'Query message'
+                                        weight_height_missing #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(weight_height_missing, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       weight_height_missing$Query.message[1])
+    )
+    print(weight_height_missing[,-(1:4)])
+    writeLines('##########################################################################')
+    
   }
   
-  clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
-  writeLines('##########################################################################')
-  writeLines('### Clinical database: Checking distributions of BMI after manual corrections:')
-  summary(clin_data$BMI) %>% print()
-  hist(clin_data$BMI)
-  writeLines('##########################################################################')
+  ### Checking outliers for weight/height
+  writeLines('### Clinical database: Checking outliers for weight/height:')
+  weight_height_outlier <- abs(clin_data$BMI - mean(clin_data$BMI, na.rm = T)) > 6*sd(clin_data$BMI, na.rm = T) & !is.na(clin_data$BMI)
+  weight_height_outlier <- clin_data %>% filter(weight_height_outlier) %>% select(Label, BMI, weight, height)
   
- return(clin_data)
+  if(nrow(weight_height_outlier) > 0){
+    weight_height_outlier <- data.frame("Dataset" = data_name, #Dataset
+                                        "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                                        "Question/Variable" = "Demographics", #'Question/Variable'
+                                        "Query message" = paste0(nrow(weight_height_outlier), " patients have unusual weight OR height. Likely that the data are switched. Please check."), #'Query message'
+                                        weight_height_outlier #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(weight_height_outlier, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       weight_height_outlier$Query.message[1])
+    )
+    print(weight_height_outlier[,-(1:4)])
+    writeLines('##########################################################################')
+    writeLines('### [MANUAL CORRECTIONS]: Outliers are likely from switching weights and heights')
+    for(i in weight_height_outlier$Label){
+      weight_correct <- clin_data$height[clin_data$Label == i]
+      height_correct  <- clin_data$weight[clin_data$Label == i]
+      clin_data$height[clin_data$Label == i] <- height_correct
+      clin_data$weight[clin_data$Label == i] <- weight_correct
+    }
+    clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
+    writeLines('##########################################################################')
+  }
+  
+  writeLines('### Clinical database: Checking distributions of BMI after manual corrections:')
+  G <- ggplot(clin_data, aes(x = randat, y =  BMI)) +
+    geom_point(size = 3, alpha = 0.25) +
+    theme_bw(base_size = 13) +
+    xlab("Randomisation date") +
+    ylab("BMI") 
+  print(G)
+  return(clin_data)
   
 }
 
 ######################################################################
 #9. Check randomisation date and time data
-check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data){
+check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
   writeLines('### Clinical database: Checking randomisation date and time:')
   ### Check if randomisation date and time is correct
   clin_data$Rand_date_time = NA
@@ -457,67 +493,125 @@ check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data){
     }
   }
   
-  check_data <- merge(rand_app_data, clin_data[,c("Label", "Rand_date_time")], by.x = "ID",  by.y = "Label", all.x = T)
+  check_data <- merge(rand_app_data, clin_data, by.x = "ID",  by.y = "Label", all.x = T)
   check_data$Rand_diffs = apply(check_data[,c('Rand_date_time','Rand_Time_TZ')],1, function(x) difftime(x[1], x[2], units='mins'))
   
   # Check missing data
   writeLines('### Clinical database: Checking if randomisation date and time are missing:')
   rand_date_missing <- is.na(check_data$Rand_date_time)
-  
-  writeLines(sprintf('%s patients have no information on randomisation date and time on MACRO:', 
-                     sum(rand_date_missing)))
-  check_data[rand_date_missing, ] %>% pull(ID) %>% as.character() %>% print()
-  writeLines('##########################################################################')
+  rand_date_missing <- check_data %>% filter(rand_date_missing, !ID %in% IDs_pending) %>% select(ID, randat, rantim)
+  colnames(rand_date_missing)[1] <- "Label"
+  if(nrow(rand_date_missing) > 0){
+    rand_date_missing <- data.frame("Dataset" = data_name, #Dataset
+                                    "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                                    "Question/Variable" = "Randomisation arm", #'Question/Variable'
+                                    "Query message" = paste0(nrow(rand_date_missing), " patients have missing information on randomisation date and time."), #'Query message'
+                                    rand_date_missing #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(rand_date_missing, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       rand_date_missing$Query.message[1])
+    )
+    print(rand_date_missing[,-(1:4)])
+    writeLines('##########################################################################')
+    
+  }
   
   # Check if the differences is more than 5 mins between both databases
   writeLines('### Clinical database: Checking if more than 5 min difference in randomisation date/time between MACRO and Randomisation database')
   randtime_diff_exceed <- check_data$Rand_diffs > 5 & !is.na(check_data$Rand_diffs)
-  writeLines(sprintf('%s patients have more than 5 minutes difference in randomisation date/time:', 
-                     sum(randtime_diff_exceed)))
-  check_data[randtime_diff_exceed, ] %>% 
-    mutate(MACRO = Rand_date_time, Randomisation_DB = Rand_Time_TZ) %>% 
-    select(ID, Treatment, MACRO, Randomisation_DB, Rand_diffs) %>% print()
-  writeLines('##########################################################################')
-  writeLines('### [MANUAL CORRECTIONS]: Using randomisation date and time from randomisation database in further analyses')
-  ID_time_errors <- check_data[rand_date_missing|randtime_diff_exceed,] %>% pull(ID) %>% as.character()
-  for(i in ID_time_errors){clin_data$Rand_date_time[clin_data$Label == i] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == i]}
-  writeLines('##########################################################################')
+  randtime_diff_exceed <- check_data %>% filter(randtime_diff_exceed) %>% select(ID, randat, rantim, Rand_Time_TZ, Rand_diffs) %>% rename("Rand_time_SHINY" = "Rand_Time_TZ")
   
+  if(nrow(randtime_diff_exceed) > 0){
+    randtime_diff_exceed <- data.frame("Dataset" = data_name, #Dataset
+                                       "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                                       "Question/Variable" = "Randomisation arm", #'Question/Variable'
+                                       "Query message" = paste0(nrow(randtime_diff_exceed), " patients have time difference (Rand_diffs) greater than 5 minutes between randomisation date/time on MACRO (randat and rantim) and that from randomisation database (SHINY). Please check with the source documents."), #'Query message'
+                                       randtime_diff_exceed #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(randtime_diff_exceed, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       randtime_diff_exceed$Query.message[1])
+    )
+    print(randtime_diff_exceed[,-(1:4)])
+    writeLines('##########################################################################')
+    writeLines('### [MANUAL CORRECTIONS]: Using randomisation date and time from randomisation database in further analyses')
+    for(i in randtime_diff_exceed$ID){clin_data$Rand_date_time[clin_data$Label == i] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == i]}
+    writeLines('##########################################################################')
+    
+  }
   return(clin_data)
 }
 ######################################################################
 #10. Check randomisation arms
-check_rand_arms <- function(clin_data, IDs_pending, rand_app_data){
-  
-  ### Check if randomisation arms matched 
+check_rand_arms <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
   clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
   clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
   clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
   
-  check_data <- merge(rand_app_data, clin_data[,c("Label", "rangrp")], by.x = "ID",  by.y = "Label", all.x = T)
+  check_data <- merge(rand_app_data, clin_data, by.x = "ID",  by.y = "Label", all.x = T)
   
+  ### Check missing data
   writeLines('### Clinical database: Checking if randomisation arms are missing:')
   rangrp_missing <- is.na(check_data$rangrp)
-  writeLines(sprintf('%s patients have no information on treatment arms on MACRO:', 
-                     sum(rangrp_missing)))
-  check_data[rangrp_missing, ] %>% pull(ID) %>% as.character() %>% print()
-  writeLines('##########################################################################')
+  rangrp_missing <- check_data %>% filter(rangrp_missing) %>% select(ID, rangrp) %>% rename("Label" = "ID")
   
+  if(nrow(rangrp_missing) > 0){
+    rangrp_missing <- data.frame("Dataset" = data_name, #Dataset
+                                 "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                                 "Question/Variable" = "Randomisation arm", #'Question/Variable'
+                                 "Query message" = paste0(nrow(rangrp_missing), " patients have missing randomisation arm information"), #'Query message'
+                                 rangrp_missing #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(rangrp_missing, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       rangrp_missing$Query.message[1])
+    )
+    print(rangrp_missing[,-(1:4)])
+    writeLines('##########################################################################')
+    writeLines('### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses')
+    for(i in rangrp_missing$Label){clin_data$rangrp[clin_data$Label == i] <- rand_app_data$Treatment[rand_app_data$ID == i]}
+    writeLines('##########################################################################')
+  }
   
+  ### Check mismatched data
   writeLines('### Clinical database: Checking if randomisation arms matched with the randomisation database:')
   rangrp_disagree <- (check_data$Treatment != check_data$rangrp) & !is.na(check_data$rangrp)
-  writeLines(sprintf('%s patients have mismatched treatment arms:', 
-                     sum(rangrp_disagree)))
-  check_data[rangrp_disagree, ] %>% mutate(MACRO = rangrp, randomisation_DB = Treatment) %>% 
-    select(ID, sex, MACRO, randomisation_DB)  %>% print()
-  writeLines('##########################################################################')
-  writeLines('### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses')
-  ID_rangrp_errors <- check_data[rangrp_missing|rangrp_disagree,] %>% pull(ID) %>% as.character()
-  for(i in ID_rangrp_errors){clin_data$rangrp[clin_data$Label == i] <- rand_app_data$Treatment[rand_app_data$ID == i]}
-  writeLines('##########################################################################')
+  rangrp_disagree <- check_data %>% filter(rangrp_disagree) %>% select(ID, rangrp, Treatment) %>% rename("Trt_SHINY" = "Treatment")
   
-  writeLines('### Clinical database: Checking frequencies of randomisation arms after manual corrections:')
-  table(clin_data$rangrp, useNA = "always") %>% as.data.frame() %>% print()
-  writeLines('##########################################################################')
+  if(nrow(rangrp_disagree) > 0){
+    rangrp_disagree <- data.frame("Dataset" = data_name, #Dataset
+                                  "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                                  "Question/Variable" = "Randomisation arm", #'Question/Variable'
+                                  "Query message" = paste0(nrow(rangrp_disagree), " patients mismatched randomisation arm information with the randomisation database (SHINY). Please check."), #'Query message'
+                                  rangrp_disagree #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(rangrp_disagree, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       rangrp_disagree$Query.message[1])
+    )
+    print(rangrp_disagree[,-(1:4)])
+    writeLines('##########################################################################')
+    writeLines('### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses')
+    for(i in rangrp_disagree$Label){clin_data$rangrp[clin_data$Label == i] <- rand_app_data$Treatment[rand_app_data$ID == i]}
+    writeLines('##########################################################################')
+  }
+  
   return(clin_data)
 }
