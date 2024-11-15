@@ -1,97 +1,86 @@
-load_clinical_data <- function(){
-  # load the clinical data
-  writeLines('##########################################################################')
-  data_name <- 'InterimEnrolment.dta'
-  file_name <- paste0(prefix_dropbox, "/Data/", data_name)
-  version <- file.info(file_name)$ctime %>% as.Date()
-  today <- Sys.Date()
-  clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
-  clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
+check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
+  # A special case
+  clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
   
-  
-  sink('Queries/test.csv')
-  writeLines(sprintf('PLATCOV data queries\nData: %s\nReceived date: %s\nQuery date: %s\n',
-                     data_name,
-                     version,
-                     today)
-  )
-  sink()
-  
-  write.table(B, 'Queries/test.csv', col.names=T, sep=",", append=TRUE, row.names = F)
-  
-  
+  writeLines('### Clinical database: Checking missing age information:')
+  # Missing Age data?
+  ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
   
   writeLines('##########################################################################')
+  # calculate age at randomisation 
+  for(i in which(ind)){
+    clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
+  }
   
-  # writeLines(sprintf('Clinical dataset contains %s rows with %s unique Screening IDs and %s unique Patient IDs',
-  #                    nrow(clin_data),
-  #                    length(unique(clin_data$scrid)),
-  #                    length(unique(clin_data$Label))
-  # ))
+  check_data <- merge(clin_data[,c("Label", "randat", "dob_my", "age_yr")], rand_app_data, by.y = "ID",  by.x = "Label", all.x = T)
+  check_data <- check_data %>% filter(!check_data$Label %in% IDs_pending)
   
-  # Check if a patient has multiple screening ID
-  duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
-  duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
-  duplicated_clin_data
-  duplicated_clin_queries <- clin_data %>%
-    filter(Label %in% duplicated_clin_data) %>%
-    select(Site, scrid, Label)
+  check_data$age <- floor(as.numeric(check_data$age))
+  check_data$age_dob_missing <- is.na(check_data$age_yr)
+  check_data$age_agree_yn <- check_data$age == check_data$age_yr
   
-  A <- data.frame(Dataset = data_name,
-             CRF = "Screening",
-             Variable = "Screening Number",
-             Query = "Different Screening Number ('scrid') were assigned to the same Subject Number ('Label')",
-             duplicated_clin_queries
-  )
-  
-  B <- A %>%
-    mutate(i = 1:nrow(A),
-           Dataset = if_else(i > 1, "", Dataset),
-           CRF = if_else(i > 1, "", CRF),
-           Variable = if_else(i > 1, "", Variable),
-           Query = if_else(i > 1, "", Query)) %>%
-    select(-i)
-           
-  
-  C <- list(B,B)
-  lapply(C, function(x) write.table( data.frame(x), 'Queries/test.csv'  , append= T, sep=',', row.names = F ))
-  
-  duplicated_clin_queries
+  age_missing <- check_data %>% filter(age_dob_missing) %>% select(Label, dob_my, age_yr)
 
-  
-  
-  
-  
-  
-  
-  
-  # check duplications
-  writeLines('### Clinical database: Checking multiple screening IDs:')
-  duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
-  duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
-  duplicated_clin_data
-  writeLines(sprintf('%s patients have multiple screening ID',
-                     length(duplicated_clin_data)))
-  
-  
-  for(i in duplicated_clin_data){
-    writeLines(sprintf('- Patient %s has multiple screening IDs: %s', 
-                       duplicated_clin_data,
-                       paste(clin_data$scrid[clin_data$Label == i], collapse = ", ")
-    ))
+  if(sum(check_data$age_dob_missing) > 0){
+    age_missing <- data.frame("Dataset" = data_name, #Dataset
+                              "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                              "Question/Variable" = "Demographics", #'Question/Variable'
+                              "Query message" = paste0(nrow(age_missing), " patients have missing age (age_yr) AND date of birth (dob_my) information."), #'Query message'
+                              age_missing #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
     
+    write.table(age_missing, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
     
-    
-    
-    
-    
+    writeLines(sprintf('Query: %s\n',
+                       age_missing$Query.message[1])
+    )
+    print(age_missing[,-(1:4)])
+    writeLines('##########################################################################')
+    #manual correction
+    writeLines('### [MANUAL CORRECTIONS]: Subsequent analyses use age information from the randomisation database')
+    for(i in age_missing$Label){clin_data$age_yr[clin_data$Label == i] <- rand_app_data$age[rand_app_data$ID == i]}
     writeLines('##########################################################################')
     
   }
   
-  # manual correction for duplications
-  ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
-  if(length(ind>0)){clin_data <- clin_data[-ind,]}
+  
+  # mismatched age?
+  age_mismatched <- check_data %>% filter(!age_agree_yn) %>% select(Label, age_yr, age)
+  colnames(age_mismatched) <- c("Label", "age_yr_MACRO", "age_yr_SHINY")
+  if(nrow(age_mismatched) > 0){
+    age_mismatched <- data.frame("Dataset" = data_name, #Dataset
+                              "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                              "Question/Variable" = "Demographics", #'Question/Variable'
+                              "Query message" = paste0(nrow(age_mismatched), " patients have mismatched age information with randomisation database (SHINY). Please check with the source documents"), #'Query message'
+                              age_mismatched #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(age_mismatched, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       age_mismatched$Query.message[1])
+    )
+    print(age_mismatched[,-(1:4)])
+    writeLines('##########################################################################')
+    #manual correction
+    writeLines('### [MANUAL CORRECTIONS]: Subsequent analyses use age information from the randomisation database')
+    for(i in age_mismatched$Label){clin_data$age_yr[clin_data$Label == i] <- rand_app_data$age[rand_app_data$ID == i]}
+    writeLines('##########################################################################')
+  }
+  
+  clin_data$ v <- as.numeric(clin_data$age_yr)
+  
+  # writeLines('### Clinical database: Checking distributions of age:')
+  # ggplot(clin_data, aes(x = randat, y =  age_yr)) +
+  #   geom_point(size = 3, alpha = 0.25) +
+  #   theme_bw(base_size = 13) +
+  #   xlab("Randomisation date") +
+  #   ylab("Age (years)")
+  writeLines('##########################################################################')
   
   return(clin_data)
 }

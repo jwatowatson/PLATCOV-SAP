@@ -29,16 +29,35 @@ options(max.print = 5000)
 # 000 Randomization database
 rand_app_data <- load_randomisation_data()
 #############################################################################################
+query_file_name <-  'Queries/01_queries_clinical_database.csv'
+
+
+sink("Queries/01_queries_clinical_database.txt", split = T)
+clin_data <- load_clinical_data(query_file_name)
+IDs_pending <- check_MACRO_clinical_database(clin_data, rand_app_data)
+clin_data <- check_screen_failure(clin_data, query_file_name)
+clin_data <- check_randomisation_info(clin_data, query_file_name)
+clin_data <- check_sex(clin_data, IDs_pending, rand_app_data, query_file_name)
+clin_data <- check_age(clin_data, IDs_pending, rand_app_data, query_file_name)
+clin_data <- check_symptom_onset(clin_data, IDs_pending, rand_app_data, query_file_name)
+
+
+
+sink()
+
+
+clin_data <- check_randomisation_info(clin_data)
+
+
+
+
 # 001 Clinical database
 sink("Queries/01_queries_clinical_database.txt", split = T)
 
 
-clin_data <- load_clinical_data()
 
 
 
-IDs_pending <- check_MACRO_clinical_database(clin_data, rand_app_data)
-clin_data <- check_screen_failure(clin_data)
 clin_data <- check_randomisation_info(clin_data)
 clin_data <- check_sex(clin_data, IDs_pending, rand_app_data)
 clin_data <- check_age(clin_data, IDs_pending, rand_app_data)
