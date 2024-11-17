@@ -40,6 +40,9 @@
     id_missing <- rand_app_data$ID[which(!rand_app_data$ID %in% id_data)]
     
     if(length(id_missing) > 0){
+      n_rows <- ceiling(length(id_missing) / 5)
+      id_missing <- c(id_missing, rep("", n_rows * 5 - length(id_missing)))
+      
       id_missing_matrix <- matrix(id_missing, ncol = 5)
       
       id_missing_matrix <- data.frame("Dataset" = data_name, #Dataset
