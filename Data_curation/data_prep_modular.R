@@ -46,6 +46,29 @@ clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data, query_file_n
 sink()
 
 #############################################################################################
+
+#############################################################################################
+## 002 Vital sign database
+
+query_file_name <-  'Queries/02_PLATCOV_queries_vital_sign_database.csv'
+
+
+
+
+
+
+
+sink("Queries/03_queries_vital_sign_database.txt", split = T)
+vita_data <- load_vital_data(rand_app_data)
+vita_data <- prep_vitadata(vita_data, clin_data)
+check_vita_time(vita_data)
+check_vital_signs(vita_data)
+sink()
+
+
+
+
+
 ## 002 Temperature database
 query_file_name <-  'Queries/02_PLATCOV_queries_temperature_database.csv'
 
@@ -61,14 +84,7 @@ sink()
 
 clin_data <- add_baseline_fever(clin_data, fever_data)
 
-#############################################################################################
-## 003 Vital sign database
-sink("Queries/03_queries_vital_sign_database.txt", split = T)
-vita_data <- load_vital_data(rand_app_data)
-vita_data <- prep_vitadata(vita_data, clin_data)
-check_vita_time(vita_data)
-check_vital_signs(vita_data)
-sink()
+
 #############################################################################################
 ## 004 Symptom database
 sink("Queries/04_queries_symptom_database.txt", split = T)
