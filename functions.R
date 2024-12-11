@@ -593,6 +593,9 @@ get_itt_population = function(prefix_drop_rand){
   rand.TH57$ID = paste('PLT-TH57-',rand.TH57$RandomisationID,sep='')
   
   ff_names = list.files(path = prefix_drop_rand, pattern = 'data',full.names = T)
+  
+  ff_names <- ff_names[-3] # Move back when NP has some data
+  
   data_list = list()
   for(i in 1:length(ff_names)){
     data_list[[i]] = read.csv(ff_names[i])

@@ -19,9 +19,9 @@ source("000_load_randomisation_database.R")
 source("001_clean_clinical_database.R")
 source("002_clean_temperature_database.R")
 source("003_clean_vital_database.R")
-source("004_clean_symptom_database.R")
-source("005_clean_final_status_database.R")
-source("006_clean_CBC_database.R")
+#source("004_clean_symptom_database.R")
+#source("005_clean_final_status_database.R")
+#source("006_clean_CBC_database.R")
 
 
 options(max.print = 5000)
@@ -31,6 +31,7 @@ rand_app_data <- load_randomisation_data()
 #############################################################################################
 ## 001 Clinical database
 query_file_name <-  'Queries/01_PLATCOV_queries_clinical_database.csv'
+data_name <- 'InterimEnrolment.dta'
 
 sink("Queries/01_queries_clinical_database.txt", split = T)
 clin_data <- load_clinical_data(query_file_name)
@@ -46,34 +47,23 @@ clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data, query_file_n
 sink()
 
 #############################################################################################
-
-#############################################################################################
 ## 002 Vital sign database
-
 query_file_name <-  'Queries/02_PLATCOV_queries_vital_sign_database.csv'
+data_name <- 'InterimVitalSigns.dta'
 
-
-
-
-
-
-
-sink("Queries/03_queries_vital_sign_database.txt", split = T)
+sink("Queries/02_queries_vital_sign_database.txt", split = T)
 vita_data <- load_vital_data(rand_app_data)
 vita_data <- prep_vitadata(vita_data, clin_data)
 check_vita_time(vita_data)
 check_vital_signs(vita_data)
 sink()
 
+#############################################################################################
+## 003 Temperature database
+query_file_name <-  'Queries/03_PLATCOV_queries_temperature_database.csv'
 
 
-
-
-## 002 Temperature database
-query_file_name <-  'Queries/02_PLATCOV_queries_temperature_database.csv'
-
-
-sink("Queries/02_queries_temperature_database.txt", split = T)
+sink("Queries/03_queries_temperature_database.txt", split = T)
 temp_data <- load_temp_data(rand_app_data, query_file_name)
 fever_data <- prep_tempdata(temp_data, clin_data)
 check_time_temp(fever_data)

@@ -40,7 +40,7 @@ source('functions.R')
 source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
 
-interim_version <- "v10"
+interim_version <- "v11"
 ```
 
 All paths are local
@@ -52,9 +52,9 @@ Set up analysis
 \<\<\<\<\<\<\< HEAD
 
 ```{r load_data}
-intervention = 'interim_all';ref_arm = 'No study drug'
+#intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
-# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+ intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
@@ -240,7 +240,7 @@ ff = paste0('Rout/',ff)
 ```{r}
 main_mod = which(model_settings$prior==1&
                    model_settings$cov_matrices==1&
-                   model_settings$mod==all_mods[3])
+                   model_settings$mod==all_mods[2])
 
 model_cols = brewer.pal(n = 8, name = 'Dark2')[1:nrow(model_settings)]
 names(model_cols) = paste('model', 1:nrow(model_settings))
@@ -272,8 +272,8 @@ G1_box
 ```{r}
 plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".pdf")
 
-pdf(plot_name, width = 8, height = 5)
-G1_box
+pdf(plot_name, width = 5, height = 5)
+G1
 dev.off()
 ```
 

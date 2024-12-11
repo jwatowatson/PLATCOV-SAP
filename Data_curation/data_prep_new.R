@@ -454,7 +454,7 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
 re_download = F
-system_used = "mac"
+system_used = "windows"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -1410,11 +1410,12 @@ write.table(x = symptom_REGN, file = '../Analysis_Data/REGN_symptom_analysis.csv
 Res_Nitazoxanide = 
   Res %>% filter(Trt %in% c('Nitazoxanide',"No study drug"),
                  Rand_date > "2022-06-03 00:00:00",
-                 Country %in% c('Brazil','Laos', 'Pakistan'),
-                 !ID %in% c("PLT-BR3-006", ## why are we excluding these patients at this stage - should be at the analysis stage?
-                            "PLT-BR3-018",
-                            "PLT-BR3-033",
-                            "PLT-BR3-043")) %>%
+                 Country %in% c('Brazil','Laos', 'Pakistan')#,
+                 # !ID %in% c("PLT-BR3-006", ## why are we excluding these patients at this stage - should be at the analysis stage?
+                 #            "PLT-BR3-018",
+                 #            "PLT-BR3-033",
+                 #            "PLT-BR3-043")
+                 ) %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Nitazoxanide, file = paste0(prefix_analysis_data, "/Analysis_Data/Nitazoxanide_analysis.csv"), row.names = F, sep=',', quote = F)
 
