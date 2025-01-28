@@ -19,8 +19,8 @@ source("000_load_randomisation_database.R")
 source("001_clean_clinical_database.R")
 source("002_clean_temperature_database.R")
 source("003_clean_vital_database.R")
-#source("004_clean_symptom_database.R")
-#source("005_clean_final_status_database.R")
+source("004_clean_symptom_database.R")
+source("005_clean_final_status_database.R")
 #source("006_clean_CBC_database.R")
 
 

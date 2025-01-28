@@ -1,714 +1,326 @@
 ##########################################################################
-Reading symptom database from MACRO...
+Reading final status database from MACRO...
 ##########################################################################
-### Symptom database: Checking MACRO data entry progress:
-Number of randomised patient: 2163
-Number of randomised patient symptom data on MACRO: 2082
+### Final status database: Checking MACRO data entry progress:
+Number of randomised patient: 2263
+Number of randomised patient final status data on MACRO: 1874
 ##########################################################################
-81 patients have no symptom data on any visits:
- [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617" "PLT-TH1-1618" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1897"
-[10] "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902" "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906"
-[19] "PLT-TH1-1907" "PLT-TH1-1908" "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914" "PLT-TH1-1915"
-[28] "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920" "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924"
-[37] "PLT-TH1-1925" "PLT-TH1-1926" "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932" "PLT-TH1-1933"
-[46] "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937" "PLT-TH1-1938" "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942"
-[55] "PLT-TH1-1943" "PLT-TH1-1944" "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950" "PLT-TH1-1951"
-[64] "PLT-TH1-1952" "PLT-TH1-1953" "PLT-TH1-1954" "PLT-TH1-1955" "PLT-TH1-1956" "PLT-TH1-1957" "PLT-TH1-1958" "PLT-BR3-131"  "PLT-BR3-132" 
-[73] "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136"  "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
-##########################################################################
-### Symptom database: Missing data by visits:
-# A tibble: 12 × 2
-   visit missing
-   <chr>   <int>
- 1 D0        208
- 2 D0H1      208
- 3 D1        371
- 4 D10       970
- 5 D14       404
- 6 D2        377
- 7 D28       470
- 8 D3        383
- 9 D4        391
-10 D5        398
-11 D6        401
-12 D7        403
-##########################################################################
-### Symptom database: Checking symptom data mismatched:
-20 rows have sq_yn column = 1, but no details explained:
-          Label Timepoint_ID sq_yn symptom_counts
-1   PLT-BR3-101            7     1              0
-2   PLT-TH1-030            1     1              0
-3  PLT-TH1-1119            3     1              0
-4   PLT-TH1-118            1     1              0
-5  PLT-TH1-1251            4     1              0
-6  PLT-TH1-1341           28     1              0
-7   PLT-TH1-254            7     1              0
-8   PLT-TH1-268           14     1              0
-9   PLT-TH1-305            3     1              0
-10  PLT-TH1-317            7     1              0
-11  PLT-TH1-341            3     1              0
-12  PLT-TH1-349            3     1              0
-13  PLT-TH1-369            3     1              0
-14  PLT-TH1-391            7     1              0
-15  PLT-TH1-662           10     1              0
-16  PLT-TH1-708           10     1              0
-17  PLT-TH1-712            2     1              0
-18  PLT-TH1-769           10     1              0
-19  PLT-TH1-784            6     1              0
-20  PLT-TH1-890           10     1              0
-##########################################################################
-3 rows have sq_yn column = 0, but indicated of having at least 1 symptom:
-         Label Timepoint_ID sq_yn symptom_counts
-1  PLT-LA8-001            3     0              1
-2 PLT-TH1-1416           14     0              1
-3 PLT-TH1-1507            1     0              1
-##########################################################################
-282 rows have missing data on the sq_yn column:
-           Label Timepoint_ID sq_yn symptom_counts
-1    PLT-BR3-031            0    NA              0
-2    PLT-BR3-037            0    NA              0
-3    PLT-BR3-048            0    NA              0
-4    PLT-BR3-058            0    NA              0
-5    PLT-BR3-120            0    NA              0
-6    PLT-BR3-124            0    NA              0
-7    PLT-LA8-012            0    NA              0
-8    PLT-LA8-012            1    NA              0
-9    PLT-PK1-004            0    NA              0
-10   PLT-TH1-056            0    NA              0
-11  PLT-TH1-1024            0    NA              0
-12  PLT-TH1-1024            1    NA              0
-13  PLT-TH1-1024            2    NA              0
-14  PLT-TH1-1024            3    NA              0
-15  PLT-TH1-1024            4    NA              0
-16  PLT-TH1-1024            5    NA              0
-17  PLT-TH1-1024            6    NA              0
-18  PLT-TH1-1024            7    NA              0
-19  PLT-TH1-1024           14    NA              0
-20  PLT-TH1-1028            0    NA              0
-21  PLT-TH1-1028            1    NA              0
-22  PLT-TH1-1035            0    NA              0
-23  PLT-TH1-1039            0    NA              0
-24  PLT-TH1-1045           14    NA              0
-25  PLT-TH1-1047           14    NA              0
-26  PLT-TH1-1050            6    NA              0
-27  PLT-TH1-1050            7    NA              0
-28  PLT-TH1-1050           14    NA              0
-29  PLT-TH1-1087            4    NA              0
-30  PLT-TH1-1087            5    NA              0
-31  PLT-TH1-1087            6    NA              0
-32  PLT-TH1-1087            7    NA              0
-33  PLT-TH1-1087           14    NA              0
-34  PLT-TH1-1090            0    NA              0
-35  PLT-TH1-1090            1    NA              0
-36  PLT-TH1-1090            2    NA              0
-37  PLT-TH1-1090            3    NA              0
-38  PLT-TH1-1090            4    NA              0
-39  PLT-TH1-1090            5    NA              0
-40  PLT-TH1-1090            6    NA              0
-41  PLT-TH1-1090            7    NA              0
-42  PLT-TH1-1090           14    NA              0
-43  PLT-TH1-1095            0    NA              0
-44  PLT-TH1-1095            1    NA              0
-45  PLT-TH1-1095            2    NA              0
-46  PLT-TH1-1095            3    NA              0
-47  PLT-TH1-1095            4    NA              0
-48  PLT-TH1-1095            5    NA              0
-49  PLT-TH1-1095            6    NA              0
-50  PLT-TH1-1095            7    NA              0
-51  PLT-TH1-1095           10    NA              0
-52  PLT-TH1-1095           14    NA              0
-53  PLT-TH1-1096            0    NA              0
-54  PLT-TH1-1098            6    NA              0
-55  PLT-TH1-1098            7    NA              0
-56  PLT-TH1-1098           10    NA              0
-57  PLT-TH1-1100            0    NA              0
-58  PLT-TH1-1100            1    NA              0
-59  PLT-TH1-1100            2    NA              0
-60  PLT-TH1-1100            3    NA              0
-61  PLT-TH1-1100            4    NA              0
-62  PLT-TH1-1100            5    NA              0
-63  PLT-TH1-1100            6    NA              0
-64  PLT-TH1-1100            7    NA              0
-65  PLT-TH1-1100           14    NA              0
-66  PLT-TH1-1107            0    NA              0
-67  PLT-TH1-1107            1    NA              0
-68  PLT-TH1-1107            2    NA              0
-69  PLT-TH1-1107            3    NA              0
-70  PLT-TH1-1107            4    NA              0
-71  PLT-TH1-1107            5    NA              0
-72  PLT-TH1-1107            6    NA              0
-73  PLT-TH1-1107            7    NA              0
-74  PLT-TH1-1107           14    NA              0
-75  PLT-TH1-1122            0    NA              0
-76  PLT-TH1-1122            1    NA              0
-77  PLT-TH1-1122            2    NA              0
-78  PLT-TH1-1122            3    NA              0
-79  PLT-TH1-1122            4    NA              0
-80  PLT-TH1-1122            5    NA              0
-81  PLT-TH1-1122            6    NA              0
-82  PLT-TH1-1122            7    NA              0
-83  PLT-TH1-1122           10    NA              0
-84  PLT-TH1-1122           14    NA              0
-85  PLT-TH1-1126            0    NA              0
-86  PLT-TH1-1126            1    NA              0
-87  PLT-TH1-1126            2    NA              0
-88  PLT-TH1-1126            3    NA              0
-89  PLT-TH1-1126            4    NA              0
-90  PLT-TH1-1126            5    NA              0
-91  PLT-TH1-1126            6    NA              0
-92  PLT-TH1-1126            7    NA              0
-93  PLT-TH1-1126           14    NA              0
-94  PLT-TH1-1152            0    NA              0
-95   PLT-TH1-116            0    NA              0
-96   PLT-TH1-116            1    NA              0
-97   PLT-TH1-116            2    NA              0
-98   PLT-TH1-116           14    NA              0
-99  PLT-TH1-1163            0    NA              0
-100 PLT-TH1-1167            0    NA              0
-101 PLT-TH1-1190            0    NA              0
-102 PLT-TH1-1254            3    NA              0
-103 PLT-TH1-1267            0    NA              0
-104 PLT-TH1-1288            0    NA              0
-105 PLT-TH1-1293            0    NA              0
-106 PLT-TH1-1297            0    NA              0
-107 PLT-TH1-1331            0    NA              0
-108 PLT-TH1-1333            0    NA              0
-109 PLT-TH1-1334            0    NA              0
-110 PLT-TH1-1344            0    NA              0
-111 PLT-TH1-1441            0    NA              0
-112 PLT-TH1-1441            1    NA              0
-113 PLT-TH1-1461            0    NA              0
-114 PLT-TH1-1470            5    NA              0
-115 PLT-TH1-1490            1    NA              0
-116 PLT-TH1-1490            2    NA              0
-117 PLT-TH1-1490            3    NA              0
-118 PLT-TH1-1490            4    NA              0
-119 PLT-TH1-1490            6    NA              0
-120 PLT-TH1-1490            7    NA              0
-121 PLT-TH1-1490           10    NA              0
-122 PLT-TH1-1490           14    NA              0
-123 PLT-TH1-1512            0    NA              0
-124 PLT-TH1-1513            0    NA              0
-125 PLT-TH1-1515            0    NA              0
-126 PLT-TH1-1529            0    NA              0
-127 PLT-TH1-1530            0    NA              0
-128 PLT-TH1-1531            0    NA              0
-129 PLT-TH1-1532            0    NA              0
-130 PLT-TH1-1533            0    NA              0
-131 PLT-TH1-1534            0    NA              0
-132 PLT-TH1-1535            0    NA              0
-133 PLT-TH1-1536            0    NA              0
-134 PLT-TH1-1537            0    NA              0
-135 PLT-TH1-1538            0    NA              0
-136 PLT-TH1-1539            0    NA              0
-137 PLT-TH1-1540            0    NA              0
-138 PLT-TH1-1541            0    NA              0
-139 PLT-TH1-1542            0    NA              0
-140 PLT-TH1-1544            0    NA              0
-141 PLT-TH1-1545            0    NA              0
-142 PLT-TH1-1546            0    NA              0
-143 PLT-TH1-1547            0    NA              0
-144 PLT-TH1-1548            0    NA              0
-145 PLT-TH1-1550            0    NA              0
-146 PLT-TH1-1554            0    NA              0
-147 PLT-TH1-1555            0    NA              0
-148 PLT-TH1-1556            0    NA              0
-149 PLT-TH1-1557            0    NA              0
-150 PLT-TH1-1558            0    NA              0
-151 PLT-TH1-1559            0    NA              0
-152 PLT-TH1-1560            0    NA              0
-153 PLT-TH1-1561            0    NA              0
-154 PLT-TH1-1562            0    NA              0
-155 PLT-TH1-1563            0    NA              0
-156 PLT-TH1-1564            0    NA              0
-157 PLT-TH1-1565            0    NA              0
-158 PLT-TH1-1566            0    NA              0
-159 PLT-TH1-1567            0    NA              0
-160 PLT-TH1-1568            0    NA              0
-161 PLT-TH1-1569            0    NA              0
-162 PLT-TH1-1570            0    NA              0
-163 PLT-TH1-1571            0    NA              0
-164 PLT-TH1-1572            0    NA              0
-165 PLT-TH1-1573            0    NA              0
-166 PLT-TH1-1574            0    NA              0
-167 PLT-TH1-1575            0    NA              0
-168 PLT-TH1-1576            0    NA              0
-169 PLT-TH1-1577            0    NA              0
-170 PLT-TH1-1578            0    NA              0
-171 PLT-TH1-1579            0    NA              0
-172 PLT-TH1-1580            0    NA              0
-173 PLT-TH1-1581            0    NA              0
-174 PLT-TH1-1582            0    NA              0
-175 PLT-TH1-1583            0    NA              0
-176 PLT-TH1-1584            0    NA              0
-177 PLT-TH1-1585            0    NA              0
-178 PLT-TH1-1586            0    NA              0
-179 PLT-TH1-1587            0    NA              0
-180 PLT-TH1-1588            0    NA              0
-181 PLT-TH1-1588            1    NA              0
-182 PLT-TH1-1588            2    NA              0
-183 PLT-TH1-1588            3    NA              0
-184 PLT-TH1-1589            0    NA              0
-185 PLT-TH1-1590            0    NA              0
-186 PLT-TH1-1591            0    NA              0
-187 PLT-TH1-1592            0    NA              0
-188 PLT-TH1-1593            1    NA              0
-189 PLT-TH1-1593            2    NA              0
-190 PLT-TH1-1593            3    NA              0
-191 PLT-TH1-1594            0    NA              0
-192 PLT-TH1-1595            0    NA              0
-193 PLT-TH1-1596            0    NA              0
-194 PLT-TH1-1597            0    NA              0
-195 PLT-TH1-1598            0    NA              0
-196 PLT-TH1-1598            1    NA              0
-197 PLT-TH1-1599            0    NA              0
-198 PLT-TH1-1599            1    NA              0
-199 PLT-TH1-1599            2    NA              0
-200 PLT-TH1-1601            0    NA              0
-201 PLT-TH1-1603            0    NA              0
-202 PLT-TH1-1604            0    NA              0
-203 PLT-TH1-1608            0    NA              0
-204 PLT-TH1-1609            0    NA              0
-205 PLT-TH1-1609            1    NA              0
-206 PLT-TH1-1609            2    NA              0
-207 PLT-TH1-1609            3    NA              0
-208 PLT-TH1-1609            4    NA              0
-209 PLT-TH1-1610            0    NA              0
-210 PLT-TH1-1611            0    NA              0
-211 PLT-TH1-1616            0    NA              0
-212 PLT-TH1-1616            1    NA              0
-213 PLT-TH1-1616            2    NA              0
-214 PLT-TH1-1616            3    NA              0
-215 PLT-TH1-1619            1    NA              0
-216 PLT-TH1-1619            2    NA              0
-217 PLT-TH1-1619            3    NA              0
-218 PLT-TH1-1620            0    NA              0
-219 PLT-TH1-1621            0    NA              0
-220 PLT-TH1-1622            0    NA              0
-221 PLT-TH1-1623            0    NA              0
-222 PLT-TH1-1624            0    NA              0
-223 PLT-TH1-1625            0    NA              0
-224 PLT-TH1-1626            0    NA              0
-225 PLT-TH1-1626            1    NA              0
-226 PLT-TH1-1626            2    NA              0
-227 PLT-TH1-1626            3    NA              0
-228 PLT-TH1-1633            0    NA              0
-229 PLT-TH1-1633            1    NA              0
-230 PLT-TH1-1634            0    NA              0
-231 PLT-TH1-1635            0    NA              0
-232 PLT-TH1-1636            0    NA              0
-233 PLT-TH1-1637            0    NA              0
-234 PLT-TH1-1651            0    NA              0
-235 PLT-TH1-1652            0    NA              0
-236 PLT-TH1-1654            0    NA              0
-237 PLT-TH1-1655            0    NA              0
-238 PLT-TH1-1657            0    NA              0
-239 PLT-TH1-1658            0    NA              0
-240 PLT-TH1-1659            0    NA              0
-241 PLT-TH1-1660            0    NA              0
-242 PLT-TH1-1664            0    NA              0
-243 PLT-TH1-1664            1    NA              0
-244 PLT-TH1-1664            2    NA              0
-245 PLT-TH1-1664            3    NA              0
-246 PLT-TH1-1664            4    NA              0
-247 PLT-TH1-1667            0    NA              0
-248 PLT-TH1-1668            0    NA              0
-249 PLT-TH1-1677            0    NA              0
-250 PLT-TH1-1678            0    NA              0
-251 PLT-TH1-1679            0    NA              0
-252 PLT-TH1-1680            0    NA              0
-253 PLT-TH1-1681            0    NA              0
-254 PLT-TH1-1684            0    NA              0
-255 PLT-TH1-1684            1    NA              0
-256 PLT-TH1-1684            2    NA              0
-257 PLT-TH1-1685            0    NA              0
-258 PLT-TH1-1689            0    NA              0
-259 PLT-TH1-1690            0    NA              0
-260 PLT-TH1-1694            0    NA              0
-261 PLT-TH1-1707            4    NA              0
-262 PLT-TH1-1710            0    NA              0
-263 PLT-TH1-1711            0    NA              0
-264 PLT-TH1-1712            0    NA              0
-265 PLT-TH1-1716            0    NA              0
-266 PLT-TH1-1717            0    NA              0
-267 PLT-TH1-1718            0    NA              0
-268 PLT-TH1-1737            0    NA              0
-269 PLT-TH1-1739            0    NA              0
-270 PLT-TH1-1742            0    NA              0
-271 PLT-TH1-1744            0    NA              0
-272 PLT-TH1-1764            0    NA              0
-273 PLT-TH1-1772            0    NA              0
-274 PLT-TH1-1773            0    NA              0
-275 PLT-TH1-1824            0    NA              0
-276 PLT-TH1-1853            0    NA              0
-277  PLT-TH1-260            0    NA              0
-278  PLT-TH1-388            0    NA              0
-279  PLT-TH1-450            0    NA              0
-280  PLT-TH1-628            0    NA              0
-281  PLT-TH1-628            1    NA              0
-282  PLT-TH1-906            2    NA              0
-##########################################################################
-### [Export] A list of free-text other symptoms...
-##########################################################################
-##########################################################################
-Checking symptom sq_fevyn: 1 rows reported this symptom without grades:
-            Label Timepoint_ID sq_fevyn sq_fevgr
-8935 PLT-TH1-1661            1        1       NA
-#--------------------------------------------------------------------------
-Checking symptom sq_fevyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_fevyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_headyn: 1 rows reported this symptom without grades:
-            Label Timepoint_ID sq_headyn sq_headgr
-8935 PLT-TH1-1661            1         1        NA
-#--------------------------------------------------------------------------
-Checking symptom sq_headyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_headyn    sq_headgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_headyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_headyn    sq_headgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_dizzyn: 1 rows reported this symptom without grades:
-            Label Timepoint_ID sq_dizzyn sq_dizzgr
-8849 PLT-TH1-1614            1         1        NA
-#--------------------------------------------------------------------------
-Checking symptom sq_dizzyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_dizzyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_bluryn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_bluryn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_bluryn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_fatigyn: 2 rows reported this symptom without grades:
-            Label Timepoint_ID sq_fatigyn sq_fatiggr
-8849 PLT-TH1-1614            1          1         NA
-8850 PLT-TH1-1614            2          1         NA
-#--------------------------------------------------------------------------
-Checking symptom sq_fatigyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_fatigyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_coughyn: 5 rows reported this symptom without grades:
-            Label Timepoint_ID sq_coughyn sq_coughgr
-8849 PLT-TH1-1614            1          1         NA
-8935 PLT-TH1-1661            1          1         NA
-8936 PLT-TH1-1661            2          1         NA
-8937 PLT-TH1-1661            3          1         NA
-9003 PLT-TH1-1707            1          1         NA
-#--------------------------------------------------------------------------
-Checking symptom sq_coughyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_coughyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_difbreayn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_difbreayn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_difbreayn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_chpainyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_chpainyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_chpainyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_runnoseyn: 3 rows reported this symptom without grades:
-            Label Timepoint_ID sq_runnoseyn sq_runnosegr
-5310 PLT-TH1-1230            4            1           NA
-6220 PLT-TH1-1311            5            1           NA
-8935 PLT-TH1-1661            1            1           NA
-#--------------------------------------------------------------------------
-Checking symptom sq_runnoseyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_runnoseyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_lossmellyn: 2 rows reported this symptom without grades:
-            Label Timepoint_ID sq_lossmellyn sq_lossmellgr
-3402 PLT-TH1-1063           14             1            NA
-8937 PLT-TH1-1661            3             1            NA
-#--------------------------------------------------------------------------
-Checking symptom sq_lossmellyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_lossmellyn: 0 rows reported this symptom with grade not in the range:
-[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_abdpainyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_abdpainyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_abdpainyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_losappetyn: 0 rows reported this symptom without grades:
-[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_losappetyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_losappetyn: 0 rows reported this symptom with grade not in the range:
-[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_nausyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_nausyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_nausyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_vomyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_vomyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_vomyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_diaryn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_diaryn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_diaryn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_arthyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_arthyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_arthyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_myalyn: 6 rows reported this symptom without grades:
-            Label Timepoint_ID sq_myalyn sq_myalgr
-1894  PLT-TH1-020            4         1        NA
-8849 PLT-TH1-1614            1         1        NA
-8850 PLT-TH1-1614            2         1        NA
-8851 PLT-TH1-1614            3         1        NA
-8852 PLT-TH1-1614            4         1        NA
-9003 PLT-TH1-1707            1         1        NA
-#--------------------------------------------------------------------------
-Checking symptom sq_myalyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_myalyn    sq_myalgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_myalyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_myalyn    sq_myalgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_itchyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_itchyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_itchyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_skrashyn: 0 rows reported this symptom without grades:
-[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_skrashyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_skrashyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking symptom sq_soreyn: 6 rows reported this symptom without grades:
-            Label Timepoint_ID sq_soreyn sq_soregr
-8846 PLT-TH1-1613            3         1        NA
-8847 PLT-TH1-1613            4         1        NA
-8850 PLT-TH1-1614            2         1        NA
-9003 PLT-TH1-1707            1         1        NA
-9004 PLT-TH1-1707            2         1        NA
-9005 PLT-TH1-1707            3         1        NA
-#--------------------------------------------------------------------------
-Checking symptom sq_soreyn: 0 rows reported this symptom grades without checking y/n:
-[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking symptom sq_soreyn: 0 rows reported this symptom with grade not in the range:
-[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-##########################################################################
-Checking other symptom sq_oth1des: 35 rows reported a symptom without grades:
-             Label Timepoint_ID              sq_oth1des sq_oth1gr
-343    PLT-BR3-036            1 INTESTINAL CONSTIPATION        NA
-1159   PLT-BR3-121            2       PAINT IN THE LEGS        NA
-1242   PLT-BR3-129            7                  SHIVER        NA
-1259   PLT-LA8-001            3                 Nothing        NA
-1831   PLT-TH1-014            1            Muffled ears        NA
-1918   PLT-TH1-022           14       throat irritation        NA
-1977   PLT-TH1-028            7             Sore throat        NA
-2011   PLT-TH1-032            1       throat irritation        NA
-2062   PLT-TH1-037            2             Stuffy nose        NA
-2092   PLT-TH1-040            2                  SPUTUM        NA
-2100   PLT-TH1-041            0                  Sputum        NA
-2361   PLT-TH1-068            0             SORE THROAT        NA
-3371  PLT-TH1-1060           28       Throat Irritation        NA
-3379  PLT-TH1-1061            7            Voice change        NA
-3765  PLT-TH1-1094           28            SHORTNESS OF        NA
-5276  PLT-TH1-1228            1            TASTE BITTER        NA
-6830  PLT-TH1-1368            1            BITTER TASTE        NA
-7402  PLT-TH1-1416           14                       .        NA
-7663  PLT-TH1-1439            1                  SPUTUM        NA
-8846  PLT-TH1-1613            3             STUFFY NOSE        NA
-8849  PLT-TH1-1614            1                  SPUTUM        NA
-8850  PLT-TH1-1614            2                  SPUTUM        NA
-8935  PLT-TH1-1661            1             STUFFY NOSE        NA
-8936  PLT-TH1-1661            2             STUFFY NOSE        NA
-8937  PLT-TH1-1661            3                  SPUTUM        NA
-8938  PLT-TH1-1661            4             STUFFY NOSE        NA
-9179   PLT-TH1-185            7                  Sputum        NA
-9803   PLT-TH1-248            0                  Sputum        NA
-10067  PLT-TH1-274            5            Bitter taste        NA
-10636  PLT-TH1-331            5                  Sputum        NA
-10821  PLT-TH1-350            0                  Sputum        NA
-10982  PLT-TH1-366            1      Daytime sleepiness        NA
-11103  PLT-TH1-378            2             Stuffy nose        NA
-11339  PLT-TH1-402            7 Post-exertional fatigue        NA
-12111  PLT-TH1-481            0               dry mouth        NA
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth1des: 6 rows reported grades with no symptom details:
-            Label Timepoint_ID sq_oth1des sq_oth1gr
-9983  PLT-TH1-266            0       <NA>         1
-11013 PLT-TH1-369            2       <NA>         1
-11014 PLT-TH1-369            3       <NA>         1
-11561 PLT-TH1-424           28       <NA>         1
-12151 PLT-TH1-485            0       <NA>         1
-16466 PLT-TH1-921            7       <NA>         0
-##########################################################################
-Checking other symptom sq_oth2des: 8 rows reported a symptom without grades:
-             Label Timepoint_ID       sq_oth2des sq_oth2gr
-1242   PLT-BR3-129            7 PAIN IN THE EYES        NA
-2011   PLT-TH1-032            1      stuffy nose        NA
-2624   PLT-TH1-094            4           Sputum        NA
-8468  PLT-TH1-1509            2     BITTER TASTE        NA
-8936  PLT-TH1-1661            2           SPUTUM        NA
-8937  PLT-TH1-1661            3      STUFFY NOSE        NA
-11103  PLT-TH1-378            2           Sputum        NA
-14831  PLT-TH1-757            0        Dysphagia        NA
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth2des: 0 rows reported grades with no symptom details:
-[1] Label        Timepoint_ID sq_oth2des   sq_oth2gr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking other symptom sq_oth3des: 1 rows reported a symptom without grades:
-            Label Timepoint_ID           sq_oth3des sq_oth3gr
-12080 PLT-TH1-477           28 Delayed menstruation        NA
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth3des: 0 rows reported grades with no symptom details:
-[1] Label        Timepoint_ID sq_oth3des   sq_oth3gr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking other symptom sq_oth4des: 0 rows reported a symptom without grades:
-[1] Label        Timepoint_ID sq_oth4des   sq_oth4gr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth4des: 0 rows reported grades with no symptom details:
-[1] Label        Timepoint_ID sq_oth4des   sq_oth4gr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking other symptom sq_oth5des: 0 rows reported a symptom without grades:
-[1] Label        Timepoint_ID sq_oth5des   sq_oth5gr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth5des: 0 rows reported grades with no symptom details:
-[1] Label        Timepoint_ID sq_oth5des   sq_oth5gr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking other symptom sq_oth6des: 0 rows reported a symptom without grades:
-[1] Label        Timepoint_ID sq_oth6des   sq_oth6gr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth6des: 0 rows reported grades with no symptom details:
-[1] Label        Timepoint_ID sq_oth6des   sq_oth6gr   
-<0 rows> (or 0-length row.names)
-##########################################################################
-Checking other symptom sq_oth7des: 0 rows reported a symptom without grades:
-[1] Label        Timepoint_ID sq_oth7des   sq_oth7gr   
-<0 rows> (or 0-length row.names)
-#--------------------------------------------------------------------------
-Checking other symptom sq_oth7des: 0 rows reported grades with no symptom details:
-[1] Label        Timepoint_ID sq_oth7des   sq_oth7gr   
-<0 rows> (or 0-length row.names)
-##########################################################################
+389 patients have no final status data on any visits:
+  [1] "PLT-TH1-1602" "PLT-TH1-1605" "PLT-TH1-1606" "PLT-TH1-1607" "PLT-TH1-1612" "PLT-TH1-1617"
+  [7] "PLT-TH1-1618" "PLT-TH1-1627" "PLT-TH1-1628" "PLT-TH1-1629" "PLT-TH1-1630" "PLT-TH1-1631"
+ [13] "PLT-TH1-1632" "PLT-TH1-1638" "PLT-TH1-1639" "PLT-TH1-1640" "PLT-TH1-1641" "PLT-TH1-1642"
+ [19] "PLT-TH1-1643" "PLT-TH1-1644" "PLT-TH1-1645" "PLT-TH1-1646" "PLT-TH1-1647" "PLT-TH1-1648"
+ [25] "PLT-TH1-1649" "PLT-TH1-1650" "PLT-TH1-1653" "PLT-TH1-1656" "PLT-TH1-1662" "PLT-TH1-1663"
+ [31] "PLT-TH1-1665" "PLT-TH1-1669" "PLT-TH1-1670" "PLT-TH1-1671" "PLT-TH1-1672" "PLT-TH1-1673"
+ [37] "PLT-TH1-1674" "PLT-TH1-1675" "PLT-TH1-1682" "PLT-TH1-1683" "PLT-TH1-1686" "PLT-TH1-1687"
+ [43] "PLT-TH1-1688" "PLT-TH1-1692" "PLT-TH1-1693" "PLT-TH1-1695" "PLT-TH1-1698" "PLT-TH1-1699"
+ [49] "PLT-TH1-1700" "PLT-TH1-1701" "PLT-TH1-1702" "PLT-TH1-1703" "PLT-TH1-1704" "PLT-TH1-1705"
+ [55] "PLT-TH1-1706" "PLT-TH1-1708" "PLT-TH1-1709" "PLT-TH1-1720" "PLT-TH1-1722" "PLT-TH1-1723"
+ [61] "PLT-TH1-1724" "PLT-TH1-1725" "PLT-TH1-1726" "PLT-TH1-1731" "PLT-TH1-1732" "PLT-TH1-1733"
+ [67] "PLT-TH1-1734" "PLT-TH1-1735" "PLT-TH1-1738" "PLT-TH1-1740" "PLT-TH1-1741" "PLT-TH1-1743"
+ [73] "PLT-TH1-1745" "PLT-TH1-1746" "PLT-TH1-1747" "PLT-TH1-1748" "PLT-TH1-1749" "PLT-TH1-1750"
+ [79] "PLT-TH1-1751" "PLT-TH1-1752" "PLT-TH1-1753" "PLT-TH1-1754" "PLT-TH1-1755" "PLT-TH1-1756"
+ [85] "PLT-TH1-1757" "PLT-TH1-1758" "PLT-TH1-1759" "PLT-TH1-1760" "PLT-TH1-1761" "PLT-TH1-1762"
+ [91] "PLT-TH1-1765" "PLT-TH1-1766" "PLT-TH1-1767" "PLT-TH1-1768" "PLT-TH1-1770" "PLT-TH1-1771"
+ [97] "PLT-TH1-1774" "PLT-TH1-1775" "PLT-TH1-1776" "PLT-TH1-1777" "PLT-TH1-1778" "PLT-TH1-1779"
+[103] "PLT-TH1-1780" "PLT-TH1-1781" "PLT-TH1-1782" "PLT-TH1-1783" "PLT-TH1-1784" "PLT-TH1-1785"
+[109] "PLT-TH1-1786" "PLT-TH1-1787" "PLT-TH1-1788" "PLT-TH1-1789" "PLT-TH1-1790" "PLT-TH1-1791"
+[115] "PLT-TH1-1792" "PLT-TH1-1793" "PLT-TH1-1794" "PLT-TH1-1795" "PLT-TH1-1796" "PLT-TH1-1797"
+[121] "PLT-TH1-1798" "PLT-TH1-1799" "PLT-TH1-1800" "PLT-TH1-1801" "PLT-TH1-1802" "PLT-TH1-1803"
+[127] "PLT-TH1-1804" "PLT-TH1-1805" "PLT-TH1-1806" "PLT-TH1-1807" "PLT-TH1-1808" "PLT-TH1-1809"
+[133] "PLT-TH1-1810" "PLT-TH1-1811" "PLT-TH1-1812" "PLT-TH1-1813" "PLT-TH1-1814" "PLT-TH1-1815"
+[139] "PLT-TH1-1816" "PLT-TH1-1817" "PLT-TH1-1818" "PLT-TH1-1819" "PLT-TH1-1821" "PLT-TH1-1822"
+[145] "PLT-TH1-1823" "PLT-TH1-1825" "PLT-TH1-1826" "PLT-TH1-1827" "PLT-TH1-1828" "PLT-TH1-1829"
+[151] "PLT-TH1-1830" "PLT-TH1-1831" "PLT-TH1-1832" "PLT-TH1-1833" "PLT-TH1-1834" "PLT-TH1-1835"
+[157] "PLT-TH1-1836" "PLT-TH1-1837" "PLT-TH1-1838" "PLT-TH1-1839" "PLT-TH1-1840" "PLT-TH1-1841"
+[163] "PLT-TH1-1842" "PLT-TH1-1843" "PLT-TH1-1844" "PLT-TH1-1845" "PLT-TH1-1846" "PLT-TH1-1847"
+[169] "PLT-TH1-1848" "PLT-TH1-1849" "PLT-TH1-1850" "PLT-TH1-1851" "PLT-TH1-1852" "PLT-TH1-1854"
+[175] "PLT-TH1-1855" "PLT-TH1-1856" "PLT-TH1-1857" "PLT-TH1-1858" "PLT-TH1-1859" "PLT-TH1-1860"
+[181] "PLT-TH1-1861" "PLT-TH1-1862" "PLT-TH1-1863" "PLT-TH1-1864" "PLT-TH1-1865" "PLT-TH1-1866"
+[187] "PLT-TH1-1867" "PLT-TH1-1868" "PLT-TH1-1869" "PLT-TH1-1870" "PLT-TH1-1871" "PLT-TH1-1872"
+[193] "PLT-TH1-1873" "PLT-TH1-1874" "PLT-TH1-1875" "PLT-TH1-1876" "PLT-TH1-1877" "PLT-TH1-1878"
+[199] "PLT-TH1-1879" "PLT-TH1-1880" "PLT-TH1-1881" "PLT-TH1-1882" "PLT-TH1-1883" "PLT-TH1-1884"
+[205] "PLT-TH1-1885" "PLT-TH1-1886" "PLT-TH1-1887" "PLT-TH1-1888" "PLT-TH1-1889" "PLT-TH1-1890"
+[211] "PLT-TH1-1891" "PLT-TH1-1892" "PLT-TH1-1893" "PLT-TH1-1894" "PLT-TH1-1895" "PLT-TH1-1896"
+[217] "PLT-TH1-1897" "PLT-TH1-1898" "PLT-TH1-1899" "PLT-TH1-1900" "PLT-TH1-1901" "PLT-TH1-1902"
+[223] "PLT-TH1-1903" "PLT-TH1-1904" "PLT-TH1-1905" "PLT-TH1-1906" "PLT-TH1-1907" "PLT-TH1-1908"
+[229] "PLT-TH1-1909" "PLT-TH1-1910" "PLT-TH1-1911" "PLT-TH1-1912" "PLT-TH1-1913" "PLT-TH1-1914"
+[235] "PLT-TH1-1915" "PLT-TH1-1916" "PLT-TH1-1917" "PLT-TH1-1918" "PLT-TH1-1919" "PLT-TH1-1920"
+[241] "PLT-TH1-1921" "PLT-TH1-1922" "PLT-TH1-1923" "PLT-TH1-1924" "PLT-TH1-1925" "PLT-TH1-1926"
+[247] "PLT-TH1-1927" "PLT-TH1-1928" "PLT-TH1-1929" "PLT-TH1-1930" "PLT-TH1-1931" "PLT-TH1-1932"
+[253] "PLT-TH1-1933" "PLT-TH1-1934" "PLT-TH1-1935" "PLT-TH1-1936" "PLT-TH1-1937" "PLT-TH1-1938"
+[259] "PLT-TH1-1939" "PLT-TH1-1940" "PLT-TH1-1941" "PLT-TH1-1942" "PLT-TH1-1943" "PLT-TH1-1944"
+[265] "PLT-TH1-1945" "PLT-TH1-1946" "PLT-TH1-1947" "PLT-TH1-1948" "PLT-TH1-1949" "PLT-TH1-1950"
+[271] "PLT-TH1-1951" "PLT-TH1-1952" "PLT-TH1-1953" "PLT-TH1-1954" "PLT-TH1-1955" "PLT-TH1-1956"
+[277] "PLT-TH1-1957" "PLT-TH1-1958" "PLT-TH1-1959" "PLT-TH1-1960" "PLT-TH1-1961" "PLT-TH1-1962"
+[283] "PLT-TH1-1963" "PLT-TH1-1964" "PLT-TH1-1965" "PLT-TH1-1966" "PLT-TH1-1967" "PLT-TH1-1968"
+[289] "PLT-TH1-1969" "PLT-TH1-1970" "PLT-TH1-1971" "PLT-TH1-1972" "PLT-TH1-1973" "PLT-TH1-1974"
+[295] "PLT-TH1-1975" "PLT-TH1-1976" "PLT-TH1-1977" "PLT-TH1-1978" "PLT-TH1-1979" "PLT-TH1-1980"
+[301] "PLT-TH1-1981" "PLT-TH1-1982" "PLT-TH1-1983" "PLT-TH1-1984" "PLT-TH1-1985" "PLT-TH1-1986"
+[307] "PLT-TH1-1987" "PLT-TH1-1988" "PLT-TH1-1989" "PLT-TH1-1990" "PLT-TH1-1991" "PLT-TH1-1992"
+[313] "PLT-TH1-1993" "PLT-TH1-1994" "PLT-TH1-1995" "PLT-TH1-1996" "PLT-TH1-1997" "PLT-TH1-1998"
+[319] "PLT-TH1-1999" "PLT-TH1-2000" "PLT-TH1-2001" "PLT-TH1-2002" "PLT-TH1-2003" "PLT-TH1-2004"
+[325] "PLT-TH1-2005" "PLT-TH1-2006" "PLT-TH1-2007" "PLT-TH1-2008" "PLT-TH1-2009" "PLT-TH1-2010"
+[331] "PLT-TH1-2011" "PLT-TH1-2012" "PLT-TH1-2013" "PLT-TH1-2014" "PLT-TH1-2015" "PLT-TH1-2016"
+[337] "PLT-TH1-2017" "PLT-TH1-2018" "PLT-TH1-2019" "PLT-TH1-2020" "PLT-TH1-2021" "PLT-TH1-2022"
+[343] "PLT-TH1-2023" "PLT-TH1-2024" "PLT-TH1-2025" "PLT-TH1-2026" "PLT-TH1-2027" "PLT-TH1-2028"
+[349] "PLT-TH1-2029" "PLT-TH1-2030" "PLT-TH1-2031" "PLT-TH1-2032" "PLT-TH1-2033" "PLT-TH1-2034"
+[355] "PLT-TH1-2035" "PLT-TH1-2036" "PLT-TH1-2037" "PLT-TH1-2038" "PLT-TH1-2039" "PLT-TH1-2040"
+[361] "PLT-TH1-2041" "PLT-TH1-2042" "PLT-TH1-2043" "PLT-TH1-2044" "PLT-TH1-2045" "PLT-TH1-2046"
+[367] "PLT-TH1-2047" "PLT-TH1-2048" "PLT-TH1-2049" "PLT-TH1-2050" "PLT-TH1-2051" "PLT-TH1-2052"
+[373] "PLT-BR3-131"  "PLT-BR3-132"  "PLT-BR3-133"  "PLT-BR3-134"  "PLT-BR3-135"  "PLT-BR3-136" 
+[379] "PLT-BR3-137"  "PLT-BR3-138"  "PLT-BR3-139"  "PLT-BR3-140"  "PLT-BR3-141"  "PLT-BR3-142" 
+[385] "PLT-LA8-034"  "PLT-LA8-035"  "PLT-LA8-036"  "PLT-LA8-037"  "PLT-LA8-038" 
+# A tibble: 1,874 × 17
+   Trial   Site  Label     rangrp  fs_compyn fs_dat     fs_rsn fs_deathdat fs_rsnothsp fs_comm fs_ae   fs_sae
+   <chr>   <chr> <chr>     <dbl+l> <dbl+lbl> <date>     <dbl+> <date>      <chr>       <chr>   <dbl+l> <dbl+>
+ 1 PLATCOV br003 PLT-BR3-… 4 [Fav… 1 [Yes]   2022-03-03 NA     NA          ""          ""      0 [No]  0 [No]
+ 2 PLATCOV br003 PLT-BR3-… 5 [No … 1 [Yes]   2022-03-09 NA     NA          ""          ""      0 [No]  0 [No]
+ 3 PLATCOV br003 PLT-BR3-… 3 [Rem… 1 [Yes]   2022-03-10 NA     NA          ""          "NOT A… 0 [No]  0 [No]
+ 4 PLATCOV br003 PLT-BR3-… 5 [No … 1 [Yes]   2022-03-10 NA     NA          ""          ""      0 [No]  0 [No]
+ 5 PLATCOV br003 PLT-BR3-… 4 [Fav… 1 [Yes]   2022-03-16 NA     NA          ""          ""      0 [No]  0 [No]
+ 6 PLATCOV br003 PLT-BR3-… 7 [Nit… 1 [Yes]   2022-03-18 NA     NA          ""          "PARTI… 0 [No]  0 [No]
+ 7 PLATCOV br003 PLT-BR3-… 4 [Fav… 1 [Yes]   2022-03-31 NA     NA          ""          "PATIE… 1 [Yes] 0 [No]
+ 8 PLATCOV br003 PLT-BR3-… 5 [No … 1 [Yes]   2022-04-01 NA     NA          ""          ""      1 [Yes] 0 [No]
+ 9 PLATCOV br003 PLT-BR3-… 4 [Fav… 1 [Yes]   2022-04-04 NA     NA          ""          ""      0 [No]  0 [No]
+10 PLATCOV br003 PLT-BR3-… 7 [Nit… 1 [Yes]   2022-06-08 NA     NA          ""          ""      0 [No]  0 [No]
+# ℹ 1,864 more rows
+# ℹ 5 more variables: fs_unsche <dbl+lbl>, fs_conmed <dbl+lbl>, fs_tretchange <dbl+lbl>,
+#   fs_diecov <dbl+lbl>, fs_tretchandat <date>
+# ℹ Use `print(n = ...)` to see more rows
+tibble [1,874 × 17] (S3: tbl_df/tbl/data.frame)
+ $ Trial         : chr [1:1874] "PLATCOV" "PLATCOV" "PLATCOV" "PLATCOV" ...
+  ..- attr(*, "label")= chr "Study Name"
+  ..- attr(*, "format.stata")= chr "%6s"
+ $ Site          : chr [1:1874] "br003" "br003" "br003" "br003" ...
+  ..- attr(*, "label")= chr "Study Site"
+  ..- attr(*, "format.stata")= chr "%5s"
+ $ Label         : chr [1:1874] "PLT-BR3-001" "PLT-BR3-002" "PLT-BR3-003" "PLT-BR3-004" ...
+  ..- attr(*, "label")= chr "Subject Label"
+  ..- attr(*, "format.stata")= chr "%8s"
+ $ rangrp        : dbl+lbl [1:1874]  4,  5,  3,  5,  4,  7,  4,  5,  4,  7,  7,  3,  3,  4,  4,  3,  5,  7,  3,  7,  5...
+   ..@ label       : chr "Randomization Group"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:17] 1 2 3 4 5 6 7 8 9 10 ...
+   .. ..- attr(*, "names")= chr [1:17] "Regeneron" "Ivermectin" "Remdesivir" "Favipiravir" ...
+ $ fs_compyn     : dbl+lbl [1:1874] 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1...
+   ..@ label       : chr "Subject has completed the study"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_dat        : Date[1:1874], format: "2022-03-03" "2022-03-09" "2022-03-10" ...
+ $ fs_rsn        : dbl+lbl [1:1874] NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA...
+   ..@ label       : chr "Reason for non-completion"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:5] 1 2 3 4 5
+   .. ..- attr(*, "names")= chr [1:5] "Significant non-compliance with treatment regimen or study requirements" "Lost to follow up" "Consent withdrawn" "Death" ...
+ $ fs_deathdat   : Date[1:1874], format: NA NA NA ...
+ $ fs_rsnothsp   : chr [1:1874] "" "" "" "" ...
+  ..- attr(*, "label")= chr "Other reason for non-completion, specified"
+  ..- attr(*, "format.stata")= chr "%60s"
+ $ fs_comm       : chr [1:1874] "" "" "NOT AVAILABLE" "" ...
+  ..- attr(*, "label")= chr "Additional remarks"
+  ..- attr(*, "format.stata")= chr "%244s"
+ $ fs_ae         : dbl+lbl [1:1874]  0,  0,  0,  0,  0,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  1,  0, NA,  0,  0,  0...
+   ..@ label       : chr "Did participant have any AE?"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_sae        : dbl+lbl [1:1874]  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, NA,  0,  0,  0...
+   ..@ label       : chr "Did participant have any SAE?"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_unsche     : dbl+lbl [1:1874]  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  1, NA,  0,  0,  0...
+   ..@ label       : chr "Did participant have any unscheduled visits?"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_conmed     : dbl+lbl [1:1874]  0,  1,  1,  1,  0,  0,  1,  1,  1,  1,  0,  1,  0,  0,  1,  1,  1, NA,  0,  0,  1...
+   ..@ label       : chr "Did participant take concomitant"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_tretchange : dbl+lbl [1:1874] NA, NA, NA, NA, NA,  1, NA, NA, NA,  0,  0,  0,  0,  0,  0,  0,  0, NA,  0,  0,  0...
+   ..@ label       : chr "Did the participant change treatment allocation"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_diecov     : dbl+lbl [1:1874]  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, NA,  0,  0,  0...
+   ..@ label       : chr "Did the participant die due to COVID19?"
+   ..@ format.stata: chr "%8.0g"
+   ..@ labels      : Named num [1:2] 0 1
+   .. ..- attr(*, "names")= chr [1:2] "No" "Yes"
+ $ fs_tretchandat: Date[1:1874], format: NA NA NA ...
+ - attr(*, "label")= chr "PLATCOV"
+ - attr(*, "notes")= chr [1:3] "Status: PROD" "2" "Data extract 03Sep2024"
+<labelled<double>[1874]>: Randomization Group
+   [1]  4  5  3  5  4  7  4  5  4  7  7  3  3  4  4  3  5  7  3  7  5  3  4  7  4  3  3  4  4  5  5  5  7  7
+  [35]  3  4  4  5  7 11  5 11  7  5  7  7  4 11  4  5  4  7 11 11  5  4  5  4  4  5  7 13 13  5 13  5 11 13
+  [69]  5  7  5 11  7 11  7 11  7 11 13 11 13  5 13  7  5  5  7 11  7  5 11  5 11  5 11  5  7  9  9  9  5  9
+ [103]  7  5  5  9  9  7  5  7  7  5  5  7  7  9  5 15  9  9  7 15  5  7 15  9  9  5  5  9  8 11 14  7 15  5
+ [137]  5  9  5  7  7  7  9 15  9 15 14 14  9 15  5  7  9 14  7  5 16  5  5  9 16  9  5  5 11  7  7  5  5 11
+ [171]  7  7  7  7  5  2  1  3  5  4  4  5  1  1  2  2  3  4  1  2  3  5  5  3  5  1  3  1  2  4  2  4  5  4
+ [205]  3  3  1  4  2  5  5  2  1  3  2  5  4  1  3  2  3  2  4  5  1  2  1  5  1  4  5  4  2  3  3  4  3  4
+ [239]  3  4  2  1  5  5  1  3  5  3  4  2  4  5  3  1  2  5  1  4  4  2  5  3  2  4  3  3  1  2  2  4  4  4
+ [273]  5  5  3 15  5 14 15 14 14  5  5  9 15  4  9 14  5 15 15  9  9  5 14  5  4 14  5 15 14  9  9  5 15  9
+ [307] 15  1  9 14 14 14 15  5  5  9  9 15  2  5 14 14  9 14 14 15 15  5  9  2  5  9 15  5  5 15 14 14 14  9
+ [341]  1 15 14 14  5  9  9 15  5 14  9  5 14 14  5 14 15  9 15  9  5 15  3  5 15  9  5 14 14  5  9  9  9  4
+ [375] 15  5 14  9  5 15 15 14  5  5  3 15  9 15  9 15 14  9 15 14 14  2  5  5 14  9  5  5 14 14  9  5  4 15
+ [409] 14 15  9 14  9 15  5  5  9  1  5 15  5 15  9 14 14  5  5 15  1 15  5  9  9  9 14 14 15 15 14  5  5  9
+ [443] 14 14 15  5  9 15  5 14  2 14  9  5  9  5  5 15 15  9  9  3 15 14 15 14  5  5 14 14  9  9  4  9 14  9
+ [477] 14 15  5 15 15 15 14  3  9  5  5 15 14  9  9  9  5 15  5  5 14  9  9  9  5  5 15 14 15  1 15 14 15  9
+ [511] 14 14 15 14 15  9  4  5 14  5 15  9  9 14  5 15  5  2  5 14 14  9  9 16 15  5 15 14  2 16 16  9  5  5
+ [545] 14  9 14  5 16  3 15 16 15 16 15  9 14  9 16  5  3  5  5 14 16 14 16  9 15  5 15  3 16  9 16  5 16 14
+ [579] 14 14  5 14  5 15 16  9 15  9  5 15  9 15  9  5  9 16  5 16 15  9  9 16  5  5  1 15 14 14  9 15 15  9
+ [613] 14 16 14  3  5 15 14 16 15 15  5 16  9  9  4  5  5  9  9 14 14  9 15 16 15  2 14 16  9 15 15  5 16  5
+ [647]  9 16  2  9 16 15 14 16 16 15 14  5 14  4  9 14  9  5  5  5 14  9  9 15  3  5 16 14  9 15 16 14 15 15
+ [681] 16  5  5 14 14 15 16  9  5  5  5 15  1  9  9 14 15 16 14  9 14 15 16  2 15  5 16  9 15  9 16 15 14  5
+ [715]  1 15  5  9 15 16  5 14 16 14 14  5  5  9 16  9 14 15 14  9  5 15  5  9  9 16 14 14 15  9  5  5 16  3
+ [749] 15 16 16  5 16 14  5  9 15 14  5 15 15 16  9 14 15  5 16 15  9  4 14  9 16  9  9 16 14  5 14 15  4 15
+ [783] 15  5 14 16 16  5 14  9  5  1  9  9 14 15 16 15  9 14  9 14  1  9  5  5 16  5 15 16 14 16  9  2 15  5
+ [817] 15 16 16  9  9 14  5  5  3  5 14 16 15  9 16  5  9 15 15  4 14  5 15 16  5 15 14  9 14  9  1 16 14  5
+ [851] 14  9 16  9 15 16  5  3  9  9 16  9 16 15  9  9 15 16  3  5  5  5  5  9 15 16 15 15  5  4  9 16  9 15
+ [885]  5  9  9 16 16  5  5  9 16 16 16  9  9 16  5 15  5  2  9  5 15 15 15 16  9 16 16  5  5  9  5  5 15  9
+ [919] 15 15  9 15  5  2 16  9 15  5 16  5 15  9 15 15  2  5  5 16 16  9 15  2  5  9 16 16 15  5  5  5 16  5
+ [953] 15 16 15  5  9  1  5 15 15 16 15  4  2 15 15 15  5  9 16 16  4 16 16  5 16 15  9  4 15  9 15 15  5  5
+ [987] 16 16 16 15  1 15 15  9 16  5  3 15  4 16  5  9  9 16 16  9  5 16  5  4  9  9 16 16  2  5  9 16  9  1
+[1021]  9  5  5  2 16  9 16  3  9 16  3  5  2  4  1  9  5  2  1  5  9  4  5  5  2 11  2  3 11  3  2  1  4  4
+[1055]  3  3  1  5 11  1  5  1  3  3  1 11 11  4  4  3  5  3  1  4 11  5 11  4  5  4  1  5  1  1 11  5  3  3
+[1089] 11  4  4  4 11 11 11  3  5  1  5  1  4 11  3  1  3  5  4 11  5  5  1  4  4  3  5 11  3  3  1  1  5 11
+[1123]  1  3  5  5 11  4  8  9  5  8  4 11  1  5  4  5  5  4 11  1 11  4  5 11  5  8  8  1  1  5  1  9  9  5
+[1157]  8 11  4  8  9  9  8 11  1  9  1  4 11  1  5  1  5 11 11  8  4  5  4  5  9  9  8  4  1  8  5 11  4  5
+[1191]  9  8  9  5 11  8 11  4  8  5  5 11  5  1  9  1  9  4  4  4  1  8  8  4  1  5  4  4  5  4  9  8  5  1
+[1225]  9 11  4 11 11  9  1  5  1  5  8  8 11  8 11  5  4  9  8  5  5  1  9 11  4  9  8  8  1  5  5 11  1  9
+[1259]  4 11  4 11  8  4  5  9  5  4  1  5  9  1 11  1 11  8  5  8 11  5  1  9  8 11  9  5  4  5  1  4  1  8
+[1293]  9 13 11  9 11 13 11 13  8  5  4  4  8  9  5  1  1 11  5  5  8  5  9 13  8  4  5  9  9  8  5  4 13  4
+[1327]  1  5 13  5  8 13  1  1  8 11  9  4  5 11  4  1 11  5  5  8 13  1  5 11  9 13  5  9 11  1  8  5  5  4
+[1361]  1 11 13  5 11  5  9 13  5  4  8  5 13  4  9 11 13  9  4  4 11  8 13  5  8  9  5 13  5 13  4 11 13 11
+[1395]  5  9 13  9  9 11  5  8 11  8  9  8 11  5  8  5 13  9  8  5  8 13  5 13  8  9  9 13  5 11 11 13 11  9
+[1429]  8  8  5  8  5  8  5 13  8 13  9  9 13  9  9  8 11 11  5 11  5  9 11 13 11  5  5 11 11  9  5 11  9 11
+[1463]  8  5  9  8  5  8  5  8  5 11  5  9  9 13  9 11 13 13  5  8  8 11 11  9  5 13 11  8  5  9  5  8  8  8
+[1497] 13 11  5  5 11 13  9  8 11 13  8 13  9  5  8 11 11 13 11  5  9  9  9 11 13 13 14  5  5  5 13  9  5 13
+[1531] 13 14 11 14  9 14 11  9 11  9  5 14  5 13  5 13 13 14 11 11 14  9 14 11  9  5 13 13  5  9 11  5 14  5
+[1565]  9 14 14 13 14 13  9  9  5 13  9  9  5  5 13  5  5 13 14 14  9 13 13 14 13  9 13  9 14 11  5 14 11 14
+[1599] 14 11 11  5  5 13 13 13  9  9  5  9 14 11  9 13  5 11 13 13 14  9  9  5 14  5 11 14 11  9  9 13 14 11
+[1633]  9 13  5 14  5  9 13  9  5 11  9  5  5  5 14  9 14 13  9 14  5 13  5  9  9 14 13 14  9 13  9  5  9 13
+[1667]  5 13 14 14  5 14 13 14  5  9 13  5  5 14 13  5  9 14  9 14  9 14 14 14  9 14 14  9  5  5  5  5  9  9
+[1701]  5  5 14 14 14  9  5 14  9  9  9  9  5  9  5  9 14  9 14 14  5  5 14 13 15  5 13 14 15  9  5 13  9 14
+[1735]  9  5 15 14  5 13 14  9 14 14  5  5 15  5 13  9 13  9  9 14 15 13 14  9 15 13 13 15 13  5 15 13  5 13
+[1769]  9 13  5 14  9  9 15  9 14 15 14  5 15 14 13 13 15 15 15 14 15  5 14  5  5 14 14  9  9  9  5 13  9  9
+[1803]  9  5 14  5 15 14 14  5 15  5 15 14  9  5 14  9 15 15  5  5 15 15  9  9 14  9 15 15  9 14 14  9  5  9
+[1837]  5 14 14  5 15  5  9  9  5 14 14 15  9 14  5 15  9 15  5  2  5  2  4  1  4  3  3  5  5  1  5  1  5  3
+[1871]  2  1  2  3
+
+Labels:
+ value                                   label
+     1                               Regeneron
+     2                              Ivermectin
+     3                              Remdesivir
+     4                             Favipiravir
+     5                           No study drug
+     6                                   Other
+     7                            Nitazoxanida
+     8                            Molnupiravir
+     9                  Nirmatrelvir/ritonavir
+    10                              Sotrovimab
+    11                              Fluoxetine
+    12                             Fluvoxamine
+    13                                Evusheld
+    14                             Ensitrelvir
+    15 Molnupiravir and Nirmatrelvir/ritonavir
+    16                      Hydroxychloroquine
+    99                          Not Applicable
+# A tibble: 202 × 17
+   Trial   Site  Label  rangrp   fs_compyn fs_dat     fs_rsn fs_deathdat fs_rsnothsp fs_comm fs_ae    fs_sae 
+   <chr>   <chr> <chr>  <dbl+lb> <dbl+lbl> <date>     <dbl+> <date>      <chr>       <chr>   <dbl+lb> <dbl+l>
+ 1 PLATCOV la008 PLT-L… 14 [Ens…  1 [Yes]  2023-05-31 NA     NA          ""          ""       0 [No]   0 [No]
+ 2 PLATCOV la008 PLT-L… 14 [Ens…  1 [Yes]  2023-08-16 NA     NA          ""          ""       0 [No]   0 [No]
+ 3 PLATCOV la008 PLT-L… 14 [Ens…  1 [Yes]  2024-01-05 NA     NA          ""          ""       1 [Yes]  0 [No]
+ 4 PLATCOV la008 PLT-L… 14 [Ens…  1 [Yes]  2024-05-02 NA     NA          ""          ""       0 [No]   0 [No]
+ 5 PLATCOV th001 PLT-T… 14 [Ens…  1 [Yes]  2024-01-04 NA     NA          ""          ""      NA       NA     
+ 6 PLATCOV th001 PLT-T… 14 [Ens…  1 [Yes]  2023-10-04 NA     NA          ""          ""       0 [No]   0 [No]
+ 7 PLATCOV th001 PLT-T… 14 [Ens… NA        NA         NA     NA          ""          ""      NA       NA     
+ 8 PLATCOV th001 PLT-T… 14 [Ens… NA        NA         NA     NA          ""          ""      NA       NA     
+ 9 PLATCOV th001 PLT-T… 14 [Ens…  1 [Yes]  2023-10-21 NA     NA          ""          ""      NA       NA     
+10 PLATCOV th001 PLT-T… 14 [Ens… NA        NA         NA     NA          ""          ""      NA       NA     
+# ℹ 192 more rows
+# ℹ 5 more variables: fs_unsche <dbl+lbl>, fs_conmed <dbl+lbl>, fs_tretchange <dbl+lbl>,
+#   fs_diecov <dbl+lbl>, fs_tretchandat <date>
+# ℹ Use `print(n = ...)` to see more rows
+tibble [4,500 × 17] (S3: tbl_df/tbl/data.frame)
+ $ N                  : num [1:4500] 40 40 40 40 40 40 80 40 40 40 ...
+ $ sim_k              : int [1:4500] 20 13 43 37 19 44 11 40 12 41 ...
+ $ k_slope            : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ k_sigma_logvl      : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ k_sigmasq_u_1      : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ k_sigmasq_u_2      : Factor w/ 3 levels "0.5","1","2": 3 3 3 3 3 3 3 3 3 3 ...
+ $ trt_effect_comp    : num [1:4500] 1.2 1.2 1.6 1.2 1.4 1.8 1.4 1.2 1.2 1.2 ...
+ $ trt_control        : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Median             : num [1:4500] -0.526 -0.433 -0.422 -0.406 -0.402 ...
+ $ Lower              : num [1:4500] -1.173 -0.989 -1.103 -1.072 -1.13 ...
+ $ Upper              : num [1:4500] 0.0709 0.1597 0.2424 0.1926 0.2845 ...
+ $ trt_effect_comp_lab: Factor w/ 5 levels "Treatment effect = 20%",..: 1 1 3 1 2 4 2 1 1 1 ...
+ $ n_per_group        : int [1:4500] 50 50 50 50 50 50 50 50 50 50 ...
+ $ sim_k2             : int [1:4500] 1 2 1 3 1 1 1 4 5 6 ...
+ $ median_effect      : num [1:4500] -0.526 -0.433 -0.422 -0.406 -0.402 ...
+ $ diff_estimates     : num [1:4500] -0.708 -0.615 -0.892 -0.589 -0.739 ...
+ $ facet              : chr [1:4500] "2.0x" "2.0x" "2.0x" "2.0x" ...
+RStudioGD 
+        2 
+RStudioGD 
+        2 
+RStudioGD 
+        2 
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |................................................................................................................................| 100%                                                                                                                                                    
+"C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/pandoc" +RTS -K512m -RTS report2.knit.md --to latex --from markdown+autolink_bare_uris+tex_math_single_backslash --output report2.tex --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\pagebreak.lua" --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\latex-div.lua" --embed-resources --standalone --highlight-style tango --pdf-engine xelatex --variable graphics --variable "geometry:margin=1in" 
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |................................................................................................................................| 100%                                                                                                                                                    
+"C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/pandoc" +RTS -K512m -RTS report2.knit.md --to latex --from markdown+autolink_bare_uris+tex_math_single_backslash --output report2.tex --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\pagebreak.lua" --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\latex-div.lua" --embed-resources --standalone --highlight-style tango --pdf-engine xelatex --variable graphics --variable "geometry:margin=1in" 
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |................................................................................................................................| 100%                                                                                                                                                    
+"C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/pandoc" +RTS -K512m -RTS report2.knit.md --to latex --from markdown+autolink_bare_uris+tex_math_single_backslash --output report2.tex --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\pagebreak.lua" --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\latex-div.lua" --embed-resources --standalone --highlight-style tango --pdf-engine xelatex --variable graphics --variable "geometry:margin=1in" 
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |................................................................................................................................| 100%                                                                                                                                                    
+"C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/pandoc" +RTS -K512m -RTS report2.knit.md --to latex --from markdown+autolink_bare_uris+tex_math_single_backslash --output report2.tex --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\pagebreak.lua" --lua-filter "C:\Users\Phrutsamon\AppData\Local\R\win-library\4.4\rmarkdown\rmarkdown\lua\latex-div.lua" --embed-resources --standalone --highlight-style tango --pdf-engine xelatex --variable graphics --variable "geometry:margin=1in" 
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+[1] "PLATCOV_Randomisation"
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |================================================================================================================================| 100%
+  |                                                                                                                                        |                                                                                                                                |   0%  |                                                                                                                                        |===================                                                                                                             |  15%  |                                                                                                                                        |=======================================                                                                                         |  30%  |                                                                                                                                        |==========================================================                                                                      |  45%  |                                                                                                                                        |=============================================================================                                                   |  60%  |                                                                                                                                        |================================================================================================                                |  75%  |                                                                                                                                        |====================================================================================================================            |  90%  |                                                                                                                                        |================================================================================================================================| 100%
+tibble [4,500 × 17] (S3: tbl_df/tbl/data.frame)
+ $ N                  : num [1:4500] 40 40 40 40 40 40 80 40 40 40 ...
+ $ sim_k              : int [1:4500] 20 13 43 37 19 44 11 40 12 41 ...
+ $ k_slope            : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ k_sigma_logvl      : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ k_sigmasq_u_1      : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ k_sigmasq_u_2      : Factor w/ 3 levels "0.5","1","2": 3 3 3 3 3 3 3 3 3 3 ...
+ $ trt_effect_comp    : num [1:4500] 1.2 1.2 1.6 1.2 1.4 1.8 1.4 1.2 1.2 1.2 ...
+ $ trt_control        : num [1:4500] 1 1 1 1 1 1 1 1 1 1 ...
+ $ Median             : num [1:4500] -0.526 -0.433 -0.422 -0.406 -0.402 ...
+ $ Lower              : num [1:4500] -1.173 -0.989 -1.103 -1.072 -1.13 ...
+ $ Upper              : num [1:4500] 0.0709 0.1597 0.2424 0.1926 0.2845 ...
+ $ trt_effect_comp_lab: Factor w/ 5 levels "Treatment effect = 20%",..: 1 1 3 1 2 4 2 1 1 1 ...
+ $ n_per_group        : int [1:4500] 50 50 50 50 50 50 50 50 50 50 ...
+ $ sim_k2             : int [1:4500] 1 2 1 3 1 1 1 4 5 6 ...
+ $ median_effect      : num [1:4500] -0.526 -0.433 -0.422 -0.406 -0.402 ...
+ $ diff_estimates     : num [1:4500] -0.708 -0.615 -0.892 -0.589 -0.739 ...
+ $ facet              : chr [1:4500] "2.0x" "2.0x" "2.0x" "2.0x" ...
+RStudioGD 
+        2 
