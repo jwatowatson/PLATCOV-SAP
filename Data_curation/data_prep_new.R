@@ -658,6 +658,11 @@ ind_rm = !is.na(Res$BARCODE) & duplicated(Res$BARCODE)
 sum(ind_rm)
 Res = Res[!ind_rm, ]
 
+# take out rows with no samples
+ind_rm = is.na(Res$BARCODE) &   Res$`Sample ID` == "Don't received sample"
+sum(ind_rm)
+Res = Res[!ind_rm, ]
+
 sort(unique(Res$`Lot no.`))
 Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot1']="Thailand_D10 Lot 1"
 Res$`Lot no.`[Res$`Lot no.`=='Thailand_D10 lot2']="Thailand_D10 Lot 2"
@@ -675,6 +680,8 @@ Res$Lab[grep(pattern = 'Paki',x = Res$`Lot no.`, ignore.case = T)]='Pakistan'
 
 Res$`Lot no.` = tolower(Res$`Lot no.`)
 sort(unique(Res$`Lot no.`))
+
+
 Res$Plate = as.numeric(as.factor(Res$`Lot no.`))
 Res$Lab = as.factor(Res$Lab)
 
@@ -1141,8 +1148,6 @@ print(unique(Res$ID[duplicated(Res$BARCODE)]))
 
 Res = Res[!duplicated(Res$BARCODE), ]
 
-
-
 ###### Write csv files
 # Overall data files
 write.table(x = control_dat, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_control_dat.csv"), row.names = F, sep=',')
@@ -1151,7 +1156,6 @@ Res = dplyr::arrange(Res, Rand_date, ID, Time)
 write.table(x = Res, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_all_analysis.csv"), row.names = F, sep=',')
 
 write.table(x = screen_failure, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_screening_dat.csv"), row.names = F, sep=',')
-
 
 Res = 
   Res %>% filter(Swab_ID != 'Saliva' & !(grepl("_N2", Location)|grepl("_P", Location))) %>% # remove the saliva samples and extra swabs
@@ -1595,20 +1599,20 @@ write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hyd
 
 
 #************************* Unblinded all *************************#
-Res_Unblinded_all =
-  Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
-                             'Hydroxychloroquine',
-                            'Nitazoxanide',
-                            'Evusheld',
-                            'Regeneron'),
-                 Country %in% c("Thailand", "Laos"),
-                 Rand_date < "2024-04-22") %>%
-  arrange(Rand_date, ID, Time)
-
-
-write.table(x = Res_Unblinded_all,
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
-            row.names = F, sep=',', quote = F)
+# Res_Unblinded_all =
+#   Res %>% filter(!Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',
+#                              'Hydroxychloroquine',
+#                             'Nitazoxanide',
+#                             'Evusheld',
+#                             'Regeneron'),
+#                  Country %in% c("Thailand", "Laos"),
+#                  Rand_date < "2024-04-22") %>%
+#   arrange(Rand_date, ID, Time)
+# 
+# 
+# write.table(x = Res_Unblinded_all,
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_all_analysis.csv"),
+#             row.names = F, sep=',', quote = F)
 
 #************************* Baseline viral loads *************************#
 # Res_baseline_vl <- Res %>%

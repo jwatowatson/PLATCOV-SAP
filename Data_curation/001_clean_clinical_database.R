@@ -320,7 +320,7 @@ check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
     writeLines('##########################################################################')
   }
   
-  clin_data$ v <- as.numeric(clin_data$age_yr)
+  clin_data$age_yr <- as.numeric(clin_data$age_yr)
   
   writeLines('### Clinical database: Checking distributions of age:')
   G <- ggplot(clin_data, aes(x = randat, y =  age_yr)) +

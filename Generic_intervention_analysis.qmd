@@ -240,7 +240,7 @@ ff = paste0('Rout/',ff)
 ```{r}
 main_mod = which(model_settings$prior==1&
                    model_settings$cov_matrices==1&
-                   model_settings$mod==all_mods[2])
+                   model_settings$mod==all_mods[3])
 
 model_cols = brewer.pal(n = 8, name = 'Dark2')[1:nrow(model_settings)]
 names(model_cols) = paste('model', 1:nrow(model_settings))
