@@ -3,16 +3,34 @@
 ##*********************************************************
 ###########################################################################
 # 1. Load symptom  data
-load_symptom_data <- function(rand_app_data){
+load_symptom_data <- function(rand_app_data, query_file_name){
+  # load the symptom data
+  data_name <- 'InterimSymptoms.dta'
+  file_name <- paste0(prefix_dropbox, "/Data/", data_name)
+  version <- file.info(file_name)$mtime %>% as.Date()
+  today <- Sys.Date() 
+  
+  symp = haven::read_dta(file_name)
+  
+  sink(query_file_name, split = T)
+  writeLines(sprintf('PLATCOV data queries\nData: %s\nReceived date: %s\nQuery date: %s\n',
+                     data_name,
+                     version,
+                     today)
+  )
+  sink()
   writeLines('##########################################################################')
-  writeLines('Reading symptom database from MACRO...')
-  writeLines('##########################################################################')
-  symp=haven::read_dta(paste0(prefix_dropbox, "/Data/InterimSymptoms.dta"))
+  write.table(data.frame('Dataset' = "",
+                         'CRF form/Topic' = "",
+                         'Question/Variable' = "",
+                         'Query message' = "",
+                         'Example data' = ""), 
+              query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
   
   id_data = symp %>% distinct(Label) %>% pull(Label) %>% as.character()
   writeLines('### Symptom database: Checking MACRO data entry progress:')
   writeLines(sprintf('Number of randomised patient: %s\nNumber of randomised patient symptom data on MACRO: %s', 
-                     nrow(rand_app_data) + 19, # 19 = number of patients from site 057 and 058
+                     nrow(rand_app_data),
                      length(id_data)
   )
   )
@@ -29,16 +47,12 @@ load_symptom_data <- function(rand_app_data){
     group_by(visit) %>%
     summarise(missing = sum(is.na(vd_dat))) %>% print()
   writeLines('##########################################################################')
-  
-  
   return(symp)
-  
 }
-###########################################################################
-# 2. Load symptom  data
 
+###########################################################################
+# 2. Prepare symptom  data
 prep_symptom_data <- function(symp, vita_data){
-  
   symp = symp[!is.na(symp$sq_yn),]
   sort(table(symp$Label),decreasing = T)
   ids_symp_data = names(which(table(symp$Label)>4)) ## need at least 4 records to be included
@@ -66,7 +80,7 @@ prep_symptom_data <- function(symp, vita_data){
 }
 ###########################################################################
 # 3. Check symptom yes/no
-check_symptom_data <- function(symp_data){
+check_symptom_data <- function(symp_data, query_file_name){
   symptom_data = symp_data %>% 
     mutate(ID = Label, Any_symptom = sq_yn) %>%
     rename("sq_soreyn" = "sq_sore")
@@ -87,21 +101,69 @@ check_symptom_data <- function(symp_data){
     mutate(symptom_counts = (rowSums(select(., all_of(columns_to_check)), na.rm = TRUE))) %>%
     select(all_of(c("Label", "Timepoint_ID", "sq_yn", columns_to_check, "symptom_counts")))
   
-  writeLines('### Symptom database: Checking symptom data mismatched:')
-  writeLines(sprintf('%s rows have sq_yn column = 1, but no details explained:', 
-                     check_sqyn %>% filter(sq_yn == 1 & symptom_counts == 0) %>% nrow)
-  )
-  check_sqyn %>% filter(sq_yn == 1 & symptom_counts == 0) %>% select(Label, Timepoint_ID, sq_yn, symptom_counts) %>% print()
-  writeLines('##########################################################################')
-  writeLines(sprintf('%s rows have sq_yn column = 0, but indicated of having at least 1 symptom:', 
-                     check_sqyn %>% filter(sq_yn == 0 & symptom_counts != 0) %>% nrow)
-  )
-  check_sqyn %>% filter(sq_yn == 0 & symptom_counts != 0) %>% select(Label, Timepoint_ID, sq_yn, symptom_counts) %>% print()
-  writeLines('##########################################################################')
-  writeLines(sprintf('%s rows have missing data on the sq_yn column:', 
-                     check_sqyn %>% filter(is.na(sq_yn)) %>% nrow)
-  )
-  check_sqyn %>% filter(is.na(sq_yn)) %>% select(Label, Timepoint_ID, sq_yn, symptom_counts) %>% print()
+  
+  mismatch_sq_yn <- check_sqyn %>% filter(sq_yn == 1 & symptom_counts == 0) #%>% select(Label, Timepoint_ID, sq_yn, symptom_counts) %>% print()
+  if(nrow(mismatch_sq_yn) > 0){
+    report <- mismatch_sq_yn
+    report <- data.frame("Dataset" = data_name, #Dataset
+                         "CRF form/Topic" = "Symptom questionaire", #'CRF form/Topic'
+                         "Question/Variable" = "sq_yn", #'Question/Variable'
+                         "Query message" = paste0(nrow(report), " rows have sq_yn column = 1, but no details explained:"), #'Query message'
+                         report #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(report, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       report$Query.message[1])
+    )
+    print(report[,-(1:4)])
+    writeLines('##########################################################################')
+  }
+  
+  mismatch_sq_yn_2 <- check_sqyn %>% filter(sq_yn == 0 & symptom_counts != 0)
+  if(nrow(mismatch_sq_yn_2) > 0){
+    report <- mismatch_sq_yn_2
+    report <- data.frame("Dataset" = data_name, #Dataset
+                         "CRF form/Topic" = "Symptom questionaire", #'CRF form/Topic'
+                         "Question/Variable" = "sq_yn", #'Question/Variable'
+                         "Query message" = paste0(nrow(report), " rows have sq_yn column = 0, but indicated of having at least 1 symptom:"), #'Query message'
+                         report #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(report, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       report$Query.message[1])
+    )
+    print(report[,-(1:4)])
+    writeLines('##########################################################################')
+  }
+  
+  missing_sq_yn <- check_sqyn %>% filter(is.na(sq_yn))
+  if(nrow(missing_sq_yn) > 0){
+    report <- missing_sq_yn
+    report <- data.frame("Dataset" = data_name, #Dataset
+                         "CRF form/Topic" = "Symptom questionaire", #'CRF form/Topic'
+                         "Question/Variable" = "sq_yn", #'Question/Variable'
+                         "Query message" = paste0(nrow(report), " rows have missing data on the sq_yn column:"), #'Query message'
+                         report #'Example data'
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(report, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       report$Query.message[1])
+    )
+    print(report[,-(1:4)])
+    writeLines('##########################################################################')
+  }
   
   writeLines('##########################################################################')
   writeLines('### [Export] A list of free-text other symptoms...')
@@ -116,6 +178,7 @@ check_symptom_data <- function(symp_data){
   
   return(symptom_data)
 }
+###########################################################################
 ###########################################################################
 # 4. Check symptom grades
 check_symptom_grades <- function(symptom_data){
@@ -132,7 +195,7 @@ check_symptom_grades <- function(symptom_data){
     writeLines(sprintf('Checking symptom %s: %s rows reported this symptom without grades:', 
                        col_symptom_yn[i],
                        symptom_data[(yn == 1 & !is.na(yn)) & is.na(gr),] %>% nrow()
-                       )
+    )
     )
     symptom_data[(yn == 1 & !is.na(yn)) & is.na(gr),] %>% select(all_of(c("Label", "Timepoint_ID", col_symptom_yn[i], col_symptom_gr[i]))) %>% print()
     writeLines('#--------------------------------------------------------------------------')
@@ -157,36 +220,3 @@ check_symptom_grades <- function(symptom_data){
               file = paste0(prefix_analysis_data, "/Analysis_Data/symptoms_interim.csv"), 
               row.names = F, sep=',', quote = F)
 }
-###########################################################################
-# 5. Check ohter symptom grades
-check_other_symptom_grades <- function(symptom_data){
-  col_symptom_gr <- colnames(symptom_data)[grepl('^sq.*gr$', colnames(symptom_data))]
-  col_symptom_gr <- col_symptom_gr[grepl('oth', col_symptom_gr)]
-  
-  col_symptom_des <- colnames(symptom_data)[grepl('^sq.*des$', colnames(symptom_data))]
-  writeLines('##########################################################################')
-  
-  for(i in 1:length(col_symptom_gr)){
-    des <- symptom_data[,col_symptom_des[i]]
-    gr <- symptom_data[,col_symptom_gr[i]]
-    
-    writeLines(sprintf('Checking other symptom %s: %s rows reported a symptom without grades:', 
-                       col_symptom_des[i],
-                       symptom_data[(des != "" & !is.na(des)) & is.na(gr),] %>% nrow()
-    )
-    )
-    symptom_data[(des != "" & !is.na(des)) & is.na(gr),] %>% select(all_of(c("Label", "Timepoint_ID", col_symptom_des[i], col_symptom_gr[i]))) %>% print()
-    writeLines('#--------------------------------------------------------------------------')
-    
-    writeLines(sprintf('Checking other symptom %s: %s rows reported grades with no symptom details:', 
-                       col_symptom_des[i],
-                       symptom_data[(des %in% c("", ".") | is.na(des)) & !is.na(gr),] %>% nrow()
-    )
-    )
-    symptom_data[(des %in% c("", ".") | is.na(des)) & !is.na(gr),] %>% select(all_of(c("Label", "Timepoint_ID", col_symptom_des[i], col_symptom_gr[i]))) %>% print()
-    writeLines('##########################################################################')
-    
-  }
-
-}
-  

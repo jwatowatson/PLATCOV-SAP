@@ -4,12 +4,13 @@
 ###########################################################################
 # -----------------------------------------------------------------------------------------------
 # 1. Load vital sign data
-load_vital_data <- function(rand_app_data){
-  # load the clinical data
+load_vital_data <- function(rand_app_data, query_file_name){
+  data_name <- 'InterimVitalSigns.dta'
   file_name <- paste0(prefix_dropbox, "/Data/", data_name)
-  version <- file.info(file_name)$ctime %>% as.Date()
-  today <- Sys.Date()
-  vita_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVitalSigns.dta"))
+  version <- file.info(file_name)$mtime %>% as.Date()
+  today <- Sys.Date() 
+  
+  vita_data = haven::read_dta(file_name)
   
   sink(query_file_name, split = T)
   writeLines(sprintf('PLATCOV data queries\nData: %s\nReceived date: %s\nQuery date: %s\n',
@@ -18,7 +19,6 @@ load_vital_data <- function(rand_app_data){
                      today)
   )
   sink()
-  
   writeLines('##########################################################################')
   write.table(data.frame('Dataset' = "",
                          'CRF form/Topic' = "",
@@ -37,63 +37,37 @@ load_vital_data <- function(rand_app_data){
   )
   writeLines('##########################################################################')
   
-  id_missing <- rand_app_data$ID[which(!rand_app_data$ID %in% id_data)]
-  
-  if(length(id_missing) > 0){
-    n_rows <- ceiling(length(id_missing) / 5)
-    id_missing <- c(id_missing, rep("", n_rows * 5 - length(id_missing)))
-    
-    id_missing_matrix <- matrix(id_missing, ncol = 5)
-    
-    id_missing_matrix <- data.frame("Dataset" = data_name, #Dataset
-                                    "CRF form/Topic" = "Day 0 to Day 14", #'CRF form/Topic'
-                                    "Question/Variable" = "Vital signs", #'Question/Variable'
-                                    "Query message" = paste0(length(id_missing), " patients have no data on MACRO about vital signs. IDs are listed here:"), #'Query message'
-                                    id_missing_matrix #'Example data'
-    ) %>%
-      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
-    
-    write.table(id_missing_matrix, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
-    cat("\n", file=query_file_name, append=TRUE)
-    
-    writeLines(sprintf('Query: %s\n',
-                       id_missing_matrix$Query.message[1])
-    )
-    print(id_missing_matrix[,-(1:4)])
-    writeLines('##########################################################################')
-  }
-  
   visits_ID <- unique(vita_data$visit)
+  visits_ID <- visits_ID[visits_ID != "D0H1"]
+  
+  cat("\n", file=query_file_name, append=TRUE)
   for(i in 1:length(visits_ID)){
     missing_info <- vita_data %>% filter(visit == visits_ID[i], 
-                                         is.na(vd_dat) & vs_tim == "" & is.na(vs_temp))
+                                         is.na(vd_dat) & vs_tim == "" & is.na(vs_temp)) %>% select(Label, visit)
     if(nrow(missing_info) > 0){
-      n_rows <- ceiling(nrow(missing_info) / 5)
-      id_missing <- c(missing_info$Label, rep("", n_rows * 5 - nrow(missing_info)))
-      
-      id_missing_matrix <- matrix(id_missing, ncol = 5)
-      
-      id_missing_matrix <- data.frame("Dataset" = data_name, #Dataset
-                                      "CRF form/Topic" = visits_ID[i], #'CRF form/Topic'
-                                      "Question/Variable" = "Vital signs", #'Question/Variable'
-                                      "Query message" = paste0(nrow(missing_info), " patients have no data on MACRO about vital signs on ", visits_ID[i]  ,". IDs are listed here:"), #'Query message'
-                                      id_missing_matrix #'Example data'
+      report <- missing_info
+      report <- data.frame("Dataset" = data_name, #Dataset
+                           "CRF form/Topic" = visits_ID[i], #'CRF form/Topic'
+                           "Question/Variable" = "Vital signs", #'Question/Variable'
+                           "Query message" = paste0(nrow(report), " patients have no data on MACRO about vital signs on ", visits_ID[i]), #'Query message'
+                           report #'Example data'
       ) %>%
         mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
       
-      write.table(id_missing_matrix, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+      write.table(report, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
       cat("\n", file=query_file_name, append=TRUE)
       
       writeLines(sprintf('Query: %s\n',
-                         id_missing_matrix$Query.message[1])
+                         report$Query.message[1])
       )
-      print(id_missing_matrix[,-(1:4)])
+      print(report[,-(1:4)])
       writeLines('##########################################################################')
     }
   }
   
   return(vita_data)
 }
+
 # -----------------------------------------------------------------------------------------------
 # 2. Preparing vital sign data
 prep_vitadata <- function(vita_data, clin_data){
