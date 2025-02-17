@@ -7,7 +7,7 @@ load_clinical_data <- function(query_file_name){
   # load the clinical data
   data_name <- 'InterimEnrolment.dta'
   file_name <- paste0(prefix_dropbox, "/Data/", data_name)
-  version <- file.info(file_name)$ctime %>% as.Date()
+  version <- file.info(file_name)$mtime %>% as.Date()
   today <- Sys.Date()
   clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
   clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1 # Manual correction
@@ -35,6 +35,7 @@ load_clinical_data <- function(query_file_name){
     filter(Label %in% duplicated_clin_data) %>%
     select(Site, scrid, Label)
   
+  if(nrow(duplicated_clin_queries)>0){
   duplicated_clin_queries <- data.frame("Dataset" = data_name, #Dataset
                                         "CRF form/Topic" = "Screening", #'CRF form/Topic'
                                         "Question/Variable" = "Screening Number", #'Question/Variable'
@@ -55,7 +56,7 @@ load_clinical_data <- function(query_file_name){
   # manual correction for duplications
   ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
   if(length(ind>0)){clin_data <- clin_data[-ind,]}
-  
+  }
   return(clin_data)
 }
 

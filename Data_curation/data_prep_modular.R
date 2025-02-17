@@ -54,7 +54,7 @@ query_file_name <-  'Queries/02_PLATCOV_queries_vital_sign_database.csv'
 data_name <- 'InterimVitalSigns.dta'
 
 sink("Queries/02_queries_vital_sign_database.txt", split = T)
-vita_data <- load_vital_data(rand_app_data)
+vita_data <- load_vital_data(rand_app_data, query_file_name)
 vita_data <- prep_vitadata(vita_data, clin_data)
 check_vita_time(vita_data)
 check_vital_signs(vita_data)
@@ -64,27 +64,25 @@ sink()
 ## 003 Temperature database
 query_file_name <-  'Queries/03_PLATCOV_queries_temperature_database.csv'
 
-
 sink("Queries/03_queries_temperature_database.txt", split = T)
 temp_data <- load_temp_data(rand_app_data, query_file_name)
 fever_data <- prep_tempdata(temp_data, clin_data)
 check_time_temp(fever_data)
 sink()
 
-
-
-
 clin_data <- add_baseline_fever(clin_data, fever_data)
 
 
 #############################################################################################
 ## 004 Symptom database
+query_file_name <-  'Queries/04_PLATCOV_queries_symptom_database.csv'
+
 sink("Queries/04_queries_symptom_database.txt", split = T)
-symp <- load_symptom_data(rand_app_data)
+symp <- load_symptom_data(rand_app_data, query_file_name)
 symp_data <- prep_symptom_data(symp, vita_data)
 symptom_data <- check_symptom_data(symp_data)
 check_symptom_grades(symptom_data)
-check_other_symptom_grades(symptom_data)
+#check_other_symptom_grades(symptom_data)
 sink()
 ## ------------------------------------------------------------------------------------------
 write.table(x = merge(clin_data[,c("Label", "rangrp", "cov_sympday", "Sex", "Weight", "height", "age_yr")], symptom_data, by = "Label", all.y = T), 
@@ -92,6 +90,10 @@ write.table(x = merge(clin_data[,c("Label", "rangrp", "cov_sympday", "Sex", "Wei
             row.names = F, sep=',', quote = F)
 #############################################################################################
 ## 005 Final status database
+query_file_name <-  'Queries/05_PLATCOV_queries_final_status_database.csv'
+
+
+
 sink("Queries/05_queries_final_status_database.txt", split = T)
 final_status <- load_final_status_data(rand_app_data)
 check_final_status(final_status)
