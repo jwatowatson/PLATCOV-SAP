@@ -568,7 +568,7 @@ for(i in 1:nrow(clin_data)){
     if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
       time_vac_negative_ID <- c(time_vac_negative_ID, id)}
   }
-  if(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
+  if(!is.na(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) ) & any(vacc_data$vc_statyn[vacc_data$Label == id] == 1)  & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
 }
 # No vaccine date details
 writeLines(sprintf('Patient %s flagged to have vaccinated but no details',
@@ -1246,66 +1246,66 @@ baseline_serology_data <- serology_data %>%
 
 #************************* Regeneron Analysis *************************#
 #* Thailand only
-Res_REGN =
-  Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
-                 Country == 'Thailand',
-                 Rand_date < '2022-10-21 00:00:00') %>%
-  arrange(Rand_date, ID, Time)
-
-regeneron_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/regeneron_mutations.csv"))
-regeneron_mutations <- regeneron_mutations %>% select(Patient_ID, test_regeneron)
-colnames(regeneron_mutations)[1] <- "ID"
-table(regeneron_mutations$test_regeneron, useNA = 'ifany')
-
-Res_REGN$Rand_date <- as.Date(Res_REGN$Rand_date)
-
-
-Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
-Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
-
-#impute variants
-Res_REGN %>%
-  distinct(ID, .keep_all = T) %>%
-  group_by(Variant2) %>%
-  summarise(fq = n())
-
-Res_REGN$test_regeneron[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "G446S"
-Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "BA.1"
-
-Res_REGN$test_regeneron[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "G446S"
-Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "BA.2.75"
-
-Res_REGN$Resistant_test <- "Sensitive"
-Res_REGN$Resistant_test[Res_REGN$test_regeneron != "Wildtype"] <- "Resistant"
-
-Res_REGN$Resistant_mutations <- "Delta"
-Res_REGN$Resistant_mutations[Res_REGN$Variant2 != "Delta" &
-                               Res_REGN$Resistant_test == "Resistant"] <- "Omicron_resistant"
-Res_REGN$Resistant_mutations[Res_REGN$Variant2 != "Delta" &
-                               Res_REGN$Resistant_test == "Sensitive"] <- "Omicron_sensitive"
-
-#impute IgG
-Res_REGN %>%
-  distinct(ID, .keep_all = T) %>%
-  summarise(fq = sum(is.na(Baseline_log_IgG)))
-
-mean_baseline_IgG <- Res_REGN %>% ungroup() %>%
-  filter(Timepoint_ID==0, Rand_date > as.Date('2022-04-01')) %>%
-  distinct(ID, .keep_all = T) %>%
-  summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
-
-Res_REGN$Baseline_log_IgG[which(is.na(Res_REGN$Baseline_log_IgG))] <- mean_baseline_IgG
-
-write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
-
-
-IDs <- Res_REGN %>% select(ID) %>% as.vector() %>% unlist() %>% unique()
-#Temperature data
-fever_REGN <-  fever_data %>% filter(Label %in% IDs)
-write.table(x = fever_REGN, file = '../Analysis_Data/REGN_fever_analysis.csv', row.names = F, sep=',', quote = F)
-#Symptom data
-symptom_REGN <-  symptom_data %>% filter(Label %in% IDs)
-write.table(x = symptom_REGN, file = '../Analysis_Data/REGN_symptom_analysis.csv', row.names = F, sep=',', quote = F)
+# Res_REGN =
+#   Res %>% filter(Trt %in% c('Regeneron',"No study drug"),
+#                  Country == 'Thailand',
+#                  Rand_date < '2022-10-21 00:00:00') %>%
+#   arrange(Rand_date, ID, Time)
+# 
+# regeneron_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/regeneron_mutations.csv"))
+# regeneron_mutations <- regeneron_mutations %>% select(Patient_ID, test_regeneron)
+# colnames(regeneron_mutations)[1] <- "ID"
+# table(regeneron_mutations$test_regeneron, useNA = 'ifany')
+# 
+# Res_REGN$Rand_date <- as.Date(Res_REGN$Rand_date)
+# 
+# 
+# Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
+# Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
+# 
+# #impute variants
+# Res_REGN %>%
+#   distinct(ID, .keep_all = T) %>%
+#   group_by(Variant2) %>%
+#   summarise(fq = n())
+# 
+# Res_REGN$test_regeneron[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "G446S"
+# Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-01-01") & Res_REGN$Rand_date < as.Date("2022-04-01") & is.na(Res_REGN$Variant2)] <- "BA.1"
+# 
+# Res_REGN$test_regeneron[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "G446S"
+# Res_REGN$Variant2[Res_REGN$Rand_date > as.Date("2022-10-01") & is.na(Res_REGN$Variant2)] <- "BA.2.75"
+# 
+# Res_REGN$Resistant_test <- "Sensitive"
+# Res_REGN$Resistant_test[Res_REGN$test_regeneron != "Wildtype"] <- "Resistant"
+# 
+# Res_REGN$Resistant_mutations <- "Delta"
+# Res_REGN$Resistant_mutations[Res_REGN$Variant2 != "Delta" &
+#                                Res_REGN$Resistant_test == "Resistant"] <- "Omicron_resistant"
+# Res_REGN$Resistant_mutations[Res_REGN$Variant2 != "Delta" &
+#                                Res_REGN$Resistant_test == "Sensitive"] <- "Omicron_sensitive"
+# 
+# #impute IgG
+# Res_REGN %>%
+#   distinct(ID, .keep_all = T) %>%
+#   summarise(fq = sum(is.na(Baseline_log_IgG)))
+# 
+# mean_baseline_IgG <- Res_REGN %>% ungroup() %>%
+#   filter(Timepoint_ID==0, Rand_date > as.Date('2022-04-01')) %>%
+#   distinct(ID, .keep_all = T) %>%
+#   summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
+# 
+# Res_REGN$Baseline_log_IgG[which(is.na(Res_REGN$Baseline_log_IgG))] <- mean_baseline_IgG
+# 
+# write.table(x = Res_REGN, file = '../Analysis_Data/REGN_analysis.csv', row.names = F, sep=',', quote = F)
+# 
+# 
+# IDs <- Res_REGN %>% select(ID) %>% as.vector() %>% unlist() %>% unique()
+# #Temperature data
+# fever_REGN <-  fever_data %>% filter(Label %in% IDs)
+# write.table(x = fever_REGN, file = '../Analysis_Data/REGN_fever_analysis.csv', row.names = F, sep=',', quote = F)
+# #Symptom data
+# symptom_REGN <-  symptom_data %>% filter(Label %in% IDs)
+# write.table(x = symptom_REGN, file = '../Analysis_Data/REGN_symptom_analysis.csv', row.names = F, sep=',', quote = F)
 
 #************************* Fluoxetine Analysis *************************#
 #* Thailand added 1st April 2022; Brazil added 21st June 2022
@@ -1426,107 +1426,107 @@ write.table(x = Res_Nitazoxanide, file = paste0(prefix_analysis_data, "/Analysis
 
 #************************* Evusheld Analysis *************************#
 #* Thailand added 2022-09-01; Brazil added 2022-10-31
-Res_Evusheld =
-  Res %>% filter(Trt %in% c('Evusheld',"No study drug"),
-                 (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00") |
-                   (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")) %>%
-  arrange(Rand_date, ID, Time)
-
- evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_mutations.csv"))
- evusheld_mutations <- evusheld_mutations %>% select(Patient_ID, test_evusheld)
- colnames(evusheld_mutations)[1] <- "ID"
- table(evusheld_mutations$test_evusheld, useNA = 'ifany')
-
- Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
- Res_Evusheld <- merge(Res_Evusheld, baseline_serology_data, by = "ID", all.x = T)
-
- Res_Evusheld$Rand_date <- as.Date(Res_Evusheld$Rand_date)
-
- #impute variants
- Res_Evusheld %>%
-   distinct(ID, .keep_all = T) %>%
-   group_by(Variant2) %>%
-   summarise(fq = n())
- 
- Res_Evusheld$test_evusheld[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- "F486* and (R346* or K444*)"
- Res_Evusheld$Variant2[Res_Evusheld$Site == "br003"  & is.na(Res_Evusheld$Variant2)] <- "BA.5"
-
- Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2023-01-01")] <- "R346* or K444*"
- Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2023-01-01")] <- "BA.2.75"
-
- Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2023-04-01")] <- "F486* and (R346* or K444*)"
- Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2023-04-01")] <- "XBB.1.5-like"
-
- Res_Evusheld$test_evusheld[is.na(Res_Evusheld$test_evusheld) & Res_Evusheld$Variant2 == "BA.2.75"]  <- "R346* or K444*"
- Res_Evusheld$test_evusheld[is.na(Res_Evusheld$test_evusheld) & Res_Evusheld$Variant2 == "BA.5"]  <- "F486* and (R346* or K444*)"
-
- Res_Evusheld$Resistant_test <- "Partially resistant"
- Res_Evusheld$Resistant_test[Res_Evusheld$test_evusheld == "F486* and (R346* or K444*)"] <- "Resistant"
-
- Res_Evusheld$Resistant_mutations <- "Single resistant mutation"
- Res_Evusheld$Resistant_mutations[Res_Evusheld$Resistant_test == "Resistant"] <- "Double resistant mutations"
- 
- #impute IgG
- Res_Evusheld %>%
-   distinct(ID, .keep_all = T) %>%
-   summarise(fq = sum(is.na(Baseline_log_IgG)))
- 
- mean_baseline_IgG <- Res_Evusheld %>% ungroup() %>%
-   filter(Timepoint_ID==0) %>%
-   distinct(ID, .keep_all = T) %>%
-   summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
-
- Res_Evusheld$Baseline_log_IgG[which(is.na(Res_Evusheld$Baseline_log_IgG))] <- mean_baseline_IgG
-
- table(Res_Evusheld$Variant2, useNA = 'ifany')
- table(Res_Evusheld$test_evusheld, useNA = 'ifany')
-
- write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
-
-IDs <- Res_Evusheld %>% select(ID) %>% as.vector() %>% unlist() %>% unique()
-#Temperature data
-fever_Evusheld <-  fever_data %>% filter(Label %in% IDs)
-write.table(x = fever_Evusheld, file = '../Analysis_Data/Evusheld_fever_analysis.csv', row.names = F, sep=',', quote = F)
-#Symptom data
-symptom_Evusheld <-  symptom_data %>% filter(Label %in% IDs)
-write.table(x = symptom_Evusheld, file = '../Analysis_Data/Evusheld_symptom_analysis.csv', row.names = F, sep=',', quote = F)
+# Res_Evusheld =
+#   Res %>% filter(Trt %in% c('Evusheld',"No study drug"),
+#                  (Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00") |
+#                    (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")) %>%
+#   arrange(Rand_date, ID, Time)
+# 
+#  evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_mutations.csv"))
+#  evusheld_mutations <- evusheld_mutations %>% select(Patient_ID, test_evusheld)
+#  colnames(evusheld_mutations)[1] <- "ID"
+#  table(evusheld_mutations$test_evusheld, useNA = 'ifany')
+# 
+#  Res_Evusheld = merge(Res_Evusheld, evusheld_mutations, by = 'ID', all.x = T)
+#  Res_Evusheld <- merge(Res_Evusheld, baseline_serology_data, by = "ID", all.x = T)
+# 
+#  Res_Evusheld$Rand_date <- as.Date(Res_Evusheld$Rand_date)
+# 
+#  #impute variants
+#  Res_Evusheld %>%
+#    distinct(ID, .keep_all = T) %>%
+#    group_by(Variant2) %>%
+#    summarise(fq = n())
+#  
+#  Res_Evusheld$test_evusheld[Res_Evusheld$Site == "br003" & is.na(Res_Evusheld$Variant2)] <- "F486* and (R346* or K444*)"
+#  Res_Evusheld$Variant2[Res_Evusheld$Site == "br003"  & is.na(Res_Evusheld$Variant2)] <- "BA.5"
+# 
+#  Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2023-01-01")] <- "R346* or K444*"
+#  Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date <= as.Date("2023-01-01")] <- "BA.2.75"
+# 
+#  Res_Evusheld$test_evusheld[Res_Evusheld$Site == "th001" & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2023-04-01")] <- "F486* and (R346* or K444*)"
+#  Res_Evusheld$Variant2[Res_Evusheld$Site == "th001"  & is.na(Res_Evusheld$Variant2) & Res_Evusheld$Rand_date > as.Date("2023-04-01")] <- "XBB.1.5-like"
+# 
+#  Res_Evusheld$test_evusheld[is.na(Res_Evusheld$test_evusheld) & Res_Evusheld$Variant2 == "BA.2.75"]  <- "R346* or K444*"
+#  Res_Evusheld$test_evusheld[is.na(Res_Evusheld$test_evusheld) & Res_Evusheld$Variant2 == "BA.5"]  <- "F486* and (R346* or K444*)"
+# 
+#  Res_Evusheld$Resistant_test <- "Partially resistant"
+#  Res_Evusheld$Resistant_test[Res_Evusheld$test_evusheld == "F486* and (R346* or K444*)"] <- "Resistant"
+# 
+#  Res_Evusheld$Resistant_mutations <- "Single resistant mutation"
+#  Res_Evusheld$Resistant_mutations[Res_Evusheld$Resistant_test == "Resistant"] <- "Double resistant mutations"
+#  
+#  #impute IgG
+#  Res_Evusheld %>%
+#    distinct(ID, .keep_all = T) %>%
+#    summarise(fq = sum(is.na(Baseline_log_IgG)))
+#  
+#  mean_baseline_IgG <- Res_Evusheld %>% ungroup() %>%
+#    filter(Timepoint_ID==0) %>%
+#    distinct(ID, .keep_all = T) %>%
+#    summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric
+# 
+#  Res_Evusheld$Baseline_log_IgG[which(is.na(Res_Evusheld$Baseline_log_IgG))] <- mean_baseline_IgG
+# 
+#  table(Res_Evusheld$Variant2, useNA = 'ifany')
+#  table(Res_Evusheld$test_evusheld, useNA = 'ifany')
+# 
+#  write.table(x = Res_Evusheld, file = paste0(prefix_analysis_data, "/Analysis_Data/Evusheld_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
+# IDs <- Res_Evusheld %>% select(ID) %>% as.vector() %>% unlist() %>% unique()
+# #Temperature data
+# fever_Evusheld <-  fever_data %>% filter(Label %in% IDs)
+# write.table(x = fever_Evusheld, file = '../Analysis_Data/Evusheld_fever_analysis.csv', row.names = F, sep=',', quote = F)
+# #Symptom data
+# symptom_Evusheld <-  symptom_data %>% filter(Label %in% IDs)
+# write.table(x = symptom_Evusheld, file = '../Analysis_Data/Evusheld_symptom_analysis.csv', row.names = F, sep=',', quote = F)
 
 
 #************************* REGN and Evusheld for plots *************************#
-Res_REGN2 <- Res_REGN[, !names(Res_REGN) %in% c("Resistant_test", "test_regeneron", "Resistant_mutations")]
-Res_Evusheld2 <- Res_Evusheld[, !names(Res_Evusheld) %in% c("Resistant_test", "test_evusheld", "Resistant_mutations")]
-
-class(Res_REGN2$Rand_date)
-class(Res_Evusheld2$Rand_date)
-
-Res_REGN_Evusheld <- rbind(Res_REGN2, Res_Evusheld2)
-Res_REGN_Evusheld <- Res_REGN_Evusheld %>% distinct(BARCODE, .keep_all = T)
-
-write.table(x = Res_REGN_Evusheld, file = '../Analysis_Data/REGN_Evusheld_plot.csv', row.names = F, sep=',', quote = F)
+# Res_REGN2 <- Res_REGN[, !names(Res_REGN) %in% c("Resistant_test", "test_regeneron", "Resistant_mutations")]
+# Res_Evusheld2 <- Res_Evusheld[, !names(Res_Evusheld) %in% c("Resistant_test", "test_evusheld", "Resistant_mutations")]
+# 
+# class(Res_REGN2$Rand_date)
+# class(Res_Evusheld2$Rand_date)
+# 
+# Res_REGN_Evusheld <- rbind(Res_REGN2, Res_Evusheld2)
+# Res_REGN_Evusheld <- Res_REGN_Evusheld %>% distinct(BARCODE, .keep_all = T)
+# 
+# write.table(x = Res_REGN_Evusheld, file = '../Analysis_Data/REGN_Evusheld_plot.csv', row.names = F, sep=',', quote = F)
 #************************* Ensitrelvir Analysis *************************#
 #* Thailand and Laos added 2023-03-17
 
-Res_Ensitrelvir = 
-  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
-                 (Country=='Thailand' &
-                    Rand_date >= "2023-03-17 00:00:00" &
-                    Rand_date < "2024-04-22") |
-                   (Country=='Laos' & 
-                      Rand_date >= "2023-03-17 00:00:00"&
-                      Rand_date < "2024-04-22")) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
-
-
-symptom_data_Ensitrelvir <- symptom_data %>%
-  filter(Label %in% Res_Ensitrelvir$ID)
-
-write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
-
-fever_data_Ensitrelvir <- fever_data %>%
-  filter(Label %in% Res_Ensitrelvir$ID)
-
-write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
+# Res_Ensitrelvir = 
+#   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
+#                  (Country=='Thailand' &
+#                     Rand_date >= "2023-03-17 00:00:00" &
+#                     Rand_date < "2024-04-22") |
+#                    (Country=='Laos' & 
+#                       Rand_date >= "2023-03-17 00:00:00"&
+#                       Rand_date < "2024-04-22")) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
+# 
+# symptom_data_Ensitrelvir <- symptom_data %>%
+#   filter(Label %in% Res_Ensitrelvir$ID)
+# 
+# write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
+# 
+# fever_data_Ensitrelvir <- fever_data %>%
+#   filter(Label %in% Res_Ensitrelvir$ID)
+# 
+# write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
 
 
 # Res_Ensitrelvir_allpax = 
@@ -1541,7 +1541,7 @@ write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/An
 Res_MolPax = 
   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir + Molnupiravir',"No study drug",'Nirmatrelvir + Ritonavir'),
                  Country %in% c('Thailand','Laos','Brazil'), 
-                 Rand_date >= "2023-05-29 00:00:00" ) %>%
+                 Rand_date >= "2023-05-29 00:00:00" & Rand_date <= "2024-06-01 00:00:00") %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/MolPax_combination_analysis.csv"), row.names = F, sep=',', quote = F)
 
@@ -1550,8 +1550,10 @@ write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/
 #************************* Hydroxychloroquine Analysis *************************#
 #* Thailand added 2024-01-02
 Res_HCQ = 
-  Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug"),
-                 (Country=='Thailand' & Rand_date > "2024-01-01 00:00:00")) %>%
+  Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug") &
+                 (Country=='Thailand' & Rand_date >= "2024-01-01 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
+                    (Country=='Laos' & Rand_date >= "2024-04-04 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
+                    (Country=='Nepal' & Rand_date >= "2024-08-26 00:00:00" & Rand_date <= "2024-11-08 00:00:00")) %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hydroxychloroquine_analysis.csv"), row.names = F, sep=',', quote = F)
 

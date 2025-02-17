@@ -766,7 +766,7 @@ formatter <- function(x){
   (x-1)*100 
 }
 
-plot_trt_effs <- function(effect_ests, model_cols){
+plot_trt_effs <- function(effect_ests, model_cols, study_threshold){
   effect_ests_plots <- NULL
     for(i in 1:length(effect_ests)){
     effect_ests_plot <- as.data.frame(effect_ests[[i]])

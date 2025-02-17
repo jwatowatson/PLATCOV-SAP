@@ -49,12 +49,10 @@ All paths are local
 
 Set up analysis
 
-\<\<\<\<\<\<\< HEAD
-
 ```{r load_data}
 #intervention = 'interim_all';ref_arm = 'No study drug'
-# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
- intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+ intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
@@ -313,7 +311,7 @@ G_hl
 ## Plot treatment effects
 
 ```{r}
-G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols)
+G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold)
 G2
 ```
 
