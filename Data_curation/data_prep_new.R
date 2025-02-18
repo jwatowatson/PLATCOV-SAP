@@ -640,9 +640,14 @@ for(i in 1:length(fnames)){
   if(length(grep(pattern = 'Pakistan', x = fnames[i], ignore.case = F))>0){
     temp$`Lot no.` = apply(temp[, 'Lot no.', drop=F], 1, function(x) paste('Pakistan',x,sep='_'))
   }
+  
+  
   if(i==1){
     Res=temp
   } else {
+    
+    #if(any(temp$BARCODE %in% c("24AK019", "24AK016"))){print(fnames[i])}
+    
     Res = rbind(Res,temp)
   }
 }
@@ -709,7 +714,11 @@ for(i in 1:length(unique(Res$Plate))){
                )
 }
 }
+######################
 
+
+
+######################
 ### --- Extract standard curve data by plate --- ###
 ind = grep('std', Res$`Sample ID`)
 SC = Res[ind, c('Sample ID','N/S Gene','Target conc. c/mL','Plate','Lab','Lot no.')]
@@ -730,6 +739,10 @@ SC = SC[,cols]
 Res = Res[!is.na(Res$`SUBJECT ID`), ]
 Res$ID_sample = apply(Res, 1, function(x) paste(x[c("SUBJECT ID","Location","TIME-POINT")], collapse = '_'))
 #write_csv(x = Res[, c('ID_sample',"SUBJECT ID","BARCODE","Location","TIME-POINT","Time Collected","COLLECTION DATE")],file = '~/Downloads/Liz.csv')
+
+Res %>%
+  filter(is.na(Location))
+
 
 Res = Res[Res$Location != 'Saliva', ]
 Res <- Res[rowSums(is.na(Res)) != ncol(Res),]
@@ -988,15 +1001,21 @@ writeLines(sprintf('Sampling time not matched with Timepoint ID. Patient %s at T
            )
 
 # Manual corrections
-Res$Time[Res$ID == 'PLT-LA8-001' & Res$Time > 300] <- Res$Time[Res$ID == 'PLT-LA8-001' & Res$Time > 300] - 365
-Res$`TIME-POINT`[Res$ID == 'PLT-TH1-1116' & Res$Timepoint_ID == 4 & Res$Time < 3] <- "D3"
-Res$Timepoint_ID[Res$ID == 'PLT-TH1-1116' & Res$Timepoint_ID == 4 & Res$Time < 3] <- 3
-Res$Time[Res$ID == 'PLT-TH1-1331'] <- Res$Time[Res$ID == 'PLT-TH1-1331'] - 10
-Res$Time[Res$ID == 'PLT-TH1-1661'] <- Res$Time[Res$ID == 'PLT-TH1-1661'] - 30
-Res$Timepoint_ID[Res$BARCODE == '20HK232'] <- 4
-Res$`TIME-POINT`[Res$BARCODE == '20HK232'] <- "D4"
-Res$Timepoint_ID[Res$BARCODE == '20HK832'] <- 3
-Res$`TIME-POINT`[Res$BARCODE == '20HK832'] <- "D3"
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-BR3-006' & Timepoint_ID == 0 & Time > 1, Time - 1, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-LA8-001' & Timepoint_ID %in% c(5,6) & Time > 360, Time - 365, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-LA8-027' & Time > 20, Time - 30, Time))
+Res <- Res %>% mutate(Timepoint_ID = if_else(ID == 'PLT-TH1-1116' & BARCODE %in% c("23MD734", "23MD737"), 3, Timepoint_ID))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-1661' & Time > 20, Time - 30, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-1743' & Time > 20, Time - 152, Time))
+Res <- Res %>% mutate(Timepoint_ID = if_else(ID == 'PLT-TH1-1851' & BARCODE %in% c("24DR403", "24DR409"), 2, Timepoint_ID))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-1887' & Timepoint_ID == 5, Time + 1, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-1960' & Timepoint_ID == 5, Time + 1, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-1980' & Timepoint_ID == 5, Time + 1, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-276', Time - 1, Time))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH1-682'& Timepoint_ID == 4, Time + 1, Time))
+Res <- Res %>% mutate(Timepoint_ID = if_else(ID == 'PLT-TH1-781' & BARCODE %in% c("20HK232"), 4, Timepoint_ID))
+Res <- Res %>% mutate(Timepoint_ID = if_else(ID == 'PLT-TH1-798' & BARCODE %in% c("20HK832"), 3, Timepoint_ID))
+Res <- Res %>% mutate(Time = if_else(ID == 'PLT-TH58-009' & Timepoint_ID %in% 0:7, Time - 1, Time))
 
 plot(Res$Timepoint_ID, Res$Time)
 
@@ -1147,6 +1166,16 @@ writeLines('The following IDs have duplicated barcodes:')
 print(unique(Res$ID[duplicated(Res$BARCODE)]))
 
 Res = Res[!duplicated(Res$BARCODE), ]
+
+# Correct with negative time
+print(min(Res$Time))
+
+Res <- Res %>%
+  group_by(ID) %>%
+  mutate(Time = if (any(Time < 0)) Time - min(Time) else Time) %>%
+  ungroup()
+
+
 
 ###### Write csv files
 # Overall data files
@@ -1551,13 +1580,16 @@ write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/
 #* Thailand added 2024-01-02
 Res_HCQ = 
   Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug") &
-                 (Country=='Thailand' & Rand_date >= "2024-01-01 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
+                 ((Country=='Thailand' & Rand_date >= "2024-01-01 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
                     (Country=='Laos' & Rand_date >= "2024-04-04 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
-                    (Country=='Nepal' & Rand_date >= "2024-08-26 00:00:00" & Rand_date <= "2024-11-08 00:00:00")) %>%
+                    (Country=='Nepal' & Rand_date >= "2024-08-26 00:00:00" & Rand_date <= "2024-11-08 00:00:00"))) %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hydroxychloroquine_analysis.csv"), row.names = F, sep=',', quote = F)
 
-
+Res_HCQ %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt, Country) %>%
+  summarise(n = n())
 #************************* Ineffective Interventions *************************#
 # Res_ineffective = 
 #   Res %>% filter(Trt %in% c('Ivermectin',

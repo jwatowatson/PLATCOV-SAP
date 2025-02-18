@@ -864,6 +864,21 @@ plot_hl <- function(Half_life, trt_colors){
   
 }
 
+plot_randomisation <- function(Baseline_data){
+  Baseline_data$Rand_date <- as.Date(Baseline_data$Rand_date)
+  
+  ggplot(Baseline_data, aes(x = Rand_date, y = Trt, col = Country)) +
+    geom_jitter(size = 3, alpha = 0.5, height = 0.1) +
+    theme_bw() +
+    xlab("Randomisation date") +
+    ylab("") +
+    scale_x_date(date_breaks = "3 months", date_minor_breaks = "1 months",
+                 date_labels = "%b %y") +
+    theme(axis.title = element_text(size = 14, face = "bold"),
+          axis.text = element_text(size = 11))
+  
+  
+}
 
 
 checkStrict(make_stan_inputs)

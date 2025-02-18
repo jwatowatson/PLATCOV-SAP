@@ -51,8 +51,8 @@ Set up analysis
 
 ```{r load_data}
 #intervention = 'interim_all';ref_arm = 'No study drug'
- intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
-# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+ intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
@@ -102,6 +102,26 @@ platcov_dat = platcov_dat %>% group_by(ID) %>%
 
 pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
+```
+
+```{r}
+timeline <- plot_randomisation(platcov_dat %>% distinct(ID, .keep_all = T))
+timeline
+```
+
+```{r}
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention,  "_recruitment.pdf")
+
+pdf(plot_name, width = 8, height = 4)
+timeline
+dev.off()
+```
+
+```{r}
+platcov_dat %>%
+  ungroup() %>%
+  summarise(min_date = min(Rand_date),
+            max_date = max(Rand_date))
 ```
 
 ## Baseline characteristics
