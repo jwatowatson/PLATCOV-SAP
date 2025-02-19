@@ -766,14 +766,17 @@ formatter <- function(x){
   (x-1)*100 
 }
 
-plot_trt_effs <- function(effect_ests, model_cols, study_threshold){
+plot_trt_effs <- function(effect_ests, model_cols, study_threshold, unblinded_arms, intervention){
   effect_ests_plots <- NULL
     for(i in 1:length(effect_ests)){
     effect_ests_plot <- as.data.frame(effect_ests[[i]])
     effect_ests_plot <- exp(effect_ests_plot)
     colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
+    effect_ests_plot <- effect_ests_plot %>% arrange(med)
     effect_ests_plot$arm <- row.names(effect_ests_plot)
+    if(intervention == "interim_all"){effect_ests_plot <- effect_ests_plot %>% filter(!arm %in% unblinded_arms)}
     effect_ests_plot$arm <- as.factor(effect_ests_plot$arm)
+    effect_ests_plot$arm <- factor(effect_ests_plot$arm, levels = as.character(effect_ests_plot$arm))
     effect_ests_plot$model <- names(effect_ests)[i]
     effect_ests_plots <- rbind(effect_ests_plots, effect_ests_plot)
   }
@@ -784,8 +787,11 @@ plot_trt_effs <- function(effect_ests, model_cols, study_threshold){
   lab_ref <- ref_arm
   lab_ref[lab_ref == "Nirmatrelvir"] <- "Ritonavir-boosted nirmatrelvir"
   #Labeling intervention arm
+  
   my.labs <- levels(effect_ests_plot$arm)
-  my.labs[my.labs == "Nirmatrelvir+Molnupiravir"] <- "Nirmatrelvir +\nMolnupiravir"
+  my.labs[my.labs == "Nirmatrelvir+Molnupiravir"] <- "Nirmatrelvir/Molnupiravir"
+  my.labs[my.labs == "Regeneron"] <- "Casirivimab/imdevimab"
+  my.labs[my.labs == "Evusheld"] <- "Tixagevimab/cilgavimab"
   
   title <- paste0("B) Estimated treatment effects \nrelative to ", tolower(lab_ref), " arm")
   
@@ -794,7 +800,7 @@ plot_trt_effs <- function(effect_ests, model_cols, study_threshold){
   G <- ggplot(effect_ests_plots, 
          aes(x = arm, y = med, col = model, group = model)) +
     geom_rect(aes(ymin = min(0.75, min(L95)-0.05), 
-                  ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.2, col = NA) +
+                  ymax = study_threshold, xmin = 0, xmax = length(my.labs)+1), fill = "#7D7C7C", alpha = 0.1, col = NA) +
     geom_point(position = position_dodge(width = 0.5), size = 4) +
     geom_errorbar(aes(x = arm, ymin = L95, ymax = U95),position = position_dodge(width = 0.5), width = 0, linewidth = 0.65) +
     geom_errorbar(aes(x = arm, ymin = L80, ymax = U80),position = position_dodge(width = 0.5), width = 0, linewidth = 1.5) +

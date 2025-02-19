@@ -271,9 +271,11 @@ ff = paste0('Rout/',ff)
 ## main model selection
 
 ```{r}
-main_mod = which(model_settings$prior==1&
-                   model_settings$cov_matrices==1&
-                   model_settings$mod==all_mods[3])
+# main_mod = which(model_settings$prior==1&
+#                    model_settings$cov_matrices==1&
+#                    model_settings$mod==all_mods[3])
+
+main_mod = 1
 
 model_cols = brewer.pal(n = 8, name = 'Dark2')[1:nrow(model_settings)]
 names(model_cols) = paste('model', 1:nrow(model_settings))
@@ -325,11 +327,32 @@ t12_output = data.frame(t_12_med = 24*log10(.5)/apply(slopes,2,mean),
                           ID_stan = analysis_data_stan$id[analysis_data_stan$ind_start])
 t12_output = merge(t12_output, stan_inputs$ID_map, by = 'ID_stan')
 
+# For temporal random effects
+if(intervention == 'interim_all'){
+  slopes = rstan::extract(out, pars='slope')$slope
+  slope_period = rstan::extract(out, pars='slope_period')$slope_period
+
+analysis_data_stan = stan_inputs$analysis_data_stan
+t12_output = data.frame(t_12_med = 24*log10(.5)/apply(slopes,2,median),
+                        t_12_up = 24*log10(.5)/apply(slopes,2,quantile,.9),
+                        t_12_low = 24*log10(.5)/apply(slopes,2,quantile,.1),
+                        
+                        slope_median = apply(slopes,2,median),
+                        slope_low = apply(slopes,2,quantile,.1),
+                        slope_up = apply(slopes,2,quantile,.9),
+
+                        slope_period_median = apply(slope_period, 2, median),
+                        slope_period_low = apply(slope_period, 2, quantile, .1),
+                        slope_period_up = apply(slope_period, 2, quantile, .9),
+
+                        ID_stan = analysis_data_stan$id[analysis_data_stan$ind_start])
+t12_output = merge(t12_output, stan_inputs$ID_map, by = 'ID_stan')
+}
 
 
 Half_life <- t12_output
 Half_life <- platcov_dat_analysis %>%
-  distinct(ID, Trt) %>%
+  distinct(ID, Trt, .keep_all = T) %>%
   merge(Half_life, by.x = "ID", by.y = "ID_key") %>%
   arrange(Trt, t_12_med)
 
@@ -346,8 +369,19 @@ G_hl
 ## Plot treatment effects
 
 ```{r}
-G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold)
+unblinded_arms <- c("Nitazoxanide", "Metformin")
+
+G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold,
+                    intervention = intervention, unblinded_arms = unblinded_arms)
 G2
+```
+
+```{r}
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_trt.pdf")
+
+pdf(plot_name, width = 8, height = 6)
+G2
+dev.off()
 ```
 
 ```{r}
