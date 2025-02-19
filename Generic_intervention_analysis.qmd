@@ -34,6 +34,7 @@ rstan_options(auto_write = TRUE)
 Dmax = 5.5
 RUN_MODELS = F
 add_epoch = T # if using non-concurrent controls
+nperiod <- 10 # for temporal random effects 
 
 my_probs = c(0.025, 0.1, .5, .9, .975)
 source('functions.R') 
@@ -50,9 +51,9 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-#intervention = 'interim_all';ref_arm = 'No study drug'
+intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
- intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
@@ -112,7 +113,9 @@ timeline
 ```{r}
 plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention,  "_recruitment.pdf")
 
-pdf(plot_name, width = 8, height = 4)
+if(intervention == "interim_all"){wd = 12; ht = 6}else{wd = 8; ht = 4}
+
+pdf(plot_name, width = wd, height = ht)
 timeline
 dev.off()
 ```
@@ -172,6 +175,14 @@ tab.ff <- Baseline_data %>% filter(mITT) %>%
 tab.ff
 ```
 
+```{r}
+# Prepare for temporal random effect
+quant <- quantile(Baseline_data$Rand_date, seq(0,1,1/nperiod))
+
+platcov_dat <- platcov_dat %>% 
+  mutate(period_id = cut(Rand_date, breaks = quant, include.lowest = TRUE, labels = FALSE)) 
+```
+
 ## Fit models
 
 ```{r}
@@ -210,13 +221,17 @@ stan_inputs =
                    trt_frmla = formula('~ Trt'),
                    epoch = add_epoch,
                    Dmax = Dmax)
+
+stan_inputs$analysis_data_stan$period_id <- platcov_dat_analysis$period_id
+stan_inputs$analysis_data_stan$n_period <- length(unique(stan_inputs$analysis_data_stan$period_id))
 ```
 
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-model_settings = expand.grid(mod = c('Stan_models/Linear_model_RNaseP.stan',
-                                     'Stan_models/Nonlinear_model_RNaseP.stan'),
+if(intervention != 'interim_all'){mods = 'Stan_models/Linear_model_RNaseP.stan'} else {mods = 'Stan_models/Linear_model_temporal_RE.stan'}
+
+model_settings = expand.grid(mod = mods,
                              prior = 1,
                              cov_matrices = 1)
 

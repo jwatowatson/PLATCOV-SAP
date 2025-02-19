@@ -1176,6 +1176,12 @@ Res <- Res %>%
   ungroup()
 
 
+Res = 
+  Res %>% filter(Swab_ID != 'Saliva' & !(grepl("_N2", Location)|grepl("_P", Location))) %>% # remove the saliva samples and extra swabs
+  mutate(Country= case_when(Site %in% c('th001','th057','th058') ~ 'Thailand',
+                            Site == 'br003' ~ 'Brazil',
+                            Site == 'la008' ~ 'Laos',
+                            Site == 'pk001' ~ 'Pakistan'))
 
 ###### Write csv files
 # Overall data files
@@ -1186,12 +1192,7 @@ write.table(x = Res, file = paste0(prefix_analysis_data, "/Analysis_Data/interim
 
 write.table(x = screen_failure, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_screening_dat.csv"), row.names = F, sep=',')
 
-Res = 
-  Res %>% filter(Swab_ID != 'Saliva' & !(grepl("_N2", Location)|grepl("_P", Location))) %>% # remove the saliva samples and extra swabs
-  mutate(Country= case_when(Site %in% c('th001','th057','th058') ~ 'Thailand',
-                            Site == 'br003' ~ 'Brazil',
-                            Site == 'la008' ~ 'Laos',
-                            Site == 'pk001' ~ 'Pakistan'))
+
 ###### Fever data------------------------------------------------------------------
 # fever_data = read_csv(file = paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 # fever_data = fever_data %>% 
