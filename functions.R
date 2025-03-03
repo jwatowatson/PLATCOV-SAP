@@ -887,6 +887,121 @@ plot_randomisation <- function(Baseline_data){
 }
 
 
+find_rebounds = function(platcov_dat, 
+                         lower_bound=2,  # lower level such that VL is defined as non-detectable
+                         upper_bound=4,  # upper level such that VL is defined as "high"
+                         t_window=2  ,    # time window during which it has to be undetectable
+                         day_min = 4
+){
+  platcov_dat$rebound=NA
+  platcov_dat$Timepoint_ID_rebound=NA
+  platcov_dat$Time_rebound=NA
+  platcov_dat$logVL_rebound=NA
+  for(id in unique(platcov_dat$ID)){
+    ind=platcov_dat$ID==id
+    res = assess_rebound(platcov_dat[ind,],
+                         lower_bound = lower_bound,
+                         upper_bound = upper_bound,
+                         t_window = t_window,
+                         day_min = day_min)
+    platcov_dat$rebound[ind] = res$rebound
+    platcov_dat$Timepoint_ID_rebound[ind] = res$details$Timepoint_ID_rebound
+    platcov_dat$Time_rebound[ind] = res$details$Time_rebound
+    platcov_dat$logVL_rebound[ind] = res$details$logVL_rebound
+    
+  }
+  return(platcov_dat)
+}
+
+assess_rebound = function(patient_dat,
+                          lower_bound=2,  # lower level such that VL is defined as non-detectable
+                          upper_bound=3,  # upper level such that VL is defined as "high"
+                          t_window=1.5,   # time window during which it has to be undetectable
+                          day_min = 5
+){
+  xx = patient_dat %>% arrange(Time) %>% distinct(Timepoint_ID, .keep_all = T)
+  rebound = virus_cleared = F
+  details = data.frame("Timepoint_ID_rebound" = NA, "Time_rebound" = NA,
+                       "logVL_rebound" = NA)
+  if(nrow(xx)>3){
+    for(i in 2:nrow(xx)){
+      ind = which(xx$Time <= xx$Time[i] & (xx$Time >= (xx$Time[i]-t_window)))
+      if(all(xx$daily_VL[ind] <= lower_bound)){
+        virus_cleared=T
+      }
+      #print(virus_cleared)
+      if((virus_cleared & xx$daily_VL[i] >= upper_bound & xx$Time[i]>day_min & xx$daily_VL[i-1] < upper_bound)|
+         (virus_cleared & xx$Time[i] >= 8 & xx$daily_VL[i]  >= upper_bound)){
+        rebound = T
+        writeLines(sprintf('patient %s treated with %s had a rebound identified on day %s (%s days)', 
+                           xx$ID[1], xx$Trt[1],xx$Timepoint_ID[i], round(xx$Time[i],1)))
+        details = data.frame("Timepoint_ID_rebound" = xx$Timepoint_ID[i], "Time_rebound" = xx$Time[i],
+                             "logVL_rebound" = xx$daily_VL[i])
+      }
+      # print(rebound)
+    }
+  }
+  return(list("rebound" = rebound, "details" = details))
+}
+
+
+plot_rebound <- function(platcov_dat_analysis, platcov_dat_rebound, trt_colors){
+  
+  lab <- platcov_dat_analysis %>%
+    distinct(ID, .keep_all = T) %>%
+    group_by(Trt) %>%
+    summarise(n = n()) 
+  
+  lab$n_rbound <- platcov_dat_rebound %>%
+    filter(rebound) %>%
+    distinct(ID, .keep_all = T) %>%
+    group_by(Trt) %>%
+    summarise(n = n()) %>%
+    pull(n)
+  
+  lab$lab <- paste0(lab$Trt, " (n=", lab$n_rbound, "/", lab$n, ")")
+  
+  lab_labeller <- function(variable,value){
+    return(lab$lab[value])
+  }
+  
+  
+  rebound_summary <-  platcov_dat_rebound  %>% filter(rebound) %>%
+    group_by(Trt) %>%
+    summarise(med_time = median(Time_rebound) %>% round(1) %>% format(nsmall = 1),
+              Q1_time = quantile(Time_rebound, 0.25)%>% round(1) %>% format(nsmall = 1),
+              Q3_time = quantile(Time_rebound, 0.75)%>% round(1) %>% format(nsmall = 1),
+              med_vl_rebound = median(logVL_rebound)%>% round(1) %>% format(nsmall = 1),
+              Q1_vl_rebound = quantile(logVL_rebound, 0.25)%>% round(1) %>% format(nsmall = 1),
+              Q3_vl_rebound = quantile(logVL_rebound, 0.75)%>% round(1) %>% format(nsmall = 1),
+              lab1 = paste0("Time-to-rebound (days): ",  med_time, " [IQR: ", Q1_time, " to ",  Q3_time, "]"),
+              lab2 = paste0("Rebound viral loads (log genomes/mL): ",  med_vl_rebound, " [IQR: ", Q1_vl_rebound, " to ",  Q3_vl_rebound, "]"),
+    )
+  
+  
+  ggplot(platcov_dat_rebound  %>% filter(rebound), aes(x = Time, y = daily_VL)) +
+    geom_point(shape = 21, aes(group = ID, col = Trt)) +
+    geom_line(alpha = 0.5,  aes(group = ID, col = Trt)) +
+    facet_wrap(Trt~., ncol = 1,
+               labeller  = lab_labeller) +
+    theme_bw(base_size = 13)+
+    scale_color_manual(values = trt_colors) +
+    geom_hline(yintercept = c(2,3), linetype = "dashed", linewidth = 0.4, alpha = 0.75) +
+    scale_y_continuous(labels=label_math(), breaks = seq(0,8,2), limits = c(0,8)) +
+    scale_x_continuous(limits = c(0,15), breaks = seq(0,15,3)) +
+    xlab('Time since randomisation (days)') +
+    ylab('SARS-CoV-2 genomes/mL') +
+    theme(axis.title = element_text(face = "bold"),
+          strip.text = element_text(face = "bold"),
+          legend.position = "none",
+          panel.spacing = unit(1, "lines")) +
+    geom_text(data = rebound_summary, x = 5, y = 7.5, aes(label = lab1), hjust = 0, size = 3) +
+    geom_text(data = rebound_summary, x = 5, y = 6.5, aes(label = lab2), hjust = 0, size = 3)
+  
+  
+}
+
+
 checkStrict(make_stan_inputs)
 checkStrict(plot_serial_data)
 checkStrict(plot_effect_estimates)

@@ -51,8 +51,8 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-intervention = 'interim_all';ref_arm = 'No study drug'
-# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+#intervention = 'interim_all';ref_arm = 'No study drug'
+ intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
@@ -412,6 +412,146 @@ for(i in 1:nrow(effect_ests_rep)){
 }
 }
 ```
+
+## Rebound
+
+```{r rebound_visual_assessment}
+IDs_analysis = unique(platcov_dat_analysis$ID)
+
+platcov_dat_rebound = platcov_dat%>% filter(ID %in% IDs_analysis)
+platcov_dat_rebound = find_rebounds(platcov_dat = platcov_dat_rebound,
+                            lower_bound = 2, 
+                            upper_bound = 3,
+                            t_window = 1.5,
+                            day_min = 4)
+
+#print(unique(platcov_dat_rebound$ID[platcov_dat_rebound$rebound==1]))
+#par(mfrow=c(3,1), las=1, cex.lab=1.3, cex.axis=1.3)
+#platcov_dat_rebound = platcov_dat_rebound %>% filter(rebound==1)
+
+# for(tt in unique(platcov_dat_rebound$Trt)){
+#   xx = platcov_dat_rebound %>% filter(Trt==tt)
+#   plot(xx$Time, xx$daily_VL, panel.first=grid(),
+#        xlab='Time since randomisation (days)', ylab = 'SARS CoV2 genomes/mL',
+#        ylim = range(platcov_dat$daily_VL), xlim=c(0,15),
+#        col = xx$trt_color, yaxt='n')
+#     axis(2, at = c(2,4,6,8), labels = c(expression(10^2),
+#                                         expression(10^4),
+#                                         expression(10^6),
+#                                         expression(10^8)))
+#     abline(h=c(2,3), lty=2)
+#   title(paste0(tt,' (n=',length(unique(xx$ID)),'/',
+#                length(unique(platcov_dat_analysis$ID[platcov_dat_analysis$Trt==tt])),')'))
+#   for(id in unique(xx$ID)){
+#     xx_id = xx%>%filter(ID==id)
+#     lines(xx_id$Time, xx_id$daily_VL, col = adjustcolor(xx_id$trt_color,alpha.f = .6))
+#   }
+# }
+
+```
+
+```{r}
+G_rebounds <-  plot_rebound(platcov_dat_analysis, platcov_dat_rebound %>% filter(rebound == 1), trt_colors)
+G_rebounds
+```
+
+```{r}
+f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_", intervention, ".pdf")
+
+pdf(f_name, width = 6, height = 6)
+G_rebounds
+dev.off()
+```
+
+```{r}
+kruskal.test(Time_rebound ~ Trt, platcov_dat_rebound %>% filter(rebound) %>% distinct(ID, .keep_all = T) )
+
+attach(platcov_dat_rebound %>% filter(rebound) %>% distinct(ID, .keep_all = T))
+pairwise.wilcox.test(Time_rebound, Trt,p.adjust.method = "bonf")
+detach()
+```
+
+```{r}
+rebound_fq <- platcov_dat_rebound %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt) %>%
+  summarise(x = sum(rebound),
+            n = n(),
+            x_prime = n - x)
+rebound_fq
+```
+
+```{r}
+prop.test(rebound_fq$x, rebound_fq$n, correct = T)
+```
+
+```{r}
+rebound_fq2 <- rebound_fq %>% filter(Trt != "No study drug")
+prop.test(rebound_fq2$x, rebound_fq2$n, correct = T)
+```
+
+```{r}
+platcov_dat_rebound$clear_check <- "Less than 100"
+platcov_dat_rebound$clear_check[platcov_dat_rebound$daily_VL >= log10(100)] <- "More than 100"
+platcov_dat_rebound$clear_check[platcov_dat_rebound$daily_VL >= log10(1000)] <- "More than 1000"
+
+rebound_heatmap <- ggplot(platcov_dat_rebound %>% filter(rebound == 1), 
+aes(y = ID, x = as.factor(Timepoint_ID), fill = clear_check)) +
+  geom_tile(col = "white", linewidth = 0.75) +
+  facet_grid(Trt ~ ., scales = "free", space='free') +
+  scale_fill_manual(values = rev(c("#B80000", "#F6D776", "#86A7FC")), name = "SARS-CoV-2 \ngenomes per mL") +
+  theme_bw() +
+  xlab("Time since randomisation (days)") +
+  ylab("")+
+  theme(axis.title = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 10, face = "bold"))
+rebound_heatmap
+```
+
+```{r}
+f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_heatmap.pdf")
+
+pdf(f_name, width = 6, height = 8)
+rebound_heatmap
+dev.off()
+```
+
+```{r}
+G_rebound_tl <- ggplot(platcov_dat_rebound %>% distinct(ID, .keep_all = T), 
+       aes(x = Rand_date, y = Trt)) +
+  geom_point(aes(col = rebound, size = rebound), alpha = 0.5) +
+  scale_color_manual(values = c("black", "red")) +
+  scale_size_manual(values = c(3,6)) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "none") +
+  xlab("Randomisation date") +
+  ylab("")
+G_rebound_tl
+```
+
+```{r}
+f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_timeline.pdf")
+
+pdf(f_name, width = 6, height = 5)
+G_rebound_tl
+dev.off()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r Figure_main, fig.height=6, fig.width=9}
 
