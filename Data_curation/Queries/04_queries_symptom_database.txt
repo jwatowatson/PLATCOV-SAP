@@ -1,15 +1,15 @@
 PLATCOV data queries
 Data: InterimSymptoms.dta
-Received date: 2025-03-14
-Query date: 2025-03-17
+Received date: 2025-03-27
+Query date: 2025-04-01
 
 ##########################################################################
 ### Symptom database: Checking MACRO data entry progress:
-Number of randomised patient: 2259
-Number of randomised patient symptom data on MACRO: 2278
+Number of randomised patient: 2262
+Number of randomised patient symptom data on MACRO: 2279
 ##########################################################################
-0 patients have no symptom data on any visits:
-character(0)
+2 patients have no symptom data on any visits:
+[1] "PLT-TH1-2066" "PLT-TH1-2067"
 ##########################################################################
 ### Symptom database: Missing data by visits:
 # A tibble: 12 × 2
@@ -17,14 +17,525 @@ character(0)
    <chr>   <int>
  1 D0          0
  2 D0H1        0
- 3 D1         29
- 4 D10       620
- 5 D14        46
- 6 D2         37
- 7 D28        59
- 8 D3         41
- 9 D4         43
-10 D5         44
+ 3 D1         25
+ 4 D10       621
+ 5 D14        43
+ 6 D2         33
+ 7 D28        54
+ 8 D3         37
+ 9 D4         39
+10 D5         41
 11 D6         67
-12 D7         48
+12 D7         44
+##########################################################################
+Query: 21 rows have sq_yn column = 1, but no details explained:
+
+          Label Timepoint_ID sq_yn sq_fevyn sq_headyn sq_dizzyn sq_bluryn sq_fatigyn sq_coughyn sq_difbreayn
+1   PLT-BR3-101            7     1        0         0         0         0          0          0            0
+2   PLT-TH1-030            1     1        0         0         0         0          0          0            0
+3  PLT-TH1-1119            3     1        0         0         0         0          0          0            0
+4   PLT-TH1-118            1     1        0         0         0         0          0          0            0
+5  PLT-TH1-1251            4     1        0         0         0         0          0          0            0
+6  PLT-TH1-1331            3     1        0         0         0         0          0          0            0
+7  PLT-TH1-1702           28     1        0         0         0         0          0          0            0
+8   PLT-TH1-254            7     1        0         0         0         0          0          0            0
+9   PLT-TH1-268           14     1        0         0         0         0          0          0            0
+10  PLT-TH1-305            3     1        0         0         0         0          0          0            0
+11  PLT-TH1-317            7     1        0         0         0         0          0          0            0
+12  PLT-TH1-341            3     1        0         0         0         0          0          0            0
+13  PLT-TH1-349            3     1        0         0         0         0          0          0            0
+14  PLT-TH1-369            3     1        0         0         0         0          0          0            0
+15  PLT-TH1-391            7     1        0         0         0         0          0          0            0
+16  PLT-TH1-662           10     1       NA        NA        NA        NA         NA         NA           NA
+17  PLT-TH1-708           10     1       NA        NA        NA        NA         NA         NA           NA
+18  PLT-TH1-712            2     1        0         0         0         0          0          0            0
+19  PLT-TH1-769           10     1       NA        NA        NA        NA         NA         NA           NA
+20  PLT-TH1-784            6     1        0         0         0         0          0          0            0
+21  PLT-TH1-890           10     1       NA        NA        NA        NA         NA         NA           NA
+   sq_chpainyn sq_runnoseyn sq_lossmellyn sq_abdpainyn sq_losappetyn sq_nausyn sq_vomyn sq_diaryn sq_arthyn
+1            0            0             0            0             0         0        0         0         0
+2            0            0             0            0             0         0        0         0         0
+3            0            0             0            0             0         0        0         0         0
+4            0            0             0            0             0         0        0         0         0
+5            0            0             0            0             0         0        0         0         0
+6            0            0             0            0             0         0        0         0         0
+7            0            0             0            0             0         0        0         0         0
+8            0            0             0            0             0         0        0         0         0
+9            0            0             0            0             0         0        0         0         0
+10           0            0             0            0             0         0        0         0         0
+11           0            0             0            0             0         0        0         0         0
+12           0            0             0            0             0         0        0         0         0
+13           0            0             0            0             0         0        0         0         0
+14           0            0             0            0             0         0        0         0         0
+15           0            0             0            0             0         0        0         0         0
+16          NA           NA            NA           NA            NA        NA       NA        NA        NA
+17          NA           NA            NA           NA            NA        NA       NA        NA        NA
+18           0            0             0            0             0         0        0         0         0
+19          NA           NA            NA           NA            NA        NA       NA        NA        NA
+20           0            0             0            0             0         0        0         0         0
+21          NA           NA            NA           NA            NA        NA       NA        NA        NA
+   sq_myalyn sq_itchyn sq_skrashyn sq_soreyn sq_otheryn symptom_counts
+1          0         0           0         0          0              0
+2          0         0           0        NA          0              0
+3          0         0           0         0          0              0
+4          0         0           0         0          0              0
+5          0         0           0         0          0              0
+6          0         0           0         0          0              0
+7          0         0           0         0          0              0
+8          0         0           0         0          0              0
+9          0         0           0         0          0              0
+10         0         0           0         0          0              0
+11         0         0           0         0          0              0
+12         0         0           0         0          0              0
+13         0         0           0         0          0              0
+14         0         0           0         0          0              0
+15         0         0           0         0          0              0
+16        NA        NA          NA        NA          0              0
+17        NA        NA          NA        NA          0              0
+18         0         0           0         0          0              0
+19        NA        NA          NA        NA          0              0
+20         0         0           0         0          0              0
+21        NA        NA          NA        NA          0              0
+##########################################################################
+Query: 6 rows have sq_yn column = 0, but indicated of having at least 1 symptom:
+
+         Label Timepoint_ID sq_yn sq_fevyn sq_headyn sq_dizzyn sq_bluryn sq_fatigyn sq_coughyn sq_difbreayn
+1  PLT-LA8-001            3     0       NA        NA        NA        NA         NA         NA           NA
+2 PLT-TH1-1416           14     0       NA        NA        NA        NA         NA         NA           NA
+3 PLT-TH1-1507            1     0       NA        NA        NA        NA         NA         NA           NA
+4 PLT-TH1-1793            4     0       NA        NA        NA        NA         NA         NA           NA
+5 PLT-TH1-1802            2     0       NA        NA        NA        NA         NA         NA           NA
+6 PLT-TH1-1933           14     0       NA        NA        NA        NA         NA         NA           NA
+  sq_chpainyn sq_runnoseyn sq_lossmellyn sq_abdpainyn sq_losappetyn sq_nausyn sq_vomyn sq_diaryn sq_arthyn
+1          NA           NA            NA           NA            NA        NA       NA        NA        NA
+2          NA           NA            NA           NA            NA        NA       NA        NA        NA
+3          NA           NA            NA           NA            NA        NA       NA        NA        NA
+4          NA           NA            NA           NA            NA        NA       NA        NA        NA
+5          NA           NA            NA           NA            NA        NA       NA        NA        NA
+6          NA           NA            NA           NA            NA        NA       NA        NA        NA
+  sq_myalyn sq_itchyn sq_skrashyn sq_soreyn sq_otheryn symptom_counts
+1        NA        NA          NA        NA          1              1
+2        NA        NA          NA        NA          1              1
+3        NA        NA          NA        NA          1              1
+4        NA        NA          NA        NA          1              1
+5        NA        NA          NA        NA          1              1
+6        NA        NA          NA        NA          1              1
+##########################################################################
+Query: 56 rows have missing data on the sq_yn column:
+
+          Label Timepoint_ID sq_yn sq_fevyn sq_headyn sq_dizzyn sq_bluryn sq_fatigyn sq_coughyn sq_difbreayn
+1   PLT-BR3-031            0    NA       NA        NA        NA        NA         NA         NA           NA
+2   PLT-BR3-037            0    NA       NA        NA        NA        NA         NA         NA           NA
+3   PLT-BR3-048            0    NA       NA        NA        NA        NA         NA         NA           NA
+4   PLT-BR3-058            0    NA       NA        NA        NA        NA         NA         NA           NA
+5   PLT-BR3-120            0    NA       NA        NA        NA        NA         NA         NA           NA
+6   PLT-BR3-124            0    NA       NA        NA        NA        NA         NA         NA           NA
+7   PLT-BR3-132            0    NA       NA        NA        NA        NA         NA         NA           NA
+8   PLT-BR3-133            0    NA       NA        NA        NA        NA         NA         NA           NA
+9   PLT-BR3-133            1    NA       NA        NA        NA        NA         NA         NA           NA
+10  PLT-LA8-012            0    NA       NA        NA        NA        NA         NA         NA           NA
+11  PLT-LA8-012            1    NA       NA        NA        NA        NA         NA         NA           NA
+12  PLT-LA8-028            0    NA       NA        NA        NA        NA         NA         NA           NA
+13  PLT-LA8-032            0    NA       NA        NA        NA        NA         NA         NA           NA
+14  PLT-PK1-004            0    NA       NA        NA        NA        NA         NA         NA           NA
+15  PLT-TH1-056            0    NA       NA        NA        NA        NA         NA         NA           NA
+16 PLT-TH1-1028            0    NA       NA        NA        NA        NA         NA         NA           NA
+17 PLT-TH1-1028            1    NA       NA        NA        NA        NA         NA         NA           NA
+18 PLT-TH1-1035            0    NA       NA        NA        NA        NA         NA         NA           NA
+19 PLT-TH1-1039            0    NA       NA        NA        NA        NA         NA         NA           NA
+20 PLT-TH1-1047           14    NA       NA        NA        NA        NA         NA         NA           NA
+21 PLT-TH1-1050            6    NA       NA        NA        NA        NA         NA         NA           NA
+22 PLT-TH1-1050            7    NA       NA        NA        NA        NA         NA         NA           NA
+23 PLT-TH1-1050           14    NA       NA        NA        NA        NA         NA         NA           NA
+24 PLT-TH1-1096            0    NA       NA        NA        NA        NA         NA         NA           NA
+25 PLT-TH1-1152            0    NA       NA        NA        NA        NA         NA         NA           NA
+26  PLT-TH1-116            0    NA       NA        NA        NA        NA         NA         NA           NA
+27  PLT-TH1-116            1    NA       NA        NA        NA        NA         NA         NA           NA
+28  PLT-TH1-116            2    NA       NA        NA        NA        NA         NA         NA           NA
+29  PLT-TH1-116           14    NA       NA        NA        NA        NA         NA         NA           NA
+30 PLT-TH1-1163            0    NA       NA        NA        NA        NA         NA         NA           NA
+31 PLT-TH1-1190            0    NA       NA        NA        NA        NA         NA         NA           NA
+32 PLT-TH1-1267            0    NA       NA        NA        NA        NA         NA         NA           NA
+33 PLT-TH1-1344            0    NA       NA        NA        NA        NA         NA         NA           NA
+34 PLT-TH1-1441            0    NA       NA        NA        NA        NA         NA         NA           NA
+35 PLT-TH1-1441            1    NA       NA        NA        NA        NA         NA         NA           NA
+36 PLT-TH1-1470            5    NA       NA        NA        NA        NA         NA         NA           NA
+37 PLT-TH1-1551            0    NA       NA        NA        NA        NA         NA         NA           NA
+38 PLT-TH1-1660            0    NA       NA        NA        NA        NA         NA         NA           NA
+39 PLT-TH1-1660            1    NA       NA        NA        NA        NA         NA         NA           NA
+40 PLT-TH1-1662            7    NA       NA        NA        NA        NA         NA         NA           NA
+41 PLT-TH1-1662           10    NA       NA        NA        NA        NA         NA         NA           NA
+42 PLT-TH1-1662           14    NA       NA        NA        NA        NA         NA         NA           NA
+43 PLT-TH1-1666            0    NA       NA        NA        NA        NA         NA         NA           NA
+44 PLT-TH1-1851            0    NA       NA        NA        NA        NA         NA         NA           NA
+45 PLT-TH1-1851            1    NA       NA        NA        NA        NA         NA         NA           NA
+46 PLT-TH1-1907            0    NA       NA        NA        NA        NA         NA         NA           NA
+47 PLT-TH1-1963            0    NA       NA        NA        NA        NA         NA         NA           NA
+48 PLT-TH1-2047            0    NA       NA        NA        NA        NA         NA         NA           NA
+49 PLT-TH1-2051            0    NA       NA        NA        NA        NA         NA         NA           NA
+50 PLT-TH1-2064            0    NA       NA        NA        NA        NA         NA         NA           NA
+51 PLT-TH1-2065            0    NA       NA        NA        NA        NA         NA         NA           NA
+52  PLT-TH1-260            0    NA       NA        NA        NA        NA         NA         NA           NA
+53  PLT-TH1-388            0    NA       NA        NA        NA        NA         NA         NA           NA
+54  PLT-TH1-450            0    NA       NA        NA        NA        NA         NA         NA           NA
+55  PLT-TH1-628            0    NA       NA        NA        NA        NA         NA         NA           NA
+56  PLT-TH1-628            1    NA       NA        NA        NA        NA         NA         NA           NA
+   sq_chpainyn sq_runnoseyn sq_lossmellyn sq_abdpainyn sq_losappetyn sq_nausyn sq_vomyn sq_diaryn sq_arthyn
+1           NA           NA            NA           NA            NA        NA       NA        NA        NA
+2           NA           NA            NA           NA            NA        NA       NA        NA        NA
+3           NA           NA            NA           NA            NA        NA       NA        NA        NA
+4           NA           NA            NA           NA            NA        NA       NA        NA        NA
+5           NA           NA            NA           NA            NA        NA       NA        NA        NA
+6           NA           NA            NA           NA            NA        NA       NA        NA        NA
+7           NA           NA            NA           NA            NA        NA       NA        NA        NA
+8           NA           NA            NA           NA            NA        NA       NA        NA        NA
+9           NA           NA            NA           NA            NA        NA       NA        NA        NA
+10          NA           NA            NA           NA            NA        NA       NA        NA        NA
+11          NA           NA            NA           NA            NA        NA       NA        NA        NA
+12          NA           NA            NA           NA            NA        NA       NA        NA        NA
+13          NA           NA            NA           NA            NA        NA       NA        NA        NA
+14          NA           NA            NA           NA            NA        NA       NA        NA        NA
+15          NA           NA            NA           NA            NA        NA       NA        NA        NA
+16          NA           NA            NA           NA            NA        NA       NA        NA        NA
+17          NA           NA            NA           NA            NA        NA       NA        NA        NA
+18          NA           NA            NA           NA            NA        NA       NA        NA        NA
+19          NA           NA            NA           NA            NA        NA       NA        NA        NA
+20          NA           NA            NA           NA            NA        NA       NA        NA        NA
+21          NA           NA            NA           NA            NA        NA       NA        NA        NA
+22          NA           NA            NA           NA            NA        NA       NA        NA        NA
+23          NA           NA            NA           NA            NA        NA       NA        NA        NA
+24          NA           NA            NA           NA            NA        NA       NA        NA        NA
+25          NA           NA            NA           NA            NA        NA       NA        NA        NA
+26          NA           NA            NA           NA            NA        NA       NA        NA        NA
+27          NA           NA            NA           NA            NA        NA       NA        NA        NA
+28          NA           NA            NA           NA            NA        NA       NA        NA        NA
+29          NA           NA            NA           NA            NA        NA       NA        NA        NA
+30          NA           NA            NA           NA            NA        NA       NA        NA        NA
+31          NA           NA            NA           NA            NA        NA       NA        NA        NA
+32          NA           NA            NA           NA            NA        NA       NA        NA        NA
+33          NA           NA            NA           NA            NA        NA       NA        NA        NA
+34          NA           NA            NA           NA            NA        NA       NA        NA        NA
+35          NA           NA            NA           NA            NA        NA       NA        NA        NA
+36          NA           NA            NA           NA            NA        NA       NA        NA        NA
+37          NA           NA            NA           NA            NA        NA       NA        NA        NA
+38          NA           NA            NA           NA            NA        NA       NA        NA        NA
+39          NA           NA            NA           NA            NA        NA       NA        NA        NA
+40          NA           NA            NA           NA            NA        NA       NA        NA        NA
+41          NA           NA            NA           NA            NA        NA       NA        NA        NA
+42          NA           NA            NA           NA            NA        NA       NA        NA        NA
+43          NA           NA            NA           NA            NA        NA       NA        NA        NA
+44          NA           NA            NA           NA            NA        NA       NA        NA        NA
+45          NA           NA            NA           NA            NA        NA       NA        NA        NA
+46          NA           NA            NA           NA            NA        NA       NA        NA        NA
+47          NA           NA            NA           NA            NA        NA       NA        NA        NA
+48          NA           NA            NA           NA            NA        NA       NA        NA        NA
+49          NA           NA            NA           NA            NA        NA       NA        NA        NA
+50          NA           NA            NA           NA            NA        NA       NA        NA        NA
+51          NA           NA            NA           NA            NA        NA       NA        NA        NA
+52          NA           NA            NA           NA            NA        NA       NA        NA        NA
+53          NA           NA            NA           NA            NA        NA       NA        NA        NA
+54          NA           NA            NA           NA            NA        NA       NA        NA        NA
+55          NA           NA            NA           NA            NA        NA       NA        NA        NA
+56          NA           NA            NA           NA            NA        NA       NA        NA        NA
+   sq_myalyn sq_itchyn sq_skrashyn sq_soreyn sq_otheryn symptom_counts
+1         NA        NA          NA        NA          0              0
+2         NA        NA          NA        NA          0              0
+3         NA        NA          NA        NA          0              0
+4         NA        NA          NA        NA          0              0
+5         NA        NA          NA        NA          0              0
+6         NA        NA          NA        NA          0              0
+7         NA        NA          NA        NA          0              0
+8         NA        NA          NA        NA          0              0
+9         NA        NA          NA        NA          0              0
+10        NA        NA          NA        NA          0              0
+11        NA        NA          NA        NA          0              0
+12        NA        NA          NA        NA          0              0
+13        NA        NA          NA        NA          0              0
+14        NA        NA          NA        NA          0              0
+15        NA        NA          NA        NA          0              0
+16        NA        NA          NA        NA          0              0
+17        NA        NA          NA        NA          0              0
+18        NA        NA          NA        NA          0              0
+19        NA        NA          NA        NA          0              0
+20        NA        NA          NA        NA          0              0
+21        NA        NA          NA        NA          0              0
+22        NA        NA          NA        NA          0              0
+23        NA        NA          NA        NA          0              0
+24        NA        NA          NA        NA          0              0
+25        NA        NA          NA        NA          0              0
+26        NA        NA          NA        NA          0              0
+27        NA        NA          NA        NA          0              0
+28        NA        NA          NA        NA          0              0
+29        NA        NA          NA        NA          0              0
+30        NA        NA          NA        NA          0              0
+31        NA        NA          NA        NA          0              0
+32        NA        NA          NA        NA          0              0
+33        NA        NA          NA        NA          0              0
+34        NA        NA          NA        NA          0              0
+35        NA        NA          NA        NA          0              0
+36        NA        NA          NA        NA          0              0
+37        NA        NA          NA        NA          0              0
+38        NA        NA          NA        NA          0              0
+39        NA        NA          NA        NA          0              0
+40        NA        NA          NA        NA          0              0
+41        NA        NA          NA        NA          0              0
+42        NA        NA          NA        NA          0              0
+43        NA        NA          NA        NA          0              0
+44        NA        NA          NA        NA          0              0
+45        NA        NA          NA        NA          0              0
+46        NA        NA          NA        NA          0              0
+47        NA        NA          NA        NA          0              0
+48        NA        NA          NA        NA          0              0
+49        NA        NA          NA        NA          0              0
+50        NA        NA          NA        NA          0              0
+51        NA        NA          NA        NA          0              0
+52        NA        NA          NA        NA          0              0
+53        NA        NA          NA        NA          0              0
+54        NA        NA          NA        NA          0              0
+55        NA        NA          NA        NA          0              0
+56        NA        NA          NA        NA          0              0
+##########################################################################
+##########################################################################
+### [Export] A list of free-text other symptoms...
+##########################################################################
+##########################################################################
+Checking symptom sq_fevyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_fevyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_fevyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_fevyn     sq_fevgr    
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_headyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_headyn    sq_headgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_headyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_headyn    sq_headgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_headyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_headyn    sq_headgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_dizzyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_dizzyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_dizzyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_dizzyn    sq_dizzgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_bluryn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_bluryn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_bluryn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_bluryn    sq_blurgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_fatigyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_fatigyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_fatigyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_fatigyn   sq_fatiggr  
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_coughyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_coughyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_coughyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_coughyn   sq_coughgr  
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_difbreayn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_difbreayn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_difbreayn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_difbreayn sq_difbreagr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_chpainyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_chpainyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_chpainyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_chpainyn  sq_chpaingr 
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_runnoseyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_runnoseyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_runnoseyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_runnoseyn sq_runnosegr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_lossmellyn: 0 rows reported this symptom without grades:
+[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_lossmellyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_lossmellyn: 0 rows reported this symptom with grade not in the range:
+[1] Label         Timepoint_ID  sq_lossmellyn sq_lossmellgr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_abdpainyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_abdpainyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_abdpainyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_abdpainyn sq_abdpaingr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_losappetyn: 0 rows reported this symptom without grades:
+[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_losappetyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_losappetyn: 0 rows reported this symptom with grade not in the range:
+[1] Label         Timepoint_ID  sq_losappetyn sq_losappetgr
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_nausyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_nausyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_nausyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_nausyn    sq_nausgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_vomyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_vomyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_vomyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_vomyn     sq_vomgr    
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_diaryn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_diaryn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_diaryn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_diaryn    sq_diargr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_arthyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_arthyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_arthyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_arthyn    sq_arthgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_myalyn: 1 rows reported this symptom without grades:
+           Label Timepoint_ID sq_myalyn sq_myalgr
+2093 PLT-TH1-020            4         1        NA
+#--------------------------------------------------------------------------
+Checking symptom sq_myalyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_myalyn    sq_myalgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_myalyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_myalyn    sq_myalgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_itchyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_itchyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_itchyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_itchyn    sq_itchgr   
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_skrashyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_skrashyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_skrashyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_skrashyn  sq_skrashgr 
+<0 rows> (or 0-length row.names)
+##########################################################################
+Checking symptom sq_soreyn: 0 rows reported this symptom without grades:
+[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_soreyn: 0 rows reported this symptom grades without checking y/n:
+[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
+<0 rows> (or 0-length row.names)
+#--------------------------------------------------------------------------
+Checking symptom sq_soreyn: 0 rows reported this symptom with grade not in the range:
+[1] Label        Timepoint_ID sq_soreyn    sq_soregr   
+<0 rows> (or 0-length row.names)
 ##########################################################################

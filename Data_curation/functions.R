@@ -90,7 +90,7 @@ extract_FASTA <- function(){
     }  else if (grepl("Thailand", names[i])) {
       temp <- read_xlsx(names[i])
       if("Patient ID" %in% temp[1,]){colnames(temp) <- temp[1,]; temp <- temp[-1,]}
-      cols <- c("Patient_ID", "Sequence_ID")
+      cols <- c("Patient ID", "GISAID name")
       temp <- temp[, cols]
       colnames(temp) <- c("Patient_ID", "Sequence_ID")
       temp$Patient_ID <- sapply(str_split(str_trim(temp$Patient_ID, "both"), "-|_"), function(x) paste(x, collapse = "-"))

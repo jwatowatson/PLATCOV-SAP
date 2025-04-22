@@ -52,8 +52,8 @@ Set up analysis
 
 ```{r load_data}
 #intervention = 'interim_all';ref_arm = 'No study drug'
- intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
-# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+# intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
+ intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 
@@ -536,22 +536,6 @@ pdf(f_name, width = 6, height = 5)
 G_rebound_tl
 dev.off()
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ```{r Figure_main, fig.height=6, fig.width=9}
 

@@ -22,7 +22,7 @@ source("003_clean_vital_database.R")
 source("004_clean_symptom_database.R")
 source("005_clean_final_status_database.R")
 
-source("006_clean_CBC_database.R")
+#source("006_clean_CBC_database.R")
 
 
 
@@ -48,6 +48,8 @@ clin_data <- check_rand_date_time(clin_data, IDs_pending, rand_app_data, query_f
 clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data, query_file_name)
 sink()
 
+
+write.csv(clin_data, "../Analysis_Data/cleaned_clinical_data.csv", row.names = F)
 #############################################################################################
 ## 002 Vital sign database
 query_file_name <-  'Queries/02_PLATCOV_queries_vital_sign_database.csv'
@@ -80,7 +82,7 @@ query_file_name <-  'Queries/04_PLATCOV_queries_symptom_database.csv'
 sink("Queries/04_queries_symptom_database.txt", split = T)
 symp <- load_symptom_data(rand_app_data, query_file_name)
 symp_data <- prep_symptom_data(symp, vita_data)
-symptom_data <- check_symptom_data(symp_data)
+symptom_data <- check_symptom_data(symp_data, query_file_name)
 check_symptom_grades(symptom_data)
 #check_other_symptom_grades(symptom_data)
 sink()

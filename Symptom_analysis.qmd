@@ -26,7 +26,7 @@ source("functions.R")
 sympt_dat\$temp_time
 
 ```{r}
-platcov_dat = read.csv('Analysis_Data/Favipiravir_analysis.csv')
+platcov_dat = read.csv('Analysis_Data/Nitazoxanide_analysis.csv')
 ID_map <- unique(platcov_dat[,c("ID", "Trt")])
 IDs <- ID_map$ID
 
@@ -107,7 +107,7 @@ round(prop.table(table(sympt_dat_for_plot2$clearance_time_cens)),2)
 
 ```{r}
 trt_colors = get_trt_colors()
-cols <- trt_colors[c("Favipiravir",
+cols <- trt_colors[c("Nitazoxanide",
                      #"Nirmatrelvir + Ritonavir", 
                      "No study drug")]
 cols <- as.character(cols)
@@ -145,4 +145,37 @@ survplot
 png("Plots/Symptom_surv_plot_favipiravir.png", width = 6, height = 6, units = "in", res = 350)
 survplot
 dev.off()
+```
+
+```{r}
+sympt_dat
+symptom_list <- colnames(sympt_dat)[grep("yn", colnames(sympt_dat))][-1]
+
+summary_symptom <- NULL
+for(i in 1:length(symptom_list)){
+ sympt_dat %>%
+  mutate(symptom_i = if_else(is.na(!!sym(symptom_list[i])), 0, !!sym(symptom_list[i]))) %>%
+  group_by(Label, Trt) %>%
+  summarise(y = sum(symptom_i)) %>%
+  ungroup() %>%
+  group_by(Trt) %>%
+  summarise(n = n(),
+            y = sum(y >= 1),
+            x = n - y,
+            p = y/n) %>%
+  ungroup() %>%
+  mutate(symptom = symptom_list[i]) -> summary_symptom_i
+  
+  test <- prop.test(x = summary_symptom_i[,c("y", "x")] %>% as.matrix())
+  
+  summary_symptom_i$p_val <- test$p.value
+  
+  summary_symptom <- rbind(summary_symptom, summary_symptom_i)
+  
+}
+
+
+summary_symptom
+
+
 ```

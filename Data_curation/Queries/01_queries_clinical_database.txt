@@ -1,69 +1,297 @@
 PLATCOV data queries
 Data: InterimEnrolment.dta
-Received date: 2025-03-14
-Query date: 2025-03-17
+Received date: 2025-03-27
+Query date: 2025-04-01
 
 ##########################################################################
 ### Clinical database: Checking MACRO data entry progress for baseline information:
-Number of randomised patient: 2278
-Number of randomised patient baseline data on MACRO: 2279
-Baseline data entries for the following 0 patients are pending:
-character(0)
+Number of randomised patient: 2281
+Number of randomised patient baseline data on MACRO: 2280
+Baseline data entries for the following 2 patients are pending:
+[1] "PLT-TH1-2066" "PLT-TH1-2067"
 ##########################################################################
 ### Clinical database: Checking missing screening failure information:
-Query: Screening status (scrpassed) for 12 patients is missing
+### Clinical database: Checking randomisation information:
+### Clinical database: Checking randomisation information:
+Query: 247 patients have missing sex information
 
-              scrid       Label scrpassed
-1  PLT-BR3-SCR19794 PLT-BR3-133        NA
-2  PLT-BR3-SCR19795 PLT-BR3-134        NA
-3  PLT-BR3-SCR19796 PLT-BR3-135        NA
-4  PLT-BR3-SCR19797 PLT-BR3-136        NA
-5  PLT-BR3-SCR19798 PLT-BR3-137        NA
-6  PLT-BR3-SCR19799 PLT-BR3-138        NA
-7  PLT-BR3-SCR19800 PLT-BR3-139        NA
-8  PLT-BR3-SCR19801 PLT-BR3-140        NA
-9  PLT-BR3-SCR19802 PLT-BR3-141        NA
-10 PLT-BR3-SCR19803 PLT-BR3-142        NA
-11 PLT-BR3-SCR19804 PLT-BR3-143        NA
-12 PLT-BR3-SCR19805 PLT-BR3-144        NA
+               scrid Label sex
+1   PLT-BR3-SCR10259        NA
+2   PLT-BR3-SCR10303        NA
+3   PLT-BR3-SCR10315        NA
+4   PLT-BR3-SCR10345        NA
+5   PLT-BR3-SCR10425        NA
+6   PLT-BR3-SCR10426        NA
+7   PLT-BR3-SCR10455        NA
+8   PLT-BR3-SCR10460        NA
+9   PLT-BR3-SCR10461        NA
+10  PLT-BR3-SCR10838        NA
+11  PLT-BR3-SCR11818        NA
+12  PLT-BR3-SCR12357        NA
+13  PLT-BR3-SCR12486        NA
+14  PLT-BR3-SCR12620        NA
+15  PLT-BR3-SCR12703        NA
+16  PLT-BR3-SCR13102        NA
+17  PLT-BR3-SCR13255        NA
+18  PLT-BR3-SCR13256        NA
+19  PLT-BR3-SCR13402        NA
+20  PLT-BR3-SCR13552        NA
+21  PLT-BR3-SCR14429        NA
+22  PLT-BR3-SCR14544        NA
+23  PLT-BR3-SCR14651        NA
+24  PLT-BR3-SCR14906        NA
+25  PLT-BR3-SCR15632        NA
+26  PLT-BR3-SCR15834        NA
+27  PLT-BR3-SCR16507        NA
+28  PLT-BR3-SCR17104        NA
+29  PLT-BR3-SCR17298        NA
+30  PLT-BR3-SCR17301        NA
+31  PLT-BR3-SCR17622        NA
+32  PLT-BR3-SCR17726        NA
+33  PLT-BR3-SCR17908        NA
+34  PLT-BR3-SCR17909        NA
+35  PLT-BR3-SCR18049        NA
+36  PLT-BR3-SCR19193        NA
+37  PLT-BR3-SCR19213        NA
+38  PLT-BR3-SCR19565        NA
+39  PLT-BR3-SCR19748        NA
+40  PLT-BR3-SCR19756        NA
+41  PLT-BR3-SCR19790        NA
+42  PLT-BR3-SCR19791        NA
+43  PLT-LA8-SCR10002        NA
+44  PLT-LA8-SCR10003        NA
+45  PLT-LA8-SCR10005        NA
+46  PLT-LA8-SCR10007        NA
+47  PLT-LA8-SCR10008        NA
+48  PLT-LA8-SCR10029        NA
+49  PLT-LA8-SCR10030        NA
+50  PLT-PK1-SCR10011        NA
+51   PLT-PK1-SCR1005        NA
+52   PLT-PK1-SCR1008        NA
+53  PLT-TH1-SCR10001        NA
+54  PLT-TH1-SCR10015        NA
+55  PLT-TH1-SCR10020        NA
+56  PLT-TH1-SCR10029        NA
+57  PLT-TH1-SCR10030        NA
+58  PLT-TH1-SCR10034        NA
+59  PLT-TH1-SCR10035        NA
+60  PLT-TH1-SCR10036        NA
+61  PLT-TH1-SCR10037        NA
+62  PLT-TH1-SCR10043        NA
+63  PLT-TH1-SCR10046        NA
+64  PLT-TH1-SCR10047        NA
+65  PLT-TH1-SCR10051        NA
+66  PLT-TH1-SCR10057        NA
+67  PLT-TH1-SCR10060        NA
+68  PLT-TH1-SCR10065        NA
+69  PLT-TH1-SCR10066        NA
+70  PLT-TH1-SCR10068        NA
+71  PLT-TH1-SCR10069        NA
+72  PLT-TH1-SCR10072        NA
+73  PLT-TH1-SCR10073        NA
+74  PLT-TH1-SCR10076        NA
+75  PLT-TH1-SCR10081        NA
+76  PLT-TH1-SCR10083        NA
+77  PLT-TH1-SCR10092        NA
+78  PLT-TH1-SCR10096        NA
+79  PLT-TH1-SCR10097        NA
+80  PLT-TH1-SCR10099        NA
+81  PLT-TH1-SCR10100        NA
+82  PLT-TH1-SCR10101        NA
+83  PLT-TH1-SCR10106        NA
+84  PLT-TH1-SCR10112        NA
+85  PLT-TH1-SCR10116        NA
+86  PLT-TH1-SCR10120        NA
+87  PLT-TH1-SCR10127        NA
+88  PLT-TH1-SCR10128        NA
+89  PLT-TH1-SCR10130        NA
+90  PLT-TH1-SCR10140        NA
+91  PLT-TH1-SCR10149        NA
+92  PLT-TH1-SCR10151        NA
+93  PLT-TH1-SCR10160        NA
+94  PLT-TH1-SCR10161        NA
+95  PLT-TH1-SCR10188        NA
+96  PLT-TH1-SCR10194        NA
+97  PLT-TH1-SCR10207        NA
+98  PLT-TH1-SCR10214        NA
+99  PLT-TH1-SCR10223        NA
+100 PLT-TH1-SCR10226        NA
+101 PLT-TH1-SCR10241        NA
+102 PLT-TH1-SCR10243        NA
+103 PLT-TH1-SCR10275        NA
+104 PLT-TH1-SCR10276        NA
+105 PLT-TH1-SCR10277        NA
+106 PLT-TH1-SCR10278        NA
+107 PLT-TH1-SCR10280        NA
+108 PLT-TH1-SCR10281        NA
+109 PLT-TH1-SCR10283        NA
+110 PLT-TH1-SCR10288        NA
+111 PLT-TH1-SCR10296        NA
+112 PLT-TH1-SCR10297        NA
+113 PLT-TH1-SCR10302        NA
+114 PLT-TH1-SCR10303        NA
+115 PLT-TH1-SCR10309        NA
+116 PLT-TH1-SCR10322        NA
+117 PLT-TH1-SCR10323        NA
+118 PLT-TH1-SCR10332        NA
+119 PLT-TH1-SCR10340        NA
+120 PLT-TH1-SCR10344        NA
+121 PLT-TH1-SCR10346        NA
+122 PLT-TH1-SCR10352        NA
+123 PLT-TH1-SCR10357        NA
+124 PLT-TH1-SCR10358        NA
+125 PLT-TH1-SCR10361        NA
+126 PLT-TH1-SCR10362        NA
+127 PLT-TH1-SCR10365        NA
+128 PLT-TH1-SCR10366        NA
+129 PLT-TH1-SCR10367        NA
+130 PLT-TH1-SCR10372        NA
+131 PLT-TH1-SCR10376        NA
+132 PLT-TH1-SCR10378        NA
+133 PLT-TH1-SCR10379        NA
+134 PLT-TH1-SCR10400        NA
+135 PLT-TH1-SCR10403        NA
+136 PLT-TH1-SCR10405        NA
+137 PLT-TH1-SCR10406        NA
+138 PLT-TH1-SCR10407        NA
+139 PLT-TH1-SCR10408        NA
+140 PLT-TH1-SCR10412        NA
+141 PLT-TH1-SCR10413        NA
+142 PLT-TH1-SCR10414        NA
+143 PLT-TH1-SCR10417        NA
+144 PLT-TH1-SCR10418        NA
+145 PLT-TH1-SCR10422        NA
+146 PLT-TH1-SCR10424        NA
+147 PLT-TH1-SCR10425        NA
+148 PLT-TH1-SCR10432        NA
+149 PLT-TH1-SCR10438        NA
+150 PLT-TH1-SCR10507        NA
+151 PLT-TH1-SCR10508        NA
+152 PLT-TH1-SCR10535        NA
+153 PLT-TH1-SCR10540        NA
+154 PLT-TH1-SCR10544        NA
+155 PLT-TH1-SCR10570        NA
+156 PLT-TH1-SCR10580        NA
+157 PLT-TH1-SCR10581        NA
+158 PLT-TH1-SCR10583        NA
+159 PLT-TH1-SCR10589        NA
+160 PLT-TH1-SCR10621        NA
+161 PLT-TH1-SCR10651        NA
+162 PLT-TH1-SCR10661        NA
+163 PLT-TH1-SCR10671        NA
+164 PLT-TH1-SCR10683        NA
+165 PLT-TH1-SCR10690        NA
+166 PLT-TH1-SCR10692        NA
+167 PLT-TH1-SCR10695        NA
+168 PLT-TH1-SCR10717        NA
+169 PLT-TH1-SCR10718        NA
+170 PLT-TH1-SCR10747        NA
+171 PLT-TH1-SCR10749        NA
+172 PLT-TH1-SCR10757        NA
+173 PLT-TH1-SCR10765        NA
+174 PLT-TH1-SCR10945        NA
+175 PLT-TH1-SCR10960        NA
+176 PLT-TH1-SCR10983        NA
+177 PLT-TH1-SCR10989        NA
+178 PLT-TH1-SCR11042        NA
+179 PLT-TH1-SCR11050        NA
+180 PLT-TH1-SCR11058        NA
+181 PLT-TH1-SCR11064        NA
+182 PLT-TH1-SCR11067        NA
+183 PLT-TH1-SCR11070        NA
+184 PLT-TH1-SCR11073        NA
+185 PLT-TH1-SCR11085        NA
+186 PLT-TH1-SCR11099        NA
+187 PLT-TH1-SCR11109        NA
+188 PLT-TH1-SCR11126        NA
+189 PLT-TH1-SCR11147        NA
+190 PLT-TH1-SCR11158        NA
+191 PLT-TH1-SCR11160        NA
+192 PLT-TH1-SCR11193        NA
+193 PLT-TH1-SCR11204        NA
+194 PLT-TH1-SCR11206        NA
+195 PLT-TH1-SCR11207        NA
+196 PLT-TH1-SCR11219        NA
+197 PLT-TH1-SCR11233        NA
+198 PLT-TH1-SCR11240        NA
+199 PLT-TH1-SCR11274        NA
+200 PLT-TH1-SCR11279        NA
+201 PLT-TH1-SCR11281        NA
+202 PLT-TH1-SCR11296        NA
+203 PLT-TH1-SCR11308        NA
+204 PLT-TH1-SCR11311        NA
+205 PLT-TH1-SCR11318        NA
+206 PLT-TH1-SCR11353        NA
+207 PLT-TH1-SCR11379        NA
+208 PLT-TH1-SCR11389        NA
+209 PLT-TH1-SCR11390        NA
+210 PLT-TH1-SCR11485        NA
+211 PLT-TH1-SCR11486        NA
+212 PLT-TH1-SCR11509        NA
+213 PLT-TH1-SCR11532        NA
+214 PLT-TH1-SCR11534        NA
+215 PLT-TH1-SCR11541        NA
+216 PLT-TH1-SCR11568        NA
+217 PLT-TH1-SCR11577        NA
+218 PLT-TH1-SCR11627        NA
+219 PLT-TH1-SCR11640        NA
+220 PLT-TH1-SCR11665        NA
+221 PLT-TH1-SCR11697        NA
+222 PLT-TH1-SCR11702        NA
+223 PLT-TH1-SCR11751        NA
+224 PLT-TH1-SCR11755        NA
+225 PLT-TH1-SCR11757        NA
+226 PLT-TH1-SCR11841        NA
+227 PLT-TH1-SCR11871        NA
+228 PLT-TH1-SCR11886        NA
+229 PLT-TH1-SCR11937        NA
+230 PLT-TH1-SCR11944        NA
+231 PLT-TH1-SCR11976        NA
+232 PLT-TH1-SCR11978        NA
+233 PLT-TH1-SCR11996        NA
+234 PLT-TH1-SCR11999        NA
+235 PLT-TH1-SCR12041        NA
+236 PLT-TH1-SCR12047        NA
+237 PLT-TH1-SCR12055        NA
+238 PLT-TH1-SCR12069        NA
+239 PLT-TH1-SCR12093        NA
+240 PLT-TH1-SCR12131        NA
+241 PLT-TH1-SCR12142        NA
+242 PLT-TH1-SCR12155        NA
+243 PLT-TH1-SCR12165        NA
+244 PLT-TH1-SCR12222        NA
+245 PLT-TH1-SCR12237        NA
+246 PLT-TH1-SCR12250        NA
+247 PLT-TH1-SCR12258        NA
 ##########################################################################
-### Clinical database: Checking randomisation information:
-### Clinical database: Checking randomisation information:
+### [MANUAL CORRECTIONS]: Subsequent analyses use sex information from the randomisation database
+##########################################################################
 ### Clinical database: Checking mismatched sex information from Randomisation database:
-Query: 5 patients have mismatched sex information with randomisation database (shiny app). Please check with the source documents.
+Query: 1 patients have mismatched sex information with randomisation database (shiny app). Please check with the source documents.
 
          Label sex_MACRO sex_SHINY
-1 PLT-TH1-1811    Female      Male
-2 PLT-TH1-1854      Male    Female
-3 PLT-TH1-1971    Female      Male
-4 PLT-TH1-1978    Female      Male
-5 PLT-TH1-1979      Male    Female
+1 PLT-TH1-1854      Male    Female
 ##########################################################################
 ### [MANUAL CORRECTIONS]: Subsequent analyses use sex information from the randomisation database
 ##########################################################################
 ### Clinical database: Checking missing age information:
 ##########################################################################
-Query: 6 patients have mismatched age information with randomisation database (SHINY). Please check with the source documents
+Query: 3 patients have mismatched age information with randomisation database (SHINY). Please check with the source documents
 
          Label age_yr_MACRO age_yr_SHINY
 1 PLT-TH1-1582           38           28
 2 PLT-TH1-1721           26           44
-3 PLT-TH1-1777           36           30
-4 PLT-TH1-1848           39           38
-5 PLT-TH1-2016           20           25
-6 PLT-TH1-2053           49           48
+3 PLT-TH1-2053           49           48
 ##########################################################################
 ### [MANUAL CORRECTIONS]: Subsequent analyses use age information from the randomisation database
 ##########################################################################
 ### Clinical database: Checking distributions of age:
 ##########################################################################
 ### Clinical database: Checking missing symptom onset information:
-Query: 3 patients have missing information on the duration of COVID-19 (cov_sympday OR cov_symphr).
+Query: 1 patients have missing information on the duration of COVID-19 (cov_sympday OR cov_symphr).
 
              scrid        Label cov_sympday cov_symphr
 1 PLT-TH1-SCR12156 PLT-TH1-1946          NA         NA
-2 PLT-TH1-SCR12253 PLT-TH1-2039          NA         NA
-3 PLT-TH1-SCR12260 PLT-TH1-2045          NA         NA
 ##########################################################################
 ### [MANUAL CORRECTIONS]: Symptom onset of 2 days are assigned for missing data
 ### Clinical database: Checking distributions of symptom onset:
@@ -73,19 +301,11 @@ Query: 3 patients have missing information on the duration of COVID-19 (cov_symp
 ### Clinical database: Checking distributions of BMI after manual corrections:
 ### Clinical database: Checking randomisation date and time:
 ### Clinical database: Checking if randomisation date and time are missing:
-Query: 10 patients have missing information on randomisation date and time.
+Query: 2 patients have missing information on randomisation date and time.
 
-          Label randat rantim
-1   PLT-BR3-101   <NA>   <NA>
-2   PLT-LA8-006   <NA>   <NA>
-3  PLT-TH1-1040   <NA>   <NA>
-4  PLT-TH1-1169   <NA>   <NA>
-5  PLT-TH1-1176   <NA>   <NA>
-6  PLT-TH1-1177   <NA>   <NA>
-7  PLT-TH1-1946   <NA>   <NA>
-8  PLT-TH1-2039   <NA>   <NA>
-9  PLT-TH1-2045   <NA>   <NA>
-10  PLT-TH1-993   <NA>   <NA>
+         Label randat rantim
+1 PLT-TH1-1040   <NA>   <NA>
+2 PLT-TH1-1946   <NA>   <NA>
 ##########################################################################
 ### Clinical database: Checking if more than 5 min difference in randomisation date/time between MACRO and Randomisation database
 Query: 6 patients have time difference (Rand_diffs) greater than 5 minutes between randomisation date/time on MACRO (randat and rantim) and that from randomisation database (SHINY). Please check with the source documents.
@@ -101,19 +321,13 @@ Query: 6 patients have time difference (Rand_diffs) greater than 5 minutes betwe
 ### [MANUAL CORRECTIONS]: Using randomisation date and time from randomisation database in further analyses
 ##########################################################################
 ### Clinical database: Checking if randomisation arms are missing:
-Query: 10 patients have missing randomisation arm information
+Query: 4 patients have missing randomisation arm information
 
-          Label rangrp
-1   PLT-BR3-101   <NA>
-2   PLT-LA8-006   <NA>
-3  PLT-TH1-1040   <NA>
-4  PLT-TH1-1169   <NA>
-5  PLT-TH1-1176   <NA>
-6  PLT-TH1-1177   <NA>
-7  PLT-TH1-1946   <NA>
-8  PLT-TH1-2039   <NA>
-9  PLT-TH1-2045   <NA>
-10  PLT-TH1-993   <NA>
+         Label rangrp
+1 PLT-TH1-1040   <NA>
+2 PLT-TH1-1946   <NA>
+3 PLT-TH1-2066   <NA>
+4 PLT-TH1-2067   <NA>
 ##########################################################################
 ### [MANUAL CORRECTIONS]: Using randomisation arms from randomisation database in further analyses
 ##########################################################################
