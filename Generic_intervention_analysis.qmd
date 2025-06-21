@@ -41,7 +41,7 @@ source('functions.R')
 source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
 
-interim_version <- "v11"
+interim_version <- "v13"
 ```
 
 All paths are local
@@ -51,11 +51,13 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-#intervention = 'interim_all';ref_arm = 'No study drug'
+# intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
- intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
+# intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
+# intervention = 'Metformin';ref_arm = 'No study drug'  
+ intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -98,11 +100,12 @@ trts = trt_intervention[trt_intervention!=ref_arm] # get interventions
 #| echo: false
 platcov_dat = platcov_dat %>% group_by(ID) %>%
   mutate(
-    mITT = any(Per_protocol_sample==1 & Timepoint_ID>=3) &
-      !all(CT_NS==40))
+    mITT = any(Per_protocol_sample==1 & Timepoint_ID>=3) & !all(CT_NS==40),
+    mITT2 = !all(CT_NS==40))
 
 pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
+table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT2)
 ```
 
 ```{r}
@@ -111,11 +114,11 @@ timeline
 ```
 
 ```{r}
-plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention,  "_recruitment.pdf")
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention,  "_recruitment.png")
 
-if(intervention == "interim_all"){wd = 12; ht = 6}else{wd = 8; ht = 4}
+if(intervention == "interim_all"){wd = 12; ht = 6}else{wd = 10; ht = 5}
 
-pdf(plot_name, width = wd, height = ht)
+png(plot_name, width = wd, height = ht, units = 'in', res = 300)
 timeline
 dev.off()
 ```
@@ -305,10 +308,10 @@ G1_box
 ```
 
 ```{r}
-plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".pdf")
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".png")
 
-pdf(plot_name, width = 5, height = 5)
-G1
+png(plot_name, width = 8, height = 5, unit = 'in', res = 300)
+G1_box
 dev.off()
 ```
 
@@ -369,7 +372,7 @@ G_hl
 ## Plot treatment effects
 
 ```{r}
-unblinded_arms <- c("Nitazoxanide", "Metformin")
+unblinded_arms <- c("Nitazoxanide", "Metformin", "Atilotrelvir/ritonavir")
 
 G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold,
                     intervention = intervention, unblinded_arms = unblinded_arms)
@@ -377,17 +380,17 @@ G2
 ```
 
 ```{r}
-plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_trt.pdf")
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_trt.png")
 
-pdf(plot_name, width = 8, height = 6)
+png(plot_name, width = 8, height = 6, unit = 'in', res = 300)
 G2
 dev.off()
 ```
 
 ```{r}
-plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_t12_trt.pdf")
+plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_t12_trt.png")
 
-pdf(plot_name, width = 12, height = 6)
+png(plot_name, width = 12, height = 6, unit = 'in', res = 300)
 plot_grid(G_hl, G2, ncol = 2, align = "hv", axis = "b")
 dev.off()
 ```
@@ -451,90 +454,90 @@ platcov_dat_rebound = find_rebounds(platcov_dat = platcov_dat_rebound,
 ```
 
 ```{r}
-G_rebounds <-  plot_rebound(platcov_dat_analysis, platcov_dat_rebound %>% filter(rebound == 1), trt_colors)
-G_rebounds
+# G_rebounds <-  plot_rebound(platcov_dat_analysis, platcov_dat_rebound %>% filter(rebound == 1), trt_colors)
+# G_rebounds
 ```
 
 ```{r}
-f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_", intervention, ".pdf")
-
-pdf(f_name, width = 6, height = 6)
-G_rebounds
-dev.off()
+# f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_", intervention, ".pdf")
+# 
+# pdf(f_name, width = 6, height = 6)
+# G_rebounds
+# dev.off()
 ```
 
 ```{r}
-kruskal.test(Time_rebound ~ Trt, platcov_dat_rebound %>% filter(rebound) %>% distinct(ID, .keep_all = T) )
-
-attach(platcov_dat_rebound %>% filter(rebound) %>% distinct(ID, .keep_all = T))
-pairwise.wilcox.test(Time_rebound, Trt,p.adjust.method = "bonf")
-detach()
+# kruskal.test(Time_rebound ~ Trt, platcov_dat_rebound %>% filter(rebound) %>% distinct(ID, .keep_all = T) )
+# 
+# attach(platcov_dat_rebound %>% filter(rebound) %>% distinct(ID, .keep_all = T))
+# pairwise.wilcox.test(Time_rebound, Trt,p.adjust.method = "bonf")
+# detach()
 ```
 
 ```{r}
-rebound_fq <- platcov_dat_rebound %>%
-  distinct(ID, .keep_all = T) %>%
-  group_by(Trt) %>%
-  summarise(x = sum(rebound),
-            n = n(),
-            x_prime = n - x)
-rebound_fq
+# rebound_fq <- platcov_dat_rebound %>%
+#   distinct(ID, .keep_all = T) %>%
+#   group_by(Trt) %>%
+#   summarise(x = sum(rebound),
+#             n = n(),
+#             x_prime = n - x)
+# rebound_fq
 ```
 
 ```{r}
-prop.test(rebound_fq$x, rebound_fq$n, correct = T)
+# prop.test(rebound_fq$x, rebound_fq$n, correct = T)
 ```
 
 ```{r}
-rebound_fq2 <- rebound_fq %>% filter(Trt != "No study drug")
-prop.test(rebound_fq2$x, rebound_fq2$n, correct = T)
+# rebound_fq2 <- rebound_fq %>% filter(Trt != "No study drug")
+# prop.test(rebound_fq2$x, rebound_fq2$n, correct = T)
 ```
 
 ```{r}
-platcov_dat_rebound$clear_check <- "Less than 100"
-platcov_dat_rebound$clear_check[platcov_dat_rebound$daily_VL >= log10(100)] <- "More than 100"
-platcov_dat_rebound$clear_check[platcov_dat_rebound$daily_VL >= log10(1000)] <- "More than 1000"
-
-rebound_heatmap <- ggplot(platcov_dat_rebound %>% filter(rebound == 1), 
-aes(y = ID, x = as.factor(Timepoint_ID), fill = clear_check)) +
-  geom_tile(col = "white", linewidth = 0.75) +
-  facet_grid(Trt ~ ., scales = "free", space='free') +
-  scale_fill_manual(values = rev(c("#B80000", "#F6D776", "#86A7FC")), name = "SARS-CoV-2 \ngenomes per mL") +
-  theme_bw() +
-  xlab("Time since randomisation (days)") +
-  ylab("")+
-  theme(axis.title = element_text(size = 12, face = "bold"),
-        strip.text = element_text(size = 10, face = "bold"))
-rebound_heatmap
+# platcov_dat_rebound$clear_check <- "Less than 100"
+# platcov_dat_rebound$clear_check[platcov_dat_rebound$daily_VL >= log10(100)] <- "More than 100"
+# platcov_dat_rebound$clear_check[platcov_dat_rebound$daily_VL >= log10(1000)] <- "More than 1000"
+# 
+# rebound_heatmap <- ggplot(platcov_dat_rebound %>% filter(rebound == 1), 
+# aes(y = ID, x = as.factor(Timepoint_ID), fill = clear_check)) +
+#   geom_tile(col = "white", linewidth = 0.75) +
+#   facet_grid(Trt ~ ., scales = "free", space='free') +
+#   scale_fill_manual(values = rev(c("#B80000", "#F6D776", "#86A7FC")), name = "SARS-CoV-2 \ngenomes per mL") +
+#   theme_bw() +
+#   xlab("Time since randomisation (days)") +
+#   ylab("")+
+#   theme(axis.title = element_text(size = 12, face = "bold"),
+#         strip.text = element_text(size = 10, face = "bold"))
+# rebound_heatmap
 ```
 
 ```{r}
-f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_heatmap.pdf")
-
-pdf(f_name, width = 6, height = 8)
-rebound_heatmap
-dev.off()
+# f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_heatmap.pdf")
+# 
+# pdf(f_name, width = 6, height = 8)
+# rebound_heatmap
+# dev.off()
 ```
 
 ```{r}
-G_rebound_tl <- ggplot(platcov_dat_rebound %>% distinct(ID, .keep_all = T), 
-       aes(x = Rand_date, y = Trt)) +
-  geom_point(aes(col = rebound, size = rebound), alpha = 0.5) +
-  scale_color_manual(values = c("black", "red")) +
-  scale_size_manual(values = c(3,6)) +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "none") +
-  xlab("Randomisation date") +
-  ylab("")
-G_rebound_tl
+# G_rebound_tl <- ggplot(platcov_dat_rebound %>% distinct(ID, .keep_all = T), 
+#        aes(x = Rand_date, y = Trt)) +
+#   geom_point(aes(col = rebound, size = rebound), alpha = 0.5) +
+#   scale_color_manual(values = c("black", "red")) +
+#   scale_size_manual(values = c(3,6)) +
+#   theme_bw(base_size = 14) +
+#   theme(legend.position = "none") +
+#   xlab("Randomisation date") +
+#   ylab("")
+# G_rebound_tl
 ```
 
 ```{r}
-f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_timeline.pdf")
-
-pdf(f_name, width = 6, height = 5)
-G_rebound_tl
-dev.off()
+# f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_rebound_timeline.pdf")
+# 
+# pdf(f_name, width = 6, height = 5)
+# G_rebound_tl
+# dev.off()
 ```
 
 ```{r Figure_main, fig.height=6, fig.width=9}

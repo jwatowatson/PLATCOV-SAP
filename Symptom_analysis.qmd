@@ -119,7 +119,7 @@ survplot <- survminer::ggsurvplot(fit,pval=T,
                                   risk.table.y.text=F,
                                   palette = cols,
                                   ggtheme = theme_bw(),
-                                  legend.labs = c("Favipiravir", 
+                                  legend.labs = c("Nitazoxanide", 
                                                   #"Nirmatrelvir", 
                                                   "No study drug"),
                                   break.time.by = 4,
@@ -178,4 +178,32 @@ for(i in 1:length(symptom_list)){
 summary_symptom
 
 
+```
+
+Plot diarrhea
+
+```{r}
+dia_plot <- sympt_dat_for_plot %>%
+  filter(Timepoint_ID %in% 0:7) %>%
+  ggplot(aes(x = as.factor(Timepoint_ID), y = Label, fill = as.factor(sq_diaryn))) +
+  geom_tile(color = "white", size = 0.5) +
+  scale_fill_manual(values = c("1" = "firebrick", "0" = "burlywood"),
+                    na.value = "transparent") +
+  facet_wrap(.~Trt, scales = 'free_y') +
+  labs(x = "Days post-randomisation", y = "Individual patient") +
+  theme_bw(base_size = 13)  +
+  theme(
+    axis.text.y = element_text(size = 10),
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "none"
+  )
+dia_plot
+```
+
+```{r}
+f_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/plot_diarrhea.png")
+
+png(f_name, width = 10, height = 8, res = 300, units = "in")
+dia_plot
+dev.off()
 ```

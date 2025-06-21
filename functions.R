@@ -624,7 +624,7 @@ get_itt_population = function(prefix_drop_rand){
 
 
 get_trt_colors = function(){
-  trt_cols = array(dim = 13)
+  trt_cols = array(dim = 15)
   names(trt_cols) = 
     c("Ivermectin",
       "Regeneron",
@@ -638,7 +638,9 @@ get_trt_colors = function(){
       "Evusheld",
       'Ensitrelvir',
       "Nirmatrelvir",
-      "Hydroxychloroquine")
+      "Hydroxychloroquine",
+      "Metformin",
+      "Atilotrelvir/ritonavir")
   trt_cols['No study drug'] = viridis::viridis(n = 10)[8]
   trt_cols['Fluoxetine'] = viridis::viridis(n = 10)[5]
   trt_cols['Nitazoxanide'] = viridis::magma(n = 10)[8]
@@ -652,6 +654,8 @@ get_trt_colors = function(){
   trt_cols['Remdesivir'] = RColorBrewer::brewer.pal('Dark2',n=8)[8]
   trt_cols['Ensitrelvir'] = RColorBrewer::brewer.pal('Set1',n=8)[1]
   trt_cols['Hydroxychloroquine'] = RColorBrewer::brewer.pal('Paired',n=8)[1]
+  trt_cols['Metformin'] = "#FF9F00"
+  trt_cols['Atilotrelvir/ritonavir'] =  "#CD5656" 
   
   return(trt_cols)
 }
@@ -742,15 +746,15 @@ plot_vl_box <- function(dataplot, trt_colors){
     scale_color_manual(label = labels, values = colors, name = "") +
     scale_fill_manual(label = labels, values = colors, name = "") +
     facet_grid(.~Trt) +
-    theme_bw() +
+    theme_bw(base_size = 13) +
     scale_y_continuous(labels=label_math(), breaks = seq(0,10,1), limits = c(0,9)) +
     xlab("Time since randomisation (days)") +
     ylab("SARS-CoV-2 genomes/mL") + 
     theme(axis.title  = element_text(face = "bold"),
           plot.title = element_text(face = "bold"),
           legend.position = "none",
-          axis.text = element_text(size = 10),
-          strip.text = element_text(size = 10, face = 'bold')) +
+          axis.text = element_text(size = 13),
+          strip.text = element_text(size = 13, face = 'bold')) +
     geom_hline(yintercept = 0, col = "red", linetype = "dashed", linewidth = 0.75) +
     geom_text(data = f_tab, x = 4, y = 9, aes(label = lab),
               hjust = 0, vjust = 1) +
