@@ -1200,7 +1200,7 @@ Res %>%
   group_by(Trt) %>%
   summarise(n = n()) %>%
   ungroup() %>%
-  mutate(N = sum(n))
+  mutate(N = sum(n)) 
 ###### Fever data------------------------------------------------------------------
 # fever_data = read_csv(file = paste0(prefix_analysis_data, "/Analysis_Data/temperature_data.csv"))
 # fever_data = fever_data %>% 
@@ -1629,19 +1629,46 @@ write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/
 
 
 #************************* Hydroxychloroquine Analysis *************************#
-#* Thailand added 2024-01-02
-Res_HCQ = 
-  Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug") &
-                 ((Country=='Thailand' & Rand_date >= "2024-01-01 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
-                    (Country=='Laos' & Rand_date >= "2024-04-04 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
-                    (Country=='Nepal' & Rand_date >= "2024-08-26 00:00:00" & Rand_date <= "2024-11-08 00:00:00"))) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hydroxychloroquine_analysis.csv"), row.names = F, sep=',', quote = F)
+# #* Thailand added 2024-01-02
+# Res_HCQ = 
+#   Res %>% filter(Trt %in% c('Hydroxychloroquine',"No study drug") &
+#                  ((Country=='Thailand' & Rand_date >= "2024-01-01 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
+#                     (Country=='Laos' & Rand_date >= "2024-04-04 00:00:00" & Rand_date <= "2024-11-08 00:00:00")|
+#                     (Country=='Nepal' & Rand_date >= "2024-08-26 00:00:00" & Rand_date <= "2024-11-08 00:00:00"))) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_HCQ, file = paste0(prefix_analysis_data, "/Analysis_Data/Hydroxychloroquine_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
+# Res_HCQ %>%
+#   distinct(ID, .keep_all = T) %>%
+#   group_by(Trt, Country) %>%
+#   summarise(n = n())
 
-Res_HCQ %>%
+#************************* Metformin Analysis *************************#
+#* Thailand added 2024-12-13
+Res_Metformin = 
+  Res %>% filter(Trt %in% c('Metformin',"No study drug") &
+                   (Country=='Thailand' & Rand_date >= "2024-12-12 00:00:00" )) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Metformin, file = paste0(prefix_analysis_data, "/Analysis_Data/Metformin_analysis.csv"), row.names = F, sep=',', quote = F)
+
+Res_Metformin %>%
   distinct(ID, .keep_all = T) %>%
   group_by(Trt, Country) %>%
   summarise(n = n())
+
+#************************* Atilotrelvir/ritonavir Analysis *************************#
+#* Thailand added 2024-12-13
+Res_Atilotrelvir = 
+  Res %>% filter(Trt %in% c('Atilotrelvir/ritonavir',"No study drug", "Nirmatrelvir + Ritonavir") &
+                   (Country=='Thailand' & Rand_date >= "2025-04-01 00:00:00" )) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Atilotrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Atilotrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
+
+Res_Atilotrelvir %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt, Country) %>%
+  summarise(n = n())
+
 #************************* Ineffective Interventions *************************#
 # Res_ineffective = 
 #   Res %>% filter(Trt %in% c('Ivermectin',
