@@ -456,7 +456,7 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
 re_download = F
-system_used = "Mac"
+system_used = "windows"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -1308,7 +1308,11 @@ Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
 Res_REGN = merge(Res_REGN, evusheld_mutations, by = 'ID', all.x = T)
 Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
 
-
+Res_REGN %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Variant) %>%
+  summarise(n = n()) %>%
+  mutate(N = sum(n))
 
 
 #impute variants
@@ -1448,14 +1452,25 @@ write.table(x = symptom_REGN, file = '../Analysis_Data/REGN_symptom_analysis.csv
 
 #************************* Paxlovid v No study drug - recent data only *************************#
 #* Thailand only - this is used for internal analyses
-# Res_Paxlovid_recent = 
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
-#                  Rand_date > "2023-02-24 00:00:00",
-#                  Country %in% c('Thailand')) %>%
-#   arrange(Rand_date, ID, Time) %>% ungroup() 
-# 
-# write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
-# 
+Res_Paxlovid_recent =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
+                 Rand_date > "2023-02-24 00:00:00" & Rand_date < "2024-01-01 00:00:00",
+                 Country %in% c('Thailand')) %>%
+  arrange(Rand_date, ID, Time) %>% ungroup()
+
+write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
+# For JID letter
+Res_Paxlovid_recent2 =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
+                 Rand_date >= "2024-01-01 00:00:00" & Rand_date < "2025-01-01 00:00:00",
+                 Country %in% c('Thailand')) %>%
+  arrange(Rand_date, ID, Time) %>% ungroup()
+
+write.table(x = Res_Paxlovid_recent2, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent2_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
 
 ## vaccine data
 # vacc_data_molnupiravir = vacc_data %>% filter(Label %in% Res_Paxlovid_Molnupiravir$ID) %>%
@@ -1641,6 +1656,14 @@ Res_HCQ %>%
 #   Res %>% filter(Trt %in% c("No study drug")) %>%
 #   arrange(Rand_date, ID, Time)
 # write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs.csv"), row.names = F, sep=',', quote = F)
+
+Res_noStudyDrugs2024 =
+  Res %>% filter(Trt %in% c("No study drug"),
+                 Site == 'th001',
+                 Rand_date >= "2024-01-01 00:00:00" & Rand_date < "2025-01-01 00:00:00") %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_noStudyDrugs2024, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs2024.csv"), row.names = F, sep=',', quote = F)
+
 
 #************************* Site TH01 only *************************#
 # Res_TH1 <-  Res %>% filter(Site %in% c("th001")) %>%
