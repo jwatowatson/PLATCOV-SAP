@@ -1677,23 +1677,28 @@ Res_Atilotrelvir %>%
 
 
 #************************* Unblinded arm meta-analysis *************************#
-# Res_Unblinded_meta =
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-#                             'Molnupiravir',
-#                             "No study drug",
-#                             'Ivermectin',
-#                             'Remdesivir',
-#                             'Favipiravir',
-#                             'Regeneron'),
-#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-#                  Rand_date <= "2023-10-20 00:00:00"
-#   ) %>%
-#   arrange(Rand_date, ID, Time)
-# 
-# write.table(x = Res_Unblinded_meta,
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
-#             row.names = F, sep=',', quote = F)
+Res_Unblinded_meta =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+                            'Molnupiravir',
+                            "No study drug",
+                            'Ivermectin',
+                            'Remdesivir',
+                            'Favipiravir',
+                            'Ensitrelvir',
+                            'Regeneron'),
+                 Country %in% c('Thailand')#,'Brazil','Laos','Pakistan'),
+               #  Rand_date <= "2023-10-20 00:00:00"
+  ) %>%
+  arrange(Rand_date, ID, Time)
 
+write.table(x = Res_Unblinded_meta,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
+            row.names = F, sep=',', quote = F)
+
+Res_Unblinded_meta %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt, Country) %>%
+  summarise(n = n())
 
 
 #************************* Unblinded all *************************#
@@ -1721,4 +1726,44 @@ Res_Atilotrelvir %>%
 # write.table(x = Res_baseline_vl,
 #             file = "../Analysis_Data/Baseline_VL_all.csv",
 #             row.names = F, sep=',', quote = F)
+#************************* Monoclonal antibodies analysis *************************#
+Res_monoclonal_antibodies <- Res %>% filter(
+  (Trt %in% c('Regeneron',"No study drug") & Country == 'Thailand' & Rand_date < '2022-10-21 00:00:00') |
+    (Trt %in% c('Evusheld',"No study drug") & ((Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00")| 
+                                                 (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")))
+) %>%
+  arrange(Rand_date, ID, Time)
 
+regeneron_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/regeneron_mutations.csv"))
+evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_mutations.csv"))
+
+Res_monoclonal_antibodies <- Res_monoclonal_antibodies %>%
+  left_join(regeneron_mutations %>% select(Patient_ID, test_regeneron), join_by("ID" == "Patient_ID")) %>%
+  left_join(evusheld_mutations %>% select(Patient_ID, test_evusheld), join_by("ID" == "Patient_ID")) %>%
+  left_join(baseline_serology_data, join_by(ID))
+
+#impute variants
+Res_monoclonal_antibodies <- Res_monoclonal_antibodies %>%
+  mutate(test_regeneron = if_else(Rand_date > as.Date("2022-01-01") & Rand_date < as.Date("2022-04-01") & is.na(Variant2), "G446S", test_regeneron),
+         Variant2 = if_else(Rand_date > as.Date("2022-01-01") & Rand_date < as.Date("2022-04-01") & is.na(Variant2), "BA.1", Variant2),
+         test_regeneron = if_else(Rand_date > as.Date("2022-10-01") & is.na(Variant2), "G446S", test_regeneron),
+         Variant2 = if_else(Rand_date > as.Date("2022-10-01") & is.na(Variant2), "BA.2.75", Variant2),
+         test_evusheld = if_else(is.na(test_evusheld) & Variant2 %in% c("BA.1", "BA.2.75"), "R346* or K444*", test_evusheld),
+         test_evusheld = if_else(is.na(test_evusheld) & Variant2 %in% c("BA.5"), "F486* and (R346* or K444*)", test_evusheld),
+         test_regeneron = if_else(is.na(test_regeneron) & Variant2 %in% c("BA.5"), "Wildtype", test_regeneron)
+  ) 
+
+#impute IgG
+Res_monoclonal_antibodies <- Res_monoclonal_antibodies %>%
+  mutate(Baseline_log_IgG = if_else(is.na(Baseline_log_IgG),
+                                    Res_monoclonal_antibodies %>% filter(Timepoint_ID==0, Rand_date > as.Date('2022-04-01')) %>% distinct(ID, .keep_all = T) %>%
+                                      summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric(),
+                                    Baseline_log_IgG
+  ))
+write.table(x = Res_monoclonal_antibodies, file = '../Analysis_Data/Monoclonal_antibodies_analysis.csv', row.names = F, sep=',', quote = F)
+
+IDs <- Res_monoclonal_antibodies %>% select(ID) %>% as.vector() %>% unlist() %>% unique()
+#Temperature data
+write.table(x = fever_data %>% filter(Label %in% IDs), file = '../Analysis_Data/Monoclonal_antibodies_fever_analysis.csv', row.names = F, sep=',', quote = F)
+#Symptom data
+write.table(x = symptom_data %>% filter(Label %in% IDs), file = '../Analysis_Data/Monoclonal_antibodies_symptom_analysis.csv', row.names = F, sep=',', quote = F)

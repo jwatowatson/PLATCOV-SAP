@@ -41,7 +41,7 @@ source('functions.R')
 source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
 
-interim_version <- "v13"
+interim_version <- "v14"
 ```
 
 All paths are local
@@ -57,7 +57,7 @@ Set up analysis
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Metformin';ref_arm = 'No study drug'  
- intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
+ intervention = 'Unblinded_meta';ref_arm = 'No study drug'  
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -232,7 +232,7 @@ stan_inputs$analysis_data_stan$n_period <- length(unique(stan_inputs$analysis_da
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-if(intervention != 'interim_all'){mods = 'Stan_models/Linear_model_RNaseP.stan'} else {mods = 'Stan_models/Linear_model_temporal_RE.stan'}
+if(!intervention %in% c('Unblinded_meta', 'interim_all')){mods = 'Stan_models/Linear_model_RNaseP.stan'} else {mods = 'Stan_models/Linear_model_temporal_RE.stan'}
 
 model_settings = expand.grid(mod = mods,
                              prior = 1,
@@ -355,6 +355,7 @@ t12_output = merge(t12_output, stan_inputs$ID_map, by = 'ID_stan')
 
 Half_life <- t12_output
 Half_life <- platcov_dat_analysis %>%
+  filter(Timepoint_ID == 0) %>%
   distinct(ID, Trt, .keep_all = T) %>%
   merge(Half_life, by.x = "ID", by.y = "ID_key") %>%
   arrange(Trt, t_12_med)
