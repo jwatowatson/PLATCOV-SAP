@@ -544,9 +544,21 @@ vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(i
 vac_error_ID <- NULL
 time_vac_negative_ID <- NULL
 clin_data$Label[!clin_data$Label %in% vacc_data$Label]
+
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
+  
+  # Check if patient has no vaccine records
+  if(length(ind) == 0) {
+    clin_data$N_dose[i] = NA
+    clin_data$Any_dose[i] = NA
+    clin_data$N_dose_mRNA[i] = NA
+    clin_data$Any_dose_mRNA[i] = NA
+    clin_data$Time_since_last_dose[i] = NA
+    next
+  }
+  
   vacc_data[vacc_data$Label == id, ]
   
   ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer','Chula-Cov19'))
@@ -556,22 +568,43 @@ for(i in 1:nrow(clin_data)){
   
   vac_dates_mRNA = unlist(unique(vacc_data[ind_mRNA, vacc_date_cols]))
   vac_dates_mRNA = vac_dates_mRNA[vac_dates_mRNA != '']
-  clin_data$N_dose[i] = length(vac_dates)
-  clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
   
-  clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
-  clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
+  # Check vc_statyn status
+  has_vaccination_status = any(vacc_data$vc_statyn[vacc_data$Label == id] == 1, na.rm = TRUE)
   
-  if(clin_data$Any_dose[i]=='Yes'){
-    most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
-    clin_data$Time_since_last_dose[i] =  
-      difftime(clin_data$Rand_date_time[i],
-               most_recent_vac,units = 'days')
-    if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
-      time_vac_negative_ID <- c(time_vac_negative_ID, id)}
+  if(has_vaccination_status && length(vac_dates) == 0) {
+    # Patient marked as vaccinated but no date details
+    clin_data$Any_dose[i] = 'Yes'
+    clin_data$N_dose[i] = NA
+    clin_data$Time_since_last_dose[i] = NA
+  } else {
+    clin_data$N_dose[i] = length(vac_dates)
+    clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
+    
+    if(clin_data$Any_dose[i]=='Yes'){
+      most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
+      clin_data$Time_since_last_dose[i] =  
+        difftime(clin_data$Rand_date_time[i],
+                 most_recent_vac,units = 'days')
+      if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
+        time_vac_negative_ID <- c(time_vac_negative_ID, id)}
+    }
   }
+  
+  # Handle mRNA vaccines similarly
+  has_mRNA_vaccination_status = any(vacc_data$vc_statyn[ind_mRNA] == 1, na.rm = TRUE)
+  
+  if(has_mRNA_vaccination_status && length(vac_dates_mRNA) == 0) {
+    clin_data$Any_dose_mRNA[i] = 'Yes'
+    clin_data$N_dose_mRNA[i] = NA
+  } else {
+    clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
+    clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
+  }
+  
   if(!is.na(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) ) & any(vacc_data$vc_statyn[vacc_data$Label == id] == 1)  & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
 }
+
 # No vaccine date details
 writeLines(sprintf('Patient %s flagged to have vaccinated but no details',
                    vac_error_ID))
@@ -654,7 +687,7 @@ for(i in 1:length(fnames)){
   }
 }
 
- # take out the summary PCR columns
+# take out the summary PCR columns
 ind_rm = Res$`Sample ID` %in% c('PC','R-squared','Efficiency (%)','Slope (M)')|
   (is.na(Res$`SUBJECT ID`) & is.na(Res$`Sample ID`))
 sum(ind_rm)
@@ -1587,30 +1620,30 @@ write.table(x = Res_REGN_Evusheld, file = '../Analysis_Data/REGN_Evusheld_plot.c
 #************************* Ensitrelvir Analysis *************************#
 #* Thailand and Laos added 2023-03-17
 
-# Res_Ensitrelvir = 
-#   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
-#                  (Country=='Thailand' &
-#                     Rand_date >= "2023-03-17 00:00:00" &
-#                     Rand_date < "2024-04-22") |
-#                    (Country=='Laos' & 
-#                       Rand_date >= "2023-03-17 00:00:00"&
-#                       Rand_date < "2024-04-22")) %>%
-#   arrange(Rand_date, ID, Time)
-# write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
-# 
-# 
+Res_Ensitrelvir =
+  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
+                 (Country=='Thailand' &
+                    Rand_date >= "2023-03-17 00:00:00" &
+                    Rand_date < "2024-04-22") |
+                   (Country=='Laos' &
+                      Rand_date >= "2023-03-17 00:00:00"&
+                      Rand_date < "2024-04-22")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
 # symptom_data_Ensitrelvir <- symptom_data %>%
 #   filter(Label %in% Res_Ensitrelvir$ID)
-# 
+#
 # write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
-# 
+#
 # fever_data_Ensitrelvir <- fever_data %>%
 #   filter(Label %in% Res_Ensitrelvir$ID)
-# 
+#
 # write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
 
 
-# Res_Ensitrelvir_allpax = 
+# Res_Ensitrelvir_allpax =
 #   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
 #                  (Country=='Thailand') |
 #                    (Country=='Laos')) %>%
