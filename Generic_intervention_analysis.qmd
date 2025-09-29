@@ -51,13 +51,13 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-# intervention = 'interim_all';ref_arm = 'No study drug'
+ intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Metformin';ref_arm = 'No study drug'  
- intervention = 'Unblinded_meta';ref_arm = 'No study drug'  
+# intervention = 'Unblinded_meta';ref_arm = 'No study drug'  
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -373,7 +373,7 @@ G_hl
 ## Plot treatment effects
 
 ```{r}
-unblinded_arms <- c("Nitazoxanide", "Metformin", "Atilotrelvir/ritonavir")
+unblinded_arms <- c("Metformin", "Atilotrelvir/ritonavir")
 
 G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold,
                     intervention = intervention, unblinded_arms = unblinded_arms)

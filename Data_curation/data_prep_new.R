@@ -1790,3 +1790,26 @@ IDs <- Res_monoclonal_antibodies %>% select(ID) %>% as.vector() %>% unlist() %>%
 write.table(x = fever_data %>% filter(Label %in% IDs), file = '../Analysis_Data/Monoclonal_antibodies_fever_analysis.csv', row.names = F, sep=',', quote = F)
 #Symptom data
 write.table(x = symptom_data %>% filter(Label %in% IDs), file = '../Analysis_Data/Monoclonal_antibodies_symptom_analysis.csv', row.names = F, sep=',', quote = F)
+
+# iTT population
+Res %>% filter(
+  (Country == 'Thailand' & Rand_date < '2022-10-21 00:00:00') |
+    (((Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00")| 
+      (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")))
+) %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt) %>%
+  summarise(n = n())
+  
+a <- screen_failure %>%
+  filter(
+    (Site == 'th001' & scrdat < as.Date('2022-10-21 00:00:00')) |
+      (((Site=='th001' & scrdat > as.Date("2022-09-01 00:00:00") & scrdat < as.Date("2023-07-05 00:00:00"))| 
+          (Site=='br003' & scrdat > as.Date("2022-10-31 00:00:00") & scrdat < as.Date("2023-01-04 00:00:00"))))
+  ) %>%
+  filter(scrpassed == 0)
+
+a  %>%
+  group_by(reason_failure) %>%
+  summarise(n = n())
+    
