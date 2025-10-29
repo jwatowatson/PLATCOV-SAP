@@ -41,7 +41,7 @@ source('functions.R')
 source('Data_curation/user_settings.R')
 trt_colors = get_trt_colors()
 
-interim_version <- "v13"
+interim_version <- "v14"
 ```
 
 All paths are local
@@ -51,13 +51,14 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-# intervention = 'interim_all';ref_arm = 'No study drug'
+intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Metformin';ref_arm = 'No study drug'  
- intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
+#intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
+#intervention = 'Atilotrelvir';ref_arm='Nirmatrelvir'
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -106,6 +107,11 @@ platcov_dat = platcov_dat %>% group_by(ID) %>%
 pop_table = platcov_dat %>% distinct(ID, .keep_all = T)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT)
 table(Intervention=pop_table$Trt, `mITT population` = pop_table$mITT2)
+```
+
+```{r}
+table(Site=pop_table$Site, `mITT population` = pop_table$mITT)
+table(Site=pop_table$Site, `mITT population` = pop_table$mITT2)
 ```
 
 ```{r}
@@ -265,7 +271,14 @@ if(RUN_MODELS){
 ```
 
 ```{r}
-ff = list.files('Rout/', pattern = paste0(intervention,'.RData'),)
+if (ref_arm == 'No study drug') {
+  # vs NSD
+  ff = list.files('Rout/', pattern = paste0(intervention,'.RData'),)
+} else {
+  # vs positive control
+  ff = list.files('Rout/', pattern = paste0(intervention, '_vs_', ref_arm,'.RData'),)
+}
+
 ff = ff[grep(pattern = 'model_fits_',x = ff, ignore.case = T)]
 if(!length(ff)==nrow(model_settings)) stop('not all outputs are ready for all model settings')
 ff = paste0('Rout/',ff)
@@ -293,6 +306,7 @@ for(i in 1:length(ff)){
   rownames(effect_ests[[i]]) = trts
   names(effect_ests)[i] <-  gsub("\\_.*", "", gsub("\\..*", "", gsub(".*/", "", model_settings$mod[i])))
 }
+effect_ests
 ```
 
 ## Plot viral dynamics
@@ -374,15 +388,19 @@ G_hl
 ```{r}
 unblinded_arms <- c("Nitazoxanide", "Metformin", "Atilotrelvir/ritonavir")
 
-G2 <- plot_trt_effs(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold,
-                    intervention = intervention, unblinded_arms = unblinded_arms)
+G2 <- plot_trt_effs_2(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold, intervention = intervention, unblinded_arms = unblinded_arms, lower=-80, upper=40)
+
 G2
 ```
 
 ```{r}
+if (ref_arm == "No study drug") {
 plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_trt.png")
+} else {
+  plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_vs_", ref_arm ,"_trt.png")
+}
 
-png(plot_name, width = 8, height = 6, unit = 'in', res = 300)
+png(plot_name, width = 8, height = 4, unit = 'in', res = 500)
 G2
 dev.off()
 ```
@@ -414,6 +432,132 @@ for(i in 1:nrow(effect_ests_rep)){
   )
 }
 }
+```
+
+```{r, echo=F}
+# Define positive control arm
+pos_control <- "Nirmatrelvir"
+
+ind <- 1
+
+load(ff[ind])
+
+trt_effect <- rstan::extract(out, pars = 'trt_effect')$trt %>% as.data.frame()
+
+# Call these variables again (already declared earlier)
+# Specify posterior sampling for each treatment for all iterations
+trts <- setdiff(trt_intervention, ref_arm)
+colnames(trt_effect) = trts
+
+# Initialize an empty list to store relative effects
+rel_effect_list <- list()
+
+# Loop over each column, except the pos_control
+for (trt in setdiff(colnames(trt_effect), pos_control)) {
+  rel_effect_list[[trt]] <- trt_effect[[trt]] - trt_effect[[pos_control]]
+}
+
+# Add the negated Favipiravir as "No Study Drug"
+rel_effect_list[["No Study Drug"]] <- -trt_effect[[pos_control]]
+
+# Combine into a data frame
+trt_effects_pos_rel <- as.data.frame(rel_effect_list)
+
+# Compute quantiles for each treatment arm (column)
+effect_ests_pos_rel <- apply(trt_effects_pos_rel, 2, quantile, probs = my_probs, na.rm = TRUE)
+effect_ests_pos_rel <- as.data.frame(t(effect_ests_pos_rel))
+
+# Manually fix rowname
+rownames(effect_ests_pos_rel)[1] <- "Atilotrelvir/Ritonavir"
+rownames(effect_ests_pos_rel)[2] <- "No Study Drug"
+
+# Create plotting dataframe
+effect_ests_plot <- effect_ests_pos_rel
+effect_ests_plot <- exp(effect_ests_plot)  # exponentiate estimates
+colnames(effect_ests_plot) <- c("L95", "L80", "med", "U80", "U95")
+effect_ests_plot$arm <- rownames(effect_ests_plot)
+effect_ests_plot$arm <- factor(effect_ests_plot$arm, levels = rownames(effect_ests_plot))  # preserve order
+effect_ests_plot$model <- "Linear"
+
+# Define threshold and formatting
+pos_threshold <- 0.9
+
+# Set color manually
+model_cols <- c("Linear" = "#1b9e77")
+
+# # Define plot
+# my.labs <- levels(effect_ests_plot$arm)
+# G3 <- ggplot(effect_ests_plot, aes(x = arm, y = med, col = model, group = model)) +
+#   geom_rect(aes(ymin = 0.9, ymax = 1.1, xmin = 0, xmax = length(my.labs) + 1), 
+#           fill = "#7D7C7C", alpha = 0.2, col = NA) +
+#   geom_rect(aes(ymin = min(0.75, min(effect_ests_plot$L95)-0.05), 
+#               ymax = 0.9, xmin = 0, xmax = length(my.labs) + 1), 
+#           fill = "#D3D3D3", alpha = 0.2, col = NA) +
+#   geom_point(position = position_dodge(width = 0.5), size = 4) +
+#   geom_errorbar(aes(ymin = L95, ymax = U95),
+#                 position = position_dodge(width = 0.5), width = 0, linewidth = 0.65) +
+#   geom_errorbar(aes(ymin = L80, ymax = U80),
+#                 position = position_dodge(width = 0.5), width = 0, linewidth = 1.5) +
+#   geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
+#   coord_flip() +
+#   theme_bw() +
+#   scale_color_manual(values = model_cols) +
+#   scale_y_continuous(limits = c(min(0.75, min(effect_ests_plot$L95) - 0.05), 
+#                                 max(effect_ests_plot$U95) + 0.25), 
+#                      expand = c(0, 0),
+#                      breaks = seq(0.2, 10, 1)) +
+#   ylab("Change in viral clearance rate (%)") +
+#   xlab("") +
+#   ggtitle(paste0("Estimated treatment effects relative to ", tolower(pos_control), " arm")) +
+#   theme(axis.title  = element_text(face = "bold"),
+#         plot.title = element_text(face = "bold"),
+#         legend.position = "bottom",
+#         axis.text = element_text(size = 20))
+# Custom label function
+percent_rel_label <- function(x) {
+  paste0(round(100 * (x - 1), 0), "%")
+}
+
+# Define plot
+my.labs <- levels(effect_ests_plot$arm)
+G3 <- ggplot(effect_ests_plot, aes(x = arm, y = med, col = model, group = model)) +
+  # Shaded bars
+  geom_rect(aes(ymin = 0.9, ymax = 1.1, xmin = 0, xmax = length(my.labs) + 1), 
+            fill = "#7D7C7C", alpha = 0.2, col = NA) +
+  geom_rect(aes(ymin = min(0.75, min(effect_ests_plot$L95)-0.05), 
+                ymax = 0.9, xmin = 0, xmax = length(my.labs) + 1), 
+            fill = "#D3D3D3", alpha = 0.2, col = NA) +
+  
+  # Points + error bars
+  geom_point(position = position_dodge(width = 0.5), size = 4) +
+  geom_errorbar(aes(ymin = L95, ymax = U95),
+                position = position_dodge(width = 0.5), width = 0, linewidth = 0.65) +
+  geom_errorbar(aes(ymin = L80, ymax = U80),
+                position = position_dodge(width = 0.5), width = 0, linewidth = 1.5) +
+  
+  # Reference line
+  geom_hline(yintercept = 1, col = "red", linetype = "dashed") +
+  
+  coord_flip() +
+  theme_bw() +
+  scale_color_manual(values = model_cols) +
+  scale_y_continuous(limits = c(min(0.75, min(effect_ests_plot$L95) - 0.05), 
+                     max(effect_ests_plot$U95) + 0.25), 
+                     expand = c(0, 0),
+                     breaks = c(0.9, 1.1),
+                     labels = percent_rel_label) +
+  ylab("Change in viral clearance rate (%)") +
+  xlab("") +
+  ggtitle(paste0("Estimated treatment effects relative to ", pos_control, " arm")) +
+  theme(axis.title  = element_text(face = "bold"),
+        plot.title = element_text(face = "bold"),
+        legend.position = "bottom",
+        axis.text = element_text(size = 20))
+plot_name_pos <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, "_esimated_effect_vs_positive_arm.png")
+
+png(plot_name_pos, width = 8, height = 4, units = "in", res = 600)
+G3
+dev.off()
 ```
 
 ## Rebound

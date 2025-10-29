@@ -17,6 +17,7 @@ source('functions.R')
 rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")),
+                      read.csv(paste0(prefix_drop_rand, "/data-NP03.csv")),
                       read.csv(paste0(prefix_drop_rand, "/data-PK01.csv"))) %>%
   filter(!is.na(Treatment))
 # Defining patient ID
@@ -27,8 +28,8 @@ rand_app_data$ID = paste0('PLT-', gsub(x = rand_app_data$site,pattern = '0',repl
 rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3','LA08','PK01'),to=c('th001','br003',"la008","pk001"))
 rand_app_data$Rand_Time = as.POSIXct(rand_app_data$Date, format = '%a %b %d %H:%M:%S %Y',tz = 'GMT')
 rand_app_data$tzone = plyr::mapvalues(x = rand_app_data$site,
-                                      from = c('TH1','LA08','BR3','PK01'),
-                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo','Asia/Karachi'))
+                                      from = c('TH1','LA08','BR3','PK01', 'NP03'),
+                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo','Asia/Karachi', 'Asia/Kathmandu'))
 rand_app_data$Rand_Time_TZ=NA
 for(i in 1:nrow(rand_app_data)){
   rand_app_data$Rand_Time_TZ[i] = as.character(with_tz(rand_app_data$Rand_Time[i], tzone = rand_app_data$tzone[i]))
@@ -455,8 +456,14 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Output: Interested only .tsv file
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
-re_download = F
-system_used = "Mac"
+re_download = T
+system_used = "windows"
+
+# Add NextClade to PATH temporarily for this R session
+Sys.setenv(PATH = paste("C:\\Users\\Kantapong\\Tools\\NextClade", Sys.getenv("PATH"), sep = ";"))
+
+# Check if nextclade is now recognized
+system("nextclade --version")  # should output "nextclade 3.15.3"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -624,6 +631,11 @@ for(i in 1:length(fnames)){
   
   # read in file
   temp = readr::read_csv(fnames[i],col_types = my_specs)
+  
+  # Normalize column names if necessary
+  if('Lab Lot no.' %in% names(temp)){
+    names(temp)[names(temp) == 'Lab Lot no.'] <- 'Lot no.'
+  }
   
   # check for duplicates
   if(any(duplicated(temp$BARCODE[!is.na(temp$BARCODE)]))){
