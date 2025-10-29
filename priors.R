@@ -11,17 +11,17 @@ get_priors = function(){
                       intercept_coefs_sd = .5,
                       t_max_pop_mean = -3,
                       t_max_pop_sd = 3)
-  
+
   prior_params_sensitive = prior_params
   for(i in grep('sd',x = names(prior_params))){
     prior_params_sensitive[[i]] = prior_params_sensitive[[i]]*5
   }
-  
+
   ## we get convergence issues with the covariate models if you have very wide priors on the slope coefs
   prior_params_sensitive$slope_coefs_sd=1
-  
+
   all_priors = list(WIP=prior_params, NIP=prior_params_sensitive)
-  
+
   return(all_priors)
 }
 all_priors=get_priors()

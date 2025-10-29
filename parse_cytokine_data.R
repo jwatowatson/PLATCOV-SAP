@@ -1,5 +1,6 @@
 library(tidyverse)
 library(gridExtra)
+<<<<<<< HEAD
 library(pheatmap)
 library(scales)
 library(dplyr)
@@ -57,6 +58,56 @@ if (create_df) {
     write_csv(x = control_data, file = 'Analysis_Data/cytokine_control_merged.csv')
     write_csv(x = dat_all, file = 'Analysis_Data/cytokine_data_merged.csv')
     write_csv(x = standards_data, file = 'Analysis_Data/cytokine_standards_merged.csv')
+=======
+
+ff_combo1 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 1/',pattern = '*.csv',full.names = T, recursive = T)
+ff_combo2 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 2/',pattern = '*.csv',full.names = T, recursive = T)
+ff = c(ff_combo1, ff_combo2)
+dat = list()
+for(i in 1:length(ff)){
+  plate_name = gsub(pattern = ',',replacement = '',x = readLines(ff[i], n = 1))
+  dat[[i]]=readr::read_csv(file = ff[i], skip = 1)
+  dat[[i]]$plate=plate_name
+}
+dat_all = dplyr::bind_rows(dat)
+
+dat_all$day = NA
+dat_all$day[grep('D0',x = dat_all$Sample)]='D0'
+dat_all$day[grep('D3',x = dat_all$Sample)]='D3'
+dat_all$day[grep('D7',x = dat_all$Sample)]='D7'
+dat_all$day[grep('D14',x = dat_all$Sample)]='D14'
+
+cytokines = unique(dat_all$Assay)
+control_data = dat_all %>% filter(Sample=='Control')
+standards_data = dat_all %>% filter(!is.na(Concentration))
+
+dat_all = dat_all %>% filter(Sample!='Control', is.na(Concentration))
+write_csv(x = dat_all, file = 'Analysis_Data/cytokine_data_merged.csv')
+write_csv(x = dat_all, file = 'Analysis_Data/cytokine_standards_merged.csv')
+
+
+pdf('cytokine_data.pdf')
+
+for(cytk in cytokines){
+  cytk_dat = dat_all %>% filter(Assay==cytk, Concentration>0 | is.na(Concentration))
+  cytk_std_dat = standards_data %>% filter(Assay==cytk)
+  my_lims_x = range(c(cytk_dat$Signal, cytk_std_dat$Signal))
+  breaks <- 10^(-10:10)
+  minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+
+  h1 = cytk_dat %>% filter(is.na(Concentration)) %>% ggplot(aes(x=Signal, colour = day))+
+    geom_density() + scale_x_log10(limits = my_lims_x)+theme_minimal()
+
+  p1=cytk_std_dat %>% ggplot(aes(y=Concentration, x = Signal, colour = plate))+
+    scale_x_log10()+
+    scale_y_log10(breaks = breaks, minor_breaks = minor_breaks,)+
+    geom_point()+theme_minimal()+ylab('pg/ml')+
+    geom_smooth(se = F)+
+    annotation_logticks(sides='l')+ggtitle(cytk)
+  print(grid.arrange(h1,p1))
+  cytk_dat %>% filter(is.na(Concentration)) %>% ggplot(aes(x=Signal))+
+    geom_histogram() + scale_x_log10(limits=c(1,10^6))
+>>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 }
 
 # CBC Data
@@ -197,7 +248,10 @@ dat_all$ID=NA
 for (i in 1:nrow(dat_all)) {
   xx = strsplit(x = dat_all$Sample[i],split = '-',fixed = T)[[1]]
   dat_all$ID[i] = paste(xx[1],xx[2],xx[3],sep = '-')
+<<<<<<< HEAD
   #dat_all$ID[i] = paste(xx[1],xx[2],xx[4],sep = '-')
+=======
+>>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 }
 
 all_cytokines <- unique(dat_all$Assay)
@@ -1382,7 +1436,7 @@ dat_all_2 %>% ggplot(aes(x=`Calc. Concentration pg/ml`, y = slope))+
 p_all_vc=dat_all_2 %>% ggplot(aes(x=Conc_standardised, y = slope))+
   geom_point() + geom_smooth(method = lm) + theme_minimal() +
   xlab('Standardised concentration')+ylab('Viral clearance (log10 change per day)')+
-  facet_wrap(vars(Assay, day), nrow = 4, ncol = 3) 
+  facet_wrap(vars(Assay, day), nrow = 4, ncol = 3)
 
 p_all_vl=dat_all_2 %>% filter(day=='D0') %>%
   ggplot(aes(x=Conc_standardised, y = baseline_VL))+
@@ -1413,9 +1467,9 @@ summary(lm(slope ~ Conc_standardised, data = dat_all_2%>%filter(day=='D0',Assay=
 summary(lm(slope ~ log10(`Calc. Concentration pg/ml`), data = dat_all_2%>%filter(day=='D0',Assay=='IP-10')))
 
 
-xx=dat_all_2 %>% filter(day=='D0') %>% 
-  pivot_wider(names_from = Assay, 
-              values_from = Conc_standardised, 
+xx=dat_all_2 %>% filter(day=='D0') %>%
+  pivot_wider(names_from = Assay,
+              values_from = Conc_standardised,
               id_cols = c(ID, slope, baseline_VL))
 mod1 = lm(slope ~ . , data = xx[, !colnames(xx) %in% c('ID','baseline_VL')])
 summary(mod1)

@@ -51,14 +51,22 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
+<<<<<<< HEAD
 intervention = 'interim_all';ref_arm = 'No study drug'
+=======
+ intervention = 'interim_all';ref_arm = 'No study drug'
+>>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Metformin';ref_arm = 'No study drug'  
+<<<<<<< HEAD
 #intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
 #intervention = 'Atilotrelvir';ref_arm='Nirmatrelvir'
+=======
+# intervention = 'Unblinded_meta';ref_arm = 'No study drug'  
+>>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -238,7 +246,7 @@ stan_inputs$analysis_data_stan$n_period <- length(unique(stan_inputs$analysis_da
 ```{r setup_models}
 all_mods = list.files('Stan_models',full.names = TRUE,pattern = '*stan')
 
-if(intervention != 'interim_all'){mods = 'Stan_models/Linear_model_RNaseP.stan'} else {mods = 'Stan_models/Linear_model_temporal_RE.stan'}
+if(!intervention %in% c('Unblinded_meta', 'interim_all')){mods = 'Stan_models/Linear_model_RNaseP.stan'} else {mods = 'Stan_models/Linear_model_temporal_RE.stan'}
 
 model_settings = expand.grid(mod = mods,
                              prior = 1,
@@ -369,6 +377,7 @@ t12_output = merge(t12_output, stan_inputs$ID_map, by = 'ID_stan')
 
 Half_life <- t12_output
 Half_life <- platcov_dat_analysis %>%
+  filter(Timepoint_ID == 0) %>%
   distinct(ID, Trt, .keep_all = T) %>%
   merge(Half_life, by.x = "ID", by.y = "ID_key") %>%
   arrange(Trt, t_12_med)
@@ -386,7 +395,7 @@ G_hl
 ## Plot treatment effects
 
 ```{r}
-unblinded_arms <- c("Nitazoxanide", "Metformin", "Atilotrelvir/ritonavir")
+unblinded_arms <- c("Metformin", "Atilotrelvir/ritonavir")
 
 G2 <- plot_trt_effs_2(effect_ests = effect_ests, model_cols = model_cols, study_threshold = study_threshold, intervention = intervention, unblinded_arms = unblinded_arms, lower=-80, upper=40)
 

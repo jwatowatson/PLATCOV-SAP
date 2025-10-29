@@ -827,6 +827,67 @@ plot_trt_effs <- function(effect_ests, model_cols, study_threshold, unblinded_ar
 }
 
 
+plot_trt_effs_2 <- function(effect_ests, model_cols, study_threshold, 
+                            unblinded_arms, intervention, lower, upper){
+  
+  effect_ests_plots <- NULL
+  for(i in 1:length(effect_ests)){
+    effect_ests_plot <- as.data.frame(effect_ests[[i]])
+    
+    ## Convert from log scale to % change
+    effect_ests_plot <- (exp(effect_ests_plot) - 1) * 100
+    
+    colnames(effect_ests_plot)[1:5] <- c("L95", "L80", "med", "U80", "U95")
+    effect_ests_plot$arm <- row.names(effect_ests_plot)
+    effect_ests_plot$arm <- as.factor(effect_ests_plot$arm)
+    effect_ests_plot$model <- names(effect_ests)[i]
+    effect_ests_plots <- rbind(effect_ests_plots, effect_ests_plot)
+  }
+  
+  effect_ests_plots$model <- as.factor(effect_ests_plots$model)
+  
+  lab_ref <- ref_arm
+  my.labs <- levels(effect_ests_plot$arm)
+  title <- paste0("Estimated treatment effects relative to ", tolower(lab_ref), " arm")
+  names(model_cols) <- levels(effect_ests_plots$model)
+  
+  ymin_all <- min(lower, min(effect_ests_plots$L95) - 5)
+  ymax_all <- max(upper, max(effect_ests_plots$U95) + 5)
+  
+  G <- ggplot(effect_ests_plots, aes(x = arm, y = med, col = model, group = model)) +
+    
+    ## Shaded regions:
+    geom_rect(aes(ymin = ymin_all, ymax = -10, xmin = 0, xmax = length(my.labs)+1),
+              fill = "#FFD6D6", alpha = 0.2, col = NA, inherit.aes = FALSE) +
+    geom_rect(aes(ymin = -10, ymax = 10, xmin = 0, xmax = length(my.labs)+1),
+              fill = "#D6FFD6", alpha = 0.2, col = NA, inherit.aes = FALSE) +
+    
+    ## Points and error bars:
+    geom_point(position = position_dodge(width = 0.5), size = 4) +
+    geom_errorbar(aes(ymin = L95, ymax = U95), position = position_dodge(width = 0.5),
+                  width = 0, linewidth = 0.65) +
+    geom_errorbar(aes(ymin = L80, ymax = U80), position = position_dodge(width = 0.5),
+                  width = 0, linewidth = 1.5) +
+    
+    scale_color_manual(values = model_cols) +
+    coord_flip() +
+    theme_bw() +
+    
+    geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
+    scale_y_continuous(limits = c(ymin_all, ymax_all),
+                       breaks = seq(lower, upper, 10),
+                       expand = c(0,0)) +
+    scale_x_discrete(labels = my.labs) +
+    ylab("Change in viral clearance rate (%)") +
+    xlab("") +
+    ggtitle(title)  + 
+    theme(axis.title  = element_text(face = "bold"),
+          plot.title = element_text(face = "bold"),
+          legend.position = "bottom",
+          axis.text = element_text(size = 10))
+  
+  G
+}
 
 plot_hl <- function(Half_life, trt_colors){
   Half_life_med <- Half_life %>%

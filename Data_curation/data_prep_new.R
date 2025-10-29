@@ -456,6 +456,7 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Output: Interested only .tsv file
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
+<<<<<<< HEAD
 re_download = T
 system_used = "windows"
 
@@ -464,6 +465,10 @@ Sys.setenv(PATH = paste("C:\\Users\\Kantapong\\Tools\\NextClade", Sys.getenv("PA
 
 # Check if nextclade is now recognized
 system("nextclade --version")  # should output "nextclade 3.15.3"
+=======
+re_download = F
+system_used = "windows"
+>>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -551,9 +556,21 @@ vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(i
 vac_error_ID <- NULL
 time_vac_negative_ID <- NULL
 clin_data$Label[!clin_data$Label %in% vacc_data$Label]
+
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
+  
+  # Check if patient has no vaccine records
+  if(length(ind) == 0) {
+    clin_data$N_dose[i] = NA
+    clin_data$Any_dose[i] = NA
+    clin_data$N_dose_mRNA[i] = NA
+    clin_data$Any_dose_mRNA[i] = NA
+    clin_data$Time_since_last_dose[i] = NA
+    next
+  }
+  
   vacc_data[vacc_data$Label == id, ]
   
   ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer','Chula-Cov19'))
@@ -563,22 +580,43 @@ for(i in 1:nrow(clin_data)){
   
   vac_dates_mRNA = unlist(unique(vacc_data[ind_mRNA, vacc_date_cols]))
   vac_dates_mRNA = vac_dates_mRNA[vac_dates_mRNA != '']
-  clin_data$N_dose[i] = length(vac_dates)
-  clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
   
-  clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
-  clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
+  # Check vc_statyn status
+  has_vaccination_status = any(vacc_data$vc_statyn[vacc_data$Label == id] == 1, na.rm = TRUE)
   
-  if(clin_data$Any_dose[i]=='Yes'){
-    most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
-    clin_data$Time_since_last_dose[i] =  
-      difftime(clin_data$Rand_date_time[i],
-               most_recent_vac,units = 'days')
-    if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
-      time_vac_negative_ID <- c(time_vac_negative_ID, id)}
+  if(has_vaccination_status && length(vac_dates) == 0) {
+    # Patient marked as vaccinated but no date details
+    clin_data$Any_dose[i] = 'Yes'
+    clin_data$N_dose[i] = NA
+    clin_data$Time_since_last_dose[i] = NA
+  } else {
+    clin_data$N_dose[i] = length(vac_dates)
+    clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
+    
+    if(clin_data$Any_dose[i]=='Yes'){
+      most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
+      clin_data$Time_since_last_dose[i] =  
+        difftime(clin_data$Rand_date_time[i],
+                 most_recent_vac,units = 'days')
+      if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
+        time_vac_negative_ID <- c(time_vac_negative_ID, id)}
+    }
   }
+  
+  # Handle mRNA vaccines similarly
+  has_mRNA_vaccination_status = any(vacc_data$vc_statyn[ind_mRNA] == 1, na.rm = TRUE)
+  
+  if(has_mRNA_vaccination_status && length(vac_dates_mRNA) == 0) {
+    clin_data$Any_dose_mRNA[i] = 'Yes'
+    clin_data$N_dose_mRNA[i] = NA
+  } else {
+    clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
+    clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
+  }
+  
   if(!is.na(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) ) & any(vacc_data$vc_statyn[vacc_data$Label == id] == 1)  & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
 }
+
 # No vaccine date details
 writeLines(sprintf('Patient %s flagged to have vaccinated but no details',
                    vac_error_ID))
@@ -666,7 +704,7 @@ for(i in 1:length(fnames)){
   }
 }
 
- # take out the summary PCR columns
+# take out the summary PCR columns
 ind_rm = Res$`Sample ID` %in% c('PC','R-squared','Efficiency (%)','Slope (M)')|
   (is.na(Res$`SUBJECT ID`) & is.na(Res$`Sample ID`))
 sum(ind_rm)
@@ -1320,7 +1358,11 @@ Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
 Res_REGN = merge(Res_REGN, evusheld_mutations, by = 'ID', all.x = T)
 Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
 
-
+Res_REGN %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Variant) %>%
+  summarise(n = n()) %>%
+  mutate(N = sum(n))
 
 
 #impute variants
@@ -1460,14 +1502,25 @@ write.table(x = symptom_REGN, file = '../Analysis_Data/REGN_symptom_analysis.csv
 
 #************************* Paxlovid v No study drug - recent data only *************************#
 #* Thailand only - this is used for internal analyses
-# Res_Paxlovid_recent = 
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
-#                  Rand_date > "2023-02-24 00:00:00",
-#                  Country %in% c('Thailand')) %>%
-#   arrange(Rand_date, ID, Time) %>% ungroup() 
-# 
-# write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
-# 
+Res_Paxlovid_recent =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
+                 Rand_date > "2023-02-24 00:00:00" & Rand_date < "2024-01-01 00:00:00",
+                 Country %in% c('Thailand')) %>%
+  arrange(Rand_date, ID, Time) %>% ungroup()
+
+write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
+# For JID letter
+Res_Paxlovid_recent2 =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
+                 Rand_date >= "2024-01-01 00:00:00" & Rand_date < "2025-01-01 00:00:00",
+                 Country %in% c('Thailand')) %>%
+  arrange(Rand_date, ID, Time) %>% ungroup()
+
+write.table(x = Res_Paxlovid_recent2, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent2_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
 
 ## vaccine data
 # vacc_data_molnupiravir = vacc_data %>% filter(Label %in% Res_Paxlovid_Molnupiravir$ID) %>%
@@ -1584,30 +1637,30 @@ write.table(x = Res_REGN_Evusheld, file = '../Analysis_Data/REGN_Evusheld_plot.c
 #************************* Ensitrelvir Analysis *************************#
 #* Thailand and Laos added 2023-03-17
 
-# Res_Ensitrelvir = 
-#   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
-#                  (Country=='Thailand' &
-#                     Rand_date >= "2023-03-17 00:00:00" &
-#                     Rand_date < "2024-04-22") |
-#                    (Country=='Laos' & 
-#                       Rand_date >= "2023-03-17 00:00:00"&
-#                       Rand_date < "2024-04-22")) %>%
-#   arrange(Rand_date, ID, Time)
-# write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
-# 
-# 
+Res_Ensitrelvir =
+  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
+                 (Country=='Thailand' &
+                    Rand_date >= "2023-03-17 00:00:00" &
+                    Rand_date < "2024-04-22") |
+                   (Country=='Laos' &
+                      Rand_date >= "2023-03-17 00:00:00"&
+                      Rand_date < "2024-04-22")) %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
+
+
 # symptom_data_Ensitrelvir <- symptom_data %>%
 #   filter(Label %in% Res_Ensitrelvir$ID)
-# 
+#
 # write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
-# 
+#
 # fever_data_Ensitrelvir <- fever_data %>%
 #   filter(Label %in% Res_Ensitrelvir$ID)
-# 
+#
 # write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
 
 
-# Res_Ensitrelvir_allpax = 
+# Res_Ensitrelvir_allpax =
 #   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
 #                  (Country=='Thailand') |
 #                    (Country=='Laos')) %>%
@@ -1681,6 +1734,14 @@ Res_Atilotrelvir %>%
 #   arrange(Rand_date, ID, Time)
 # write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs.csv"), row.names = F, sep=',', quote = F)
 
+Res_noStudyDrugs2024 =
+  Res %>% filter(Trt %in% c("No study drug"),
+                 Site == 'th001',
+                 Rand_date >= "2024-01-01 00:00:00" & Rand_date < "2025-01-01 00:00:00") %>%
+  arrange(Rand_date, ID, Time)
+write.table(x = Res_noStudyDrugs2024, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs2024.csv"), row.names = F, sep=',', quote = F)
+
+
 #************************* Site TH01 only *************************#
 # Res_TH1 <-  Res %>% filter(Site %in% c("th001")) %>%
 #   arrange(Rand_date, ID, Time)
@@ -1689,23 +1750,28 @@ Res_Atilotrelvir %>%
 
 
 #************************* Unblinded arm meta-analysis *************************#
-# Res_Unblinded_meta =
-#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-#                             'Molnupiravir',
-#                             "No study drug",
-#                             'Ivermectin',
-#                             'Remdesivir',
-#                             'Favipiravir',
-#                             'Regeneron'),
-#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
-#                  Rand_date <= "2023-10-20 00:00:00"
-#   ) %>%
-#   arrange(Rand_date, ID, Time)
-# 
-# write.table(x = Res_Unblinded_meta,
-#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
-#             row.names = F, sep=',', quote = F)
+Res_Unblinded_meta =
+  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+                            'Molnupiravir',
+                            "No study drug",
+                            'Ivermectin',
+                            'Remdesivir',
+                            'Favipiravir',
+                            'Ensitrelvir',
+                            'Regeneron'),
+                 Country %in% c('Thailand')#,'Brazil','Laos','Pakistan'),
+               #  Rand_date <= "2023-10-20 00:00:00"
+  ) %>%
+  arrange(Rand_date, ID, Time)
 
+write.table(x = Res_Unblinded_meta,
+            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
+            row.names = F, sep=',', quote = F)
+
+Res_Unblinded_meta %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt, Country) %>%
+  summarise(n = n())
 
 
 #************************* Unblinded all *************************#
@@ -1733,4 +1799,67 @@ Res_Atilotrelvir %>%
 # write.table(x = Res_baseline_vl,
 #             file = "../Analysis_Data/Baseline_VL_all.csv",
 #             row.names = F, sep=',', quote = F)
+#************************* Monoclonal antibodies analysis *************************#
+Res_monoclonal_antibodies <- Res %>% filter(
+  (Trt %in% c('Regeneron',"No study drug") & Country == 'Thailand' & Rand_date < '2022-10-21 00:00:00') |
+    (Trt %in% c('Evusheld',"No study drug") & ((Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00")| 
+                                                 (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")))
+) %>%
+  arrange(Rand_date, ID, Time)
 
+regeneron_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/regeneron_mutations.csv"))
+evusheld_mutations = read.csv(paste0(prefix_analysis_data, "/Analysis_Data/evusheld_mutations.csv"))
+
+Res_monoclonal_antibodies <- Res_monoclonal_antibodies %>%
+  left_join(regeneron_mutations %>% select(Patient_ID, test_regeneron), join_by("ID" == "Patient_ID")) %>%
+  left_join(evusheld_mutations %>% select(Patient_ID, test_evusheld), join_by("ID" == "Patient_ID")) %>%
+  left_join(baseline_serology_data, join_by(ID))
+
+#impute variants
+Res_monoclonal_antibodies <- Res_monoclonal_antibodies %>%
+  mutate(test_regeneron = if_else(Rand_date > as.Date("2022-01-01") & Rand_date < as.Date("2022-04-01") & is.na(Variant2), "G446S", test_regeneron),
+         Variant2 = if_else(Rand_date > as.Date("2022-01-01") & Rand_date < as.Date("2022-04-01") & is.na(Variant2), "BA.1", Variant2),
+         test_regeneron = if_else(Rand_date > as.Date("2022-10-01") & is.na(Variant2), "G446S", test_regeneron),
+         Variant2 = if_else(Rand_date > as.Date("2022-10-01") & is.na(Variant2), "BA.2.75", Variant2),
+         test_evusheld = if_else(is.na(test_evusheld) & Variant2 %in% c("BA.1", "BA.2.75"), "R346* or K444*", test_evusheld),
+         test_evusheld = if_else(is.na(test_evusheld) & Variant2 %in% c("BA.5"), "F486* and (R346* or K444*)", test_evusheld),
+         test_regeneron = if_else(is.na(test_regeneron) & Variant2 %in% c("BA.5"), "Wildtype", test_regeneron)
+  ) 
+
+#impute IgG
+Res_monoclonal_antibodies <- Res_monoclonal_antibodies %>%
+  mutate(Baseline_log_IgG = if_else(is.na(Baseline_log_IgG),
+                                    Res_monoclonal_antibodies %>% filter(Timepoint_ID==0, Rand_date > as.Date('2022-04-01')) %>% distinct(ID, .keep_all = T) %>%
+                                      summarise(mean_baseline_IgG = mean(Baseline_log_IgG, na.rm = T)) %>% as.numeric(),
+                                    Baseline_log_IgG
+  ))
+write.table(x = Res_monoclonal_antibodies, file = '../Analysis_Data/Monoclonal_antibodies_analysis.csv', row.names = F, sep=',', quote = F)
+
+IDs <- Res_monoclonal_antibodies %>% select(ID) %>% as.vector() %>% unlist() %>% unique()
+#Temperature data
+write.table(x = fever_data %>% filter(Label %in% IDs), file = '../Analysis_Data/Monoclonal_antibodies_fever_analysis.csv', row.names = F, sep=',', quote = F)
+#Symptom data
+write.table(x = symptom_data %>% filter(Label %in% IDs), file = '../Analysis_Data/Monoclonal_antibodies_symptom_analysis.csv', row.names = F, sep=',', quote = F)
+
+# iTT population
+Res %>% filter(
+  (Country == 'Thailand' & Rand_date < '2022-10-21 00:00:00') |
+    (((Country=='Thailand' & Rand_date > "2022-09-01 00:00:00" & Rand_date < "2023-07-05 00:00:00")| 
+      (Country=='Brazil' & Rand_date > "2022-10-31 00:00:00" & Rand_date < "2023-01-04 00:00:00")))
+) %>%
+  distinct(ID, .keep_all = T) %>%
+  group_by(Trt) %>%
+  summarise(n = n())
+  
+a <- screen_failure %>%
+  filter(
+    (Site == 'th001' & scrdat < as.Date('2022-10-21 00:00:00')) |
+      (((Site=='th001' & scrdat > as.Date("2022-09-01 00:00:00") & scrdat < as.Date("2023-07-05 00:00:00"))| 
+          (Site=='br003' & scrdat > as.Date("2022-10-31 00:00:00") & scrdat < as.Date("2023-01-04 00:00:00"))))
+  ) %>%
+  filter(scrpassed == 0)
+
+a  %>%
+  group_by(reason_failure) %>%
+  summarise(n = n())
+    
