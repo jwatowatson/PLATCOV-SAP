@@ -456,7 +456,9 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Output: Interested only .tsv file
 # Need Nextclade installed
 ##------------------------------------------------------------------------------------
-<<<<<<< HEAD
+# re_download = F
+# system_used = "mac"
+
 re_download = T
 system_used = "windows"
 
@@ -465,10 +467,6 @@ Sys.setenv(PATH = paste("C:\\Users\\Kantapong\\Tools\\NextClade", Sys.getenv("PA
 
 # Check if nextclade is now recognized
 system("nextclade --version")  # should output "nextclade 3.15.3"
-=======
-re_download = F
-system_used = "windows"
->>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"

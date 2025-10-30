@@ -51,22 +51,15 @@ All paths are local
 Set up analysis
 
 ```{r load_data}
-<<<<<<< HEAD
 intervention = 'interim_all';ref_arm = 'No study drug'
-=======
- intervention = 'interim_all';ref_arm = 'No study drug'
->>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 # intervention = 'MolPax_combination'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
 # intervention = 'Metformin';ref_arm = 'No study drug'  
-<<<<<<< HEAD
 #intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
 #intervention = 'Atilotrelvir';ref_arm='Nirmatrelvir'
-=======
-# intervention = 'Unblinded_meta';ref_arm = 'No study drug'  
->>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
+# intervention = 'Unblinded_meta';ref_arm = 'No study drug'
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 

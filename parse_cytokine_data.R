@@ -1,6 +1,5 @@
 library(tidyverse)
 library(gridExtra)
-<<<<<<< HEAD
 library(pheatmap)
 library(scales)
 library(dplyr)
@@ -58,7 +57,7 @@ if (create_df) {
     write_csv(x = control_data, file = 'Analysis_Data/cytokine_control_merged.csv')
     write_csv(x = dat_all, file = 'Analysis_Data/cytokine_data_merged.csv')
     write_csv(x = standards_data, file = 'Analysis_Data/cytokine_standards_merged.csv')
-=======
+}
 
 ff_combo1 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 1/',pattern = '*.csv',full.names = T, recursive = T)
 ff_combo2 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 2/',pattern = '*.csv',full.names = T, recursive = T)
@@ -107,7 +106,6 @@ for(cytk in cytokines){
   print(grid.arrange(h1,p1))
   cytk_dat %>% filter(is.na(Concentration)) %>% ggplot(aes(x=Signal))+
     geom_histogram() + scale_x_log10(limits=c(1,10^6))
->>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 }
 
 # CBC Data
@@ -248,10 +246,7 @@ dat_all$ID=NA
 for (i in 1:nrow(dat_all)) {
   xx = strsplit(x = dat_all$Sample[i],split = '-',fixed = T)[[1]]
   dat_all$ID[i] = paste(xx[1],xx[2],xx[3],sep = '-')
-<<<<<<< HEAD
   #dat_all$ID[i] = paste(xx[1],xx[2],xx[4],sep = '-')
-=======
->>>>>>> 4e43bb9dc7604923d8afb8d66e2ddb95903e7b86
 }
 
 all_cytokines <- unique(dat_all$Assay)
