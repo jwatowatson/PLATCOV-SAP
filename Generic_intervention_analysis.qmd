@@ -56,16 +56,11 @@ intervention = 'interim_all';ref_arm = 'No study drug'
 # intervention = 'Nitazoxanide'; ref_arm = 'No study drug'
 # intervention = 'Hydroxychloroquine';ref_arm = 'No study drug'  
 #intervention = 'Ensitrelvir'; ref_arm = 'Nirmatrelvir'
-<<<<<<< Updated upstream
 # intervention = 'Metformin';ref_arm = 'No study drug'  
 #intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
 #intervention = 'Atilotrelvir';ref_arm='Nirmatrelvir'
 # intervention = 'Unblinded_meta';ref_arm = 'No study drug'
-=======
-#intervention = 'Metformin';ref_arm = 'No study drug'  
-#intervention = 'Atilotrelvir';ref_arm = 'No study drug'
-intervention = 'Atilotrelvir';ref_arm = 'Nirmatrelvir'
->>>>>>> Stashed changes
+
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
