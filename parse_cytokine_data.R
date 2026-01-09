@@ -59,9 +59,9 @@ if (create_df) {
     write_csv(x = standards_data, file = 'Analysis_Data/cytokine_standards_merged.csv')
 }
 
-ff_combo1 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 1/',pattern = '*.csv',full.names = T, recursive = T)
-ff_combo2 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 2/',pattern = '*.csv',full.names = T, recursive = T)
-ff = c(ff_combo1, ff_combo2)
+# ff_combo1 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 1/',pattern = '*.csv',full.names = T, recursive = T)
+# ff_combo2 = list.files(path='~/Dropbox/MORU/Adaptive Trials/PLATCOV_Analysis/Data/Cytokines/Viral combo 2/',pattern = '*.csv',full.names = T, recursive = T)
+# ff = c(ff_combo1, ff_combo2)
 dat = list()
 for(i in 1:length(ff)){
   plate_name = gsub(pattern = ',',replacement = '',x = readLines(ff[i], n = 1))
@@ -82,7 +82,7 @@ standards_data = dat_all %>% filter(!is.na(Concentration))
 
 dat_all = dat_all %>% filter(Sample!='Control', is.na(Concentration))
 write_csv(x = dat_all, file = 'Analysis_Data/cytokine_data_merged.csv')
-write_csv(x = dat_all, file = 'Analysis_Data/cytokine_standards_merged.csv')
+write_csv(x = standards_data, file = 'Analysis_Data/cytokine_standards_merged.csv')
 
 
 pdf('cytokine_data.pdf')
@@ -264,20 +264,24 @@ dup_IDs <- dat_all %>%
 #  distinct(ID, day)
 
 # Remove those rows
+# 508 patients in total
 dat_all <- dat_all %>%
   anti_join(dup_IDs, by = c("ID", "day"))
 
 # Retrieve PCR data (PLATCOV) and join with our cytokine data
 # Nirmatrelvir+Ritonavir // NSD // Regeneron
+# 324 patients
 pcr_dat_plt = read_csv('Analysis_Data/interim_all_analysis.csv')
 pcr_dat_plt = pcr_dat_plt %>% filter(ID %in% dat_all$ID)#, Time<5)
 
 # Retrieve PCR data (AD ASTRA) and join with our cytokine data
 # Favipiravir // NSD
+# 184 patients
 pcr_dat_ast = read_csv('../ADASTRA-SAP/Analysis_Data/interim_all_analysis.csv')
 pcr_dat_ast = pcr_dat_ast %>% filter(ID %in% dat_all$ID)#, Time<5)
 
 # Retrieve leukocytes data for PLATCOV and AD ASTRA
+# Also 324 for platcov and 184 for ad astra --> no missing
 cbc_data_plt = cbc_data_plt %>% filter(Label %in% dat_all$ID)
 cbc_data_ast = cbc_data_ast %>% filter(Label %in% dat_all$ID)
 
@@ -363,13 +367,43 @@ cbc_data_plt <- cbc_data_plt %>%
     )
   )
 
+# Convert dat_all_plt into wide format
+# capture all assays so pivot_wider creates ALL columns even if absent in some groups
+all_assays <- sort(unique(dat_all_plt$Assay))
+
+dat_all_plt_wide <- dat_all_plt %>%
+  mutate(Assay = factor(Assay, levels = all_assays)) %>%  # force full set of assay cols
+  pivot_wider(
+    id_cols     = c(ID, day_num),
+    names_from  = Assay,
+    values_from = `Calc. Concentration`,
+    values_fill = NA_real_,
+    # if duplicates exist per (ID, day_num, Assay), pick a rule:
+    values_fn   = list(`Calc. Concentration` = ~ dplyr::first(na.omit(.x)))
+  )
+
 # Join dat_all_plt with pcr_dat_plt and cbc_data_plt by ID and Label
-# will only contain D0, D3
+# left join on pcr_dat_plt which offers fullest history
 pcr_cytokine_dat_plt <- pcr_dat_plt %>%
-  inner_join(dat_all_plt, by = c("ID" = "ID", "Timepoint_ID" = "day_num"),
-             relationship = "many-to-many") %>% 
-  inner_join(cbc_data_plt, by = c("ID" = "Label", "Timepoint_ID" = "day_num"),
-             relationship = "many-to-many")
+  left_join(
+    dat_all_plt_wide,
+    by = c("ID" = "ID", "Timepoint_ID" = "day_num"),
+    relationship = "many-to-many"
+  ) %>%
+  left_join(
+    cbc_data_plt,
+    by = c("ID" = "Label", "Timepoint_ID" = "day_num"),
+    relationship = "many-to-many"
+  )
+
+
+
+# inner join; will only contain D0, D3
+# pcr_cytokine_dat_plt <- pcr_dat_plt %>%
+#   inner_join(dat_all_plt, by = c("ID" = "ID", "Timepoint_ID" = "day_num"),
+#              relationship = "many-to-many") %>% 
+#   inner_join(cbc_data_plt, by = c("ID" = "Label", "Timepoint_ID" = "day_num"),
+#              relationship = "many-to-many")
 
 # 50 patients are lost due to cytokine samples not obtained on D0-D5
 lost_plt_ids <- setdiff(
@@ -423,13 +457,47 @@ cbc_data_ast <- cbc_data_ast %>%
     )
   )
 
+# Pivot cytokine from ad astra into wide format
+all_assays <- sort(unique(dat_all_ast$Assay))
+
+dat_all_ast_wide <- dat_all_ast %>%
+  mutate(Assay = factor(Assay, levels = all_assays)) %>%  # force full set of assay cols
+  pivot_wider(
+    id_cols     = c(ID, day_num),
+    names_from  = Assay,
+    values_from = `Calc. Concentration`,
+    values_fill = NA_real_,
+    # if duplicates exist per (ID, day_num, Assay), pick a rule:
+    values_fn   = list(`Calc. Concentration` = ~ dplyr::first(na.omit(.x)))
+  )
+
+# Join dat_all_ast with pcr_dat_ast and cbc_data_ast by ID and Label
+# left join on pcr_dat_ast which offers fullest history
+pcr_cytokine_dat_ast <- pcr_dat_ast %>%
+  left_join(
+    dat_all_ast_wide,
+    by = c("ID" = "ID", "Timepoint_ID" = "day_num"),
+    relationship = "many-to-many"
+  ) %>%
+  left_join(
+    cbc_data_ast,
+    by = c("ID" = "Label", "Timepoint_ID" = "day_num"),
+    relationship = "many-to-many"
+  )
+
+ast_fever <- read_csv("D:/Data-Work/ADASTRA-SAP/Analysis_Data/interim_all_fever_analysis.csv")
+ast_symp <- read_csv("D:/Data-Work/ADASTRA-SAP/Analysis_Data/interim_all_symptom_analysis.csv")
+
+ast_fever <- ast_fever %>% select(Label, visit, fut_dat, fut_tim, fut_temp, temp_time)
+ast_symp <- ast_symp %>% select(-Trial, -Site)
+
 # Join dat_all_ast with pcr_dat_ast and cbc_data_ast by ID and Label
 # will only contain D0, D3
-pcr_cytokine_dat_ast <- pcr_dat_ast %>%
-  inner_join(dat_all_ast, by = c("ID" = "ID", "Timepoint_ID" = "day_num"),
-             relationship = "many-to-many") %>% 
-  inner_join(cbc_data_ast, by = c("ID" = "Label", "Timepoint_ID" = "day_num"),
-             relationship = "many-to-many")
+# pcr_cytokine_dat_ast <- pcr_dat_ast %>%
+#   inner_join(dat_all_ast, by = c("ID" = "ID", "Timepoint_ID" = "day_num"),
+#              relationship = "many-to-many") %>% 
+#   inner_join(cbc_data_ast, by = c("ID" = "Label", "Timepoint_ID" = "day_num"),
+#              relationship = "many-to-many")
 
 # No patients are lost due to cytokine samples not obtained on D0-D5
 lost_ast_ids <- setdiff(
