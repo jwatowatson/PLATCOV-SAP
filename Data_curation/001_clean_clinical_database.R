@@ -3,15 +3,14 @@
 ##*********************************************************
 ######################################################################
 # 1. Loading clinical data
-load_clinical_data <- function(query_file_name){
+load_clinical_data <- function(query_file_name, data_name){
   # load the clinical data
-  data_name <- 'InterimEnrolment.dta'
-  file_name <- paste0(prefix_dropbox, "/Data/", data_name)
-  version <- file.info(file_name)$mtime %>% as.Date()
-  today <- Sys.Date()
-  clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
-  clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1 # Manual correction
+  file_name <- paste0(prefix_dropbox, "/Data/PLATCOV_22Sep2025/", data_name)
+  version <- file.info(file_name)$mtime %>% as.Date() # File creation time
+  today <- Sys.Date() # Today's date
+  clin_data = haven::read_dta(file_name)
   
+  # Log metadata header about query and dataset
   sink(query_file_name, split = T)
   writeLines(sprintf('PLATCOV data queries\nData: %s\nReceived date: %s\nQuery date: %s\n',
                      data_name,
@@ -19,6 +18,7 @@ load_clinical_data <- function(query_file_name){
                      today)
   )
   sink()
+  
   writeLines('##########################################################################')
   write.table(data.frame('Dataset' = "",
                          'CRF form/Topic' = "",
@@ -29,34 +29,85 @@ load_clinical_data <- function(query_file_name){
   
   # Check if a patient has multiple screening ID
   duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
-  duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
-  duplicated_clin_data
-  duplicated_clin_queries <- clin_data %>%
-    filter(Label %in% duplicated_clin_data) %>%
-    select(Site, scrid, Label)
+  duplicated_clin_queries <- duplicated_clin_data[duplicated_clin_data != ""]
   
-  if(nrow(duplicated_clin_queries)>0){
-  duplicated_clin_queries <- data.frame("Dataset" = data_name, #Dataset
+  if(length(duplicated_clin_queries)>0){
+    # Extract rows corresponding to duplicated patient Labels
+    duplicated_clin_queries <- clin_data %>%
+      filter(Label %in% duplicated_clin_data) %>%
+      select(Site, scrid, Label)
+    
+    # Prepare the query table to log the issue
+    duplicated_clin_queries <- data.frame("Dataset" = data_name, #Dataset
                                         "CRF form/Topic" = "Screening", #'CRF form/Topic'
                                         "Question/Variable" = "Screening Number", #'Question/Variable'
                                         "Query message" = "Different Screening Number ('scrid') were assigned to the same Subject Number ('Label')", #'Query message'
                                         duplicated_clin_queries #'Example data'
-  ) %>%
-    mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
-  
-  write.table(duplicated_clin_queries, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
-  cat("\n", file=query_file_name, append=TRUE)
-  
-  writeLines(sprintf('Query: %s\n',
-                     duplicated_clin_queries$X....[1])
-  )
-  print(duplicated_clin_queries[,-(1:4)])
-  writeLines('##########################################################################')
-  
-  # manual correction for duplications
-  ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
-  if(length(ind>0)){clin_data <- clin_data[-ind,]}
+    ) %>%
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    write.table(duplicated_clin_queries, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    writeLines(sprintf('Query: %s\n',
+                       duplicated_clin_queries$X....[1])
+    )
+    print(duplicated_clin_queries[,-(1:4)])
+    
+    writeLines('##########################################################################')
+    
+    # manual correction for duplications: remove entries with duplicated Label and missing scrdat
+    ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
+    if(length(ind>0)){clin_data <- clin_data[-ind,]}
   }
+  
+  # Check if patient IDs are not in the correct format (expecting 3-digit suffix if not 3 digits yet, else leave as is)
+  ID_format_failed <- clin_data %>%
+    mutate(Label2 = Label) %>%
+    separate(col = Label2, into = c("Col1", "Col2", "Col3"), sep = "-", fill = "right") %>%
+    select(Label, Col1, Col2, Col3) %>%
+    filter(!is.na(Col3) & Col1 == "PLT") %>%
+    mutate(
+      Col3_len = nchar(Col3),
+      # Pad only if suffix has fewer than 3 digits
+      Col4 = if_else(Col3_len < 3, str_pad(Col3, 3, pad = "0"), Col3),
+      Label_new = paste(Col1, Col2, Col4, sep = "-")
+    ) %>%
+    # Keep only those that changed
+    filter(Label != Label_new)
+  
+  if (nrow(ID_format_failed) > 0) {
+    # Extract rows corresponding to incorrect patient IDs
+    queries <- ID_format_failed
+    
+    # Prepare the query table to log the issue
+    queries <- data.frame("Dataset" = data_name, #Dataset
+                          "CRF form/Topic" = "Baseline", #'CRF form/Topic'
+                          "Question/Variable" = "Participant number", #'Question/Variable'
+                          "Query message" = paste0(nrow(queries), " has incorrect Label format"), #'Query message'
+                          queries$Label #'Example data'
+    ) %>%
+      # For better readability: in the query file, blank repeated metadata rows after the first row
+      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+    
+    # Append the queries to the query file
+    write.table(queries, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+    cat("\n", file=query_file_name, append=TRUE)
+    
+    # Print the query message and example data to console/log
+    writeLines(sprintf('Query: %s\n',
+                       queries$Query.message[1])
+    )
+    print(queries[,-(1:4)] %>% as.character())
+    
+    writeLines('##########################################################################')
+  }
+  
+  # Manual correction: update Labels in clin_data with corrected IDs
+  for (i in 1:nrow(ID_format_failed)) {
+    clin_data$Label[clin_data$Label == ID_format_failed$Label[i]] <- ID_format_failed$Label_new[i]
+  }
+  
   return(clin_data)
 }
 
@@ -73,6 +124,7 @@ check_MACRO_clinical_database <- function(clin_data, rand_app_data){
                      )
              )
   
+  # Log how many baseline entries are pending and list the corresponding patient IDs
   IDs_pending <- rand_app_data %>% filter(!on_macro_yn) %>% pull(ID)
   writeLines(sprintf('Baseline data entries for the following %s patients are pending:',
                      length(IDs_pending)))
@@ -82,9 +134,11 @@ check_MACRO_clinical_database <- function(clin_data, rand_app_data){
   return(IDs_pending)
 }
 
+
 # -----------------------------------------------------------------------------------------------
 # 3. Check screening failure (Clinical data) + Exporting the patients who failed the screening
-check_screen_failure <- function(clin_data, query_file_name){
+# Note: Deprecated because right now clin_data already contains all patients who passed screening
+check_screen_failure <- function(clin_data, query_file_name, data_name){
   # check screening failure
   writeLines('### Clinical database: Checking missing screening failure information:')
   missing_scr_failure <- clin_data %>% filter(is.na(scrpassed)) %>% select(scrid, Label, scrpassed)
@@ -118,14 +172,16 @@ check_screen_failure <- function(clin_data, query_file_name){
   return(clin_data)
 }
 
+
 # -----------------------------------------------------------------------------------------------
 # 4. Check randomisation information
-check_randomisation_info <- function(clin_data, query_file_name){
+check_randomisation_info <- function(clin_data, query_file_name, data_name){
   # Passed the screening but not randomised?
   writeLines('### Clinical database: Checking randomisation information:')
-  ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
+  
+  ind <- is.na(clin_data$rangrp) & clin_data$Label == ""
   ind[is.na(ind)] <- T
-  passed_no_arms <- clin_data[ind,] %>% select(scrid, scrpassed, Label, rangrp) 
+  passed_no_arms <- clin_data[ind,] %>% select(scrid, Label, rangrp) 
   
   if(sum(ind) > 0){
     passed_no_arms <- data.frame("Dataset" = data_name, #Dataset
@@ -143,43 +199,47 @@ check_randomisation_info <- function(clin_data, query_file_name){
                        passed_no_arms$Query.message[1])
     )
     print(passed_no_arms[,-(1:4)])
+    
+    # Exclude screening success patients who are not assigned treatment from the clinical dataset
     clin_data <- clin_data[!ind,]
     writeLines('##########################################################################')
-    
   }
   
-  # Not randomised with missing screening status?
-  writeLines('### Clinical database: Checking randomisation information:')
-  ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
-  ind[is.na(ind)] <- T
-  
-  missing_screening_status <- clin_data[ind,] %>% select(scrid, scrpassed, Label, rangrp)
-  
-  if(sum(ind) > 0){
-    missing_screening_status <- data.frame("Dataset" = data_name, #Dataset
-                                           "CRF form/Topic" = "Screening", #'CRF form/Topic'
-                                           "Question/Variable" = "Eligibility", #'Question/Variable'
-                                           "Query message" = paste0(nrow(missing_screening_status), " does not have the information on screening status (scrpassed = NA) and not randomised (rangrp = NA)"), #'Query message'
-                                           missing_screening_status #'Example data'
-    ) %>%
-      mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
-    
-    write.table(missing_screening_status, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
-    cat("\n", file=query_file_name, append=TRUE)
-    
-    writeLines(sprintf('Query: %s\n',
-                       missing_screening_status$Query.message[1])
-    )
-    print(missing_screening_status[,-(1:4)])
-    clin_data <- clin_data[!ind,]
-    writeLines('##########################################################################')
-    
-  }
+  # # Not randomised with missing screening status?
+  # writeLines('### Clinical database: Checking randomisation information:')
+  # ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
+  # ind[is.na(ind)] <- T
+  # 
+  # missing_screening_status <- clin_data[ind,] %>% select(scrid, scrpassed, Label, rangrp)
+  # 
+  # if(sum(ind) > 0){
+  #   missing_screening_status <- data.frame("Dataset" = data_name, #Dataset
+  #                                          "CRF form/Topic" = "Screening", #'CRF form/Topic'
+  #                                          "Question/Variable" = "Eligibility", #'Question/Variable'
+  #                                          "Query message" = paste0(nrow(missing_screening_status), " does not have the information on screening status (scrpassed = NA) and not randomised (rangrp = NA)"), #'Query message'
+  #                                          missing_screening_status #'Example data'
+  #   ) %>%
+  #     mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
+  #   
+  #   write.table(missing_screening_status, query_file_name, col.names=T, sep=",", append=TRUE, row.names = F) %>% suppressWarnings()
+  #   cat("\n", file=query_file_name, append=TRUE)
+  #   
+  #   writeLines(sprintf('Query: %s\n',
+  #                      missing_screening_status$Query.message[1])
+  #   )
+  #   print(missing_screening_status[,-(1:4)])
+  #   clin_data <- clin_data[!ind,]
+  #   writeLines('##########################################################################')
+  #   
+  # }
   return(clin_data)
 }
+
+
 # -----------------------------------------------------------------------------------------------
 # 5. Check sex data
-check_sex <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
+check_sex <- function(clin_data, IDs_pending, rand_app_data, query_file_name, data_name){
+  # Convert numeric sex codes to labels
   clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
                                    from = c(1,2),
                                    to = c('Male','Female'))
@@ -205,13 +265,14 @@ check_sex <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
     print(sex_missing[,-(1:4)])
     clin_data <- clin_data[!ind,]
     writeLines('##########################################################################')
-    #manual correction
+    
+    # Manual Correction
     writeLines('### [MANUAL CORRECTIONS]: Subsequent analyses use sex information from the randomisation database')
     for(i in sex_missing$Label){clin_data$Sex[clin_data$Label == i] <- rand_app_data$sex[rand_app_data$ID == i]}
     writeLines('##########################################################################')
   }
   
-  # Mismatched Sex data?
+  # Mismatched Sex data between clin_data and rand_app_data?
   writeLines('### Clinical database: Checking mismatched sex information from Randomisation database:')
   check_data <- merge(clin_data[,c("Label", "Sex")], rand_app_data, by.y = "ID",  by.x = "Label", all.x = T)
   check_data <- check_data %>% filter(!check_data$Label %in% IDs_pending)
@@ -238,21 +299,21 @@ check_sex <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
     print(sex_mismatched[,-(1:4)])
     clin_data <- clin_data[!ind,]
     writeLines('##########################################################################')
-    #manual correction
+    # Manual Correction
     writeLines('### [MANUAL CORRECTIONS]: Subsequent analyses use sex information from the randomisation database')
     for(i in sex_mismatched$Label){clin_data$Sex[clin_data$Label == i] <- rand_app_data$sex[rand_app_data$ID == i]}
     writeLines('##########################################################################')
   }
   return(clin_data)
 }
-######################################################################
+
+
+# -----------------------------------------------------------------------------------------------
 # 6. Check age data
-check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
-  # A special case
-  clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
-  
+check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name, data_name){
   writeLines('### Clinical database: Checking missing age information:')
-  # Missing Age data?
+  
+  # Identify rows where age is missing but DOB is available
   ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
   
   writeLines('##########################################################################')
@@ -261,13 +322,15 @@ check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
     clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
   }
   
-  check_data <- merge(clin_data[,c("Label", "randat", "dob_my", "age_yr")], rand_app_data, by.y = "ID",  by.x = "Label", all.x = T)
-  check_data <- check_data %>% filter(!check_data$Label %in% IDs_pending)
+  check_data <- merge(clin_data[,c("Label", "randat", "dob_my", "age_yr")], 
+                      rand_app_data, by.y = "ID",  by.x = "Label", all.x = T) %>% 
+    filter(!Label %in% IDs_pending)
   
-  check_data$age <- floor(as.numeric(check_data$age))
+  check_data$age <- floor(as.numeric(check_data$age)) # from SHINY
   check_data$age_dob_missing <- is.na(check_data$age_yr)
   check_data$age_agree_yn <- check_data$age == check_data$age_yr
   
+  # Patients missing both age and DOB
   age_missing <- check_data %>% filter(age_dob_missing) %>% select(Label, dob_my, age_yr)
   
   if(sum(check_data$age_dob_missing) > 0){
@@ -294,10 +357,10 @@ check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
     
   }
   
-  
   # mismatched age?
   age_mismatched <- check_data %>% filter(!age_agree_yn) %>% select(Label, age_yr, age)
   colnames(age_mismatched) <- c("Label", "age_yr_MACRO", "age_yr_SHINY")
+  
   if(nrow(age_mismatched) > 0){
     age_mismatched <- data.frame("Dataset" = data_name, #Dataset
                                  "CRF form/Topic" = "Baseline", #'CRF form/Topic'
@@ -321,8 +384,10 @@ check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
     writeLines('##########################################################################')
   }
   
+  # Ensure numeric format
   clin_data$age_yr <- as.numeric(clin_data$age_yr)
   
+  # Plot diagnostic: Age vs Randomisation Date
   writeLines('### Clinical database: Checking distributions of age:')
   G <- ggplot(clin_data, aes(x = randat, y =  age_yr)) +
     geom_point(size = 3, alpha = 0.25) +
@@ -334,21 +399,27 @@ check_age <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
   
   return(clin_data)
 }
-######################################################################
+
+
+# -----------------------------------------------------------------------------------------------
 # 7. Check symptom onset data
-check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
+check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_file_name, data_name){
   writeLines('### Clinical database: Checking missing symptom onset information:')
-  ### Check if symptom onset data is missing
-  ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
-  if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 #If day is missing >>> divide hours by 24
   
+  # Check if symptom onset data is missing but hour is available >> convert hours to days
+  ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
+  if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 # divide hours by 24
+  
+  # Find patients still missing cov_sympday
   ind = is.na(clin_data$cov_sympday)
-  missing_symptom_onset <-   clin_data %>% filter(ind) %>% select(scrid, Label, cov_sympday, cov_symphr)
+  missing_symptom_onset <- clin_data %>% filter(ind) %>% select(scrid, Label, cov_sympday, cov_symphr)
+  
   if(sum(ind) > 0){
     missing_symptom_onset <- data.frame("Dataset" = data_name, #Dataset
                                         "CRF form/Topic" = "Baseline", #'CRF form/Topic'
                                         "Question/Variable" = "COVID-19 history", #'Question/Variable'
-                                        "Query message" = paste0(nrow(missing_symptom_onset), " patients have missing information on the duration of COVID-19 (cov_sympday OR cov_symphr)."), #'Query message'
+                                        "Query message" = paste0(nrow(missing_symptom_onset), 
+                                                                 " patients have missing information on the duration of COVID-19 (cov_sympday OR cov_symphr)."), #'Query message'
                                         missing_symptom_onset #'Example data'
     ) %>%
       mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
@@ -367,16 +438,16 @@ check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_fil
     clin_data$cov_sympday[clin_data$Label %in% missing_symptom_onset$Label] <- 2
   }
   
-  
-  #Check if symptom onset is greater than 4 days
+  # Check if symptom onset is greater than 4 days
   ind_4days <- clin_data$cov_sympday > 4 & !is.na(clin_data$cov_sympday)
-  long_symptom_onset <-   clin_data[ind_4days,] %>% select(Label, cov_sympday)
+  long_symptom_onset <- clin_data[ind_4days,] %>% select(Label, cov_sympday)
   
   if(sum(ind_4days) > 0){
     long_symptom_onset <- data.frame("Dataset" = data_name, #Dataset
                                      "CRF form/Topic" = "Baseline", #'CRF form/Topic'
                                      "Question/Variable" = "COVID-19 history", #'Question/Variable'
-                                     "Query message" = paste0(nrow(long_symptom_onset), " patients duration of COVID-19 symptom greater than 4 days, which should not be enrolled. Please check with the source document."), #'Query message'
+                                     "Query message" = paste0(nrow(long_symptom_onset), 
+                                                              " patients duration of COVID-19 symptom greater than 4 days, which should not be enrolled. Please check with the source document."), #'Query message'
                                      long_symptom_onset #'Example data'
     ) %>%
       mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
@@ -394,6 +465,7 @@ check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_fil
     clin_data$cov_sympday[clin_data$Label %in% long_symptom_onset$Label] <- 4
   }
   
+  # Diagnostic plot
   writeLines('### Clinical database: Checking distributions of symptom onset:')
   G <- ggplot(clin_data, aes(x = randat, y = as.numeric(cov_sympday))) +
     geom_point(size = 3, alpha = 0.25) +
@@ -406,14 +478,17 @@ check_symptom_onset <- function(clin_data, IDs_pending, rand_app_data, query_fil
   return(clin_data)
 }
 
-######################################################################
+
+# -----------------------------------------------------------------------------------------------
 # 8. Check weight and height data
-check_weight_height <- function(clin_data, IDs_pending, query_file_name){
+check_weight_height <- function(clin_data, IDs_pending, query_file_name, data_name){
   writeLines('### Clinical database: Checking missing data for weight/height:')
-  ### Check if weight and height data are missing
+  
+  # Calculate BMI
   clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
   clin_data$Weight = clin_data$weight
   
+  # Check if BMI is missing, which implies weight or height data are missing
   ind_weight_height_missing <- is.na(clin_data$BMI)
   weight_height_missing <- clin_data %>% filter(ind_weight_height_missing) %>% select(Label, weight, height)
   
@@ -421,7 +496,8 @@ check_weight_height <- function(clin_data, IDs_pending, query_file_name){
     weight_height_missing <- data.frame("Dataset" = data_name, #Dataset
                                         "CRF form/Topic" = "Baseline", #'CRF form/Topic'
                                         "Question/Variable" = "Demographics", #'Question/Variable'
-                                        "Query message" = paste0(nrow(weight_height_missing), " patients have missing information on weight OR height."), #'Query message'
+                                        "Query message" = paste0(nrow(weight_height_missing), 
+                                                                 " patients have missing information on weight OR height."), #'Query message'
                                         weight_height_missing #'Example data'
     ) %>%
       mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
@@ -437,7 +513,7 @@ check_weight_height <- function(clin_data, IDs_pending, query_file_name){
     
   }
   
-  ### Checking outliers for weight/height
+  # Identify BMI outliers (more than 6 SD away from mean)
   writeLines('### Clinical database: Checking outliers for weight/height:')
   weight_height_outlier <- abs(clin_data$BMI - mean(clin_data$BMI, na.rm = T)) > 6*sd(clin_data$BMI, na.rm = T) & !is.na(clin_data$BMI)
   weight_height_outlier <- clin_data %>% filter(weight_height_outlier) %>% select(Label, BMI, weight, height)
@@ -446,7 +522,8 @@ check_weight_height <- function(clin_data, IDs_pending, query_file_name){
     weight_height_outlier <- data.frame("Dataset" = data_name, #Dataset
                                         "CRF form/Topic" = "Baseline", #'CRF form/Topic'
                                         "Question/Variable" = "Demographics", #'Question/Variable'
-                                        "Query message" = paste0(nrow(weight_height_outlier), " patients have unusual weight OR height. Likely that the data are switched. Please check."), #'Query message'
+                                        "Query message" = paste0(nrow(weight_height_outlier), 
+                                                                 " patients have unusual weight OR height. Likely that the data are switched. Please check."), #'Query message'
                                         weight_height_outlier #'Example data'
     ) %>%
       mutate(across(1:4, ~ if_else(row_number() > 1, "", .)))
@@ -470,6 +547,7 @@ check_weight_height <- function(clin_data, IDs_pending, query_file_name){
     writeLines('##########################################################################')
   }
   
+  # Plot BMI distribution over randomisation date
   writeLines('### Clinical database: Checking distributions of BMI after manual corrections:')
   G <- ggplot(clin_data, aes(x = randat, y =  BMI)) +
     geom_point(size = 3, alpha = 0.25) +
@@ -477,14 +555,16 @@ check_weight_height <- function(clin_data, IDs_pending, query_file_name){
     xlab("Randomisation date") +
     ylab("BMI") 
   print(G)
-  return(clin_data)
   
+  return(clin_data)
 }
 
-######################################################################
+
+# -----------------------------------------------------------------------------------------------
 #9. Check randomisation date and time data
-check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
+check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data, query_file_name, data_name){
   writeLines('### Clinical database: Checking randomisation date and time:')
+  
   ### Check if randomisation date and time is correct
   clin_data$Rand_date_time = NA
   for(i in 1:nrow(clin_data)){
@@ -502,6 +582,7 @@ check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data, query_fi
   rand_date_missing <- is.na(check_data$Rand_date_time)
   rand_date_missing <- check_data %>% filter(rand_date_missing, !ID %in% IDs_pending) %>% select(ID, randat, rantim)
   colnames(rand_date_missing)[1] <- "Label"
+  
   if(nrow(rand_date_missing) > 0){
     rand_date_missing <- data.frame("Dataset" = data_name, #Dataset
                                     "CRF form/Topic" = "Baseline", #'CRF form/Topic'
@@ -547,20 +628,22 @@ check_rand_date_time <- function(clin_data, IDs_pending, rand_app_data, query_fi
     writeLines('### [MANUAL CORRECTIONS]: Using randomisation date and time from randomisation database in further analyses')
     for(i in randtime_diff_exceed$ID){clin_data$Rand_date_time[clin_data$Label == i] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == i]}
     writeLines('##########################################################################')
-    
   }
+  
   return(clin_data)
 }
-######################################################################
+
+
+# -----------------------------------------------------------------------------------------------
 #10. Check randomisation arms
-check_rand_arms <- function(clin_data, IDs_pending, rand_app_data, query_file_name){
+check_rand_arms <- function(clin_data, IDs_pending, rand_app_data, query_file_name, data_name){
   clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
   clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
   clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
   
   check_data <- merge(rand_app_data, clin_data, by.x = "ID",  by.y = "Label", all.x = T)
   
-  ### Check missing data
+  # Check missing data
   writeLines('### Clinical database: Checking if randomisation arms are missing:')
   rangrp_missing <- is.na(check_data$rangrp)
   rangrp_missing <- check_data %>% filter(rangrp_missing) %>% select(ID, rangrp) %>% rename("Label" = "ID")

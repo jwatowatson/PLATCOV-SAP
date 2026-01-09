@@ -32,7 +32,7 @@ sessionInfo()
 rstan_options(auto_write = TRUE)
 ## parameters for the analysis
 Dmax = 5.5
-RUN_MODELS = F
+RUN_MODELS = T
 add_epoch = T # if using non-concurrent controls
 nperiod <- 10 # for temporal random effects 
 
@@ -60,6 +60,7 @@ intervention = 'interim_all';ref_arm = 'No study drug'
 #intervention = 'Atilotrelvir';ref_arm = 'No study drug'  
 #intervention = 'Atilotrelvir';ref_arm='Nirmatrelvir'
 # intervention = 'Unblinded_meta';ref_arm = 'No study drug'
+
 
 if(ref_arm=='No study drug'){
   study_threshold = 1.2 # 
@@ -122,6 +123,13 @@ timeline
 
 ```{r}
 plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention,  "_recruitment.png")
+
+plot_dir <- dirname(plot_name)
+
+# Create directory if it doesn't exist
+if (!dir.exists(plot_dir)) {
+  dir.create(plot_dir, recursive = TRUE)
+}
 
 if(intervention == "interim_all"){wd = 12; ht = 6}else{wd = 10; ht = 5}
 
@@ -325,7 +333,7 @@ G1_box
 ```{r}
 plot_name <- paste0(prefix_dropbox, "/Interim Analysis Reports/Plots_", interim_version, "/", intervention, ".png")
 
-png(plot_name, width = 8, height = 5, unit = 'in', res = 300)
+png(plot_name, width = 8, height = 5, unit = 'in', res = 500)
 G1_box
 dev.off()
 ```

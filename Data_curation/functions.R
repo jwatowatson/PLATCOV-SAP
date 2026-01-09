@@ -25,8 +25,9 @@ prep_tempdata <- function(temp_data, clin_data){
                     by = c('Label','Site'),
                     all.x=T)
   
-  temp_data = temp_data %>% filter(!is.na(scrpassed), 
-                                   scrpassed==1, 
+  # No longer have scrpassed column so remove these filter conditions
+  temp_data = temp_data %>% filter(#!is.na(scrpassed), 
+                                   #scrpassed==1, 
                                    !is.na(randat),
                                    rantim != '') %>% 
     ungroup() %>%
@@ -108,10 +109,11 @@ extract_FASTA <- function(){
 
 get_nanopore_data = function(prefix_analysis_data, run_python=T, system_used){
   if(run_python){  
-    if(system_used == "windows"){
+    # if(system_used == "windows"){
+    if(system_used == "mac"){
       shell(run_lineage_classifier) 
     } else {
-      system("python3 lineage_classifier.py --input ../Analysis_Data/lineages.csv --output ../Analysis_Data/newlineagelist.csv")
+      system("python lineage_classifier.py --input ../Analysis_Data/lineages.csv --output ../Analysis_Data/newlineagelist.csv")
     }
   }
   

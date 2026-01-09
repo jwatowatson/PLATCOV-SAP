@@ -12,256 +12,370 @@ library(anytime)
 ##Define user folder path####################################################################
 source('user_settings.R')
 source('functions.R')
+
+source('000_load_randomisation_database.R')
+source('001_clean_clinical_database.R')
+source('002_clean_vaccine_database.R')
 #############################################################################################
+##***********************************************************
 ##******************** Randomisation data *******************
-rand_app_data = rbind(read.csv(paste0(prefix_drop_rand, "/data-TH1.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-BR3.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-LA08.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-NP03.csv")),
-                      read.csv(paste0(prefix_drop_rand, "/data-PK01.csv"))) %>%
-  filter(!is.na(Treatment))
-# Defining patient ID
-rand_app_data$ID = paste0('PLT-', gsub(x = rand_app_data$site,pattern = '0',replacement = ''),
-                          '-',
-                          stringr::str_pad(rand_app_data$randomizationID, 3, pad = "0"))
-# Converting time zones
-rand_app_data$Site = plyr::mapvalues(x = rand_app_data$site, from=c('TH1','BR3','LA08','PK01'),to=c('th001','br003',"la008","pk001"))
-rand_app_data$Rand_Time = as.POSIXct(rand_app_data$Date, format = '%a %b %d %H:%M:%S %Y',tz = 'GMT')
-rand_app_data$tzone = plyr::mapvalues(x = rand_app_data$site,
-                                      from = c('TH1','LA08','BR3','PK01', 'NP03'),
-                                      to = c('Asia/Bangkok','Asia/Bangkok','America/Sao_Paulo','Asia/Karachi', 'Asia/Kathmandu'))
-rand_app_data$Rand_Time_TZ=NA
-for(i in 1:nrow(rand_app_data)){
-  rand_app_data$Rand_Time_TZ[i] = as.character(with_tz(rand_app_data$Rand_Time[i], tzone = rand_app_data$tzone[i]))
+##***********************************************************
+# 000 Randomization database
+write_itt <- F
+dt_interim <- "2025-08-14" # Date of writing interim analysis to create randomisation dataframe
+rand_app_data <- load_randomisation_data()
+
+if (write_itt) {
+  write.table(
+    rand_app_data %>%
+      filter(as.Date(Rand_Time_TZ) < as.Date(dt_interim)),
+    file = paste0(prefix_analysis_data, "/Data_curation/ITT_population_all.csv"),
+    sep = ",",
+    row.names = FALSE,
+    col.names = TRUE
+  )
 }
 
 # Creating a checklist dataset
 # NOTE: Sites TH57 and TH58 did not use app so cannot cross check
-check_data <- data.frame(rand_app_data[,c("ID", "sex", "age", "Rand_Time_TZ", "Treatment")])
-
+check_data <- data.frame(rand_app_data[, c("ID", "sex", "age", "Rand_Time_TZ", "Treatment")])
+#############################################################################################
 ##*********************************************************
 ##******************* Clinical database *******************
 ##*********************************************************
-##########  --- Clinical data --- ########## 
-clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimEnrolment.dta"))
-clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
+# 001 Clinical database
+query_file_name <- 'Queries/01_PLATCOV_queries_clinical_database.csv'
+data_name <- 'InterimEnrolment.dta'
 
-duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
-duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
+# NOTE TO SELF: CHANGE file_name inside this helper function in the other module later
+clin_data <- load_clinical_data(query_file_name, data_name)
+IDs_pending <- check_MACRO_clinical_database(clin_data, rand_app_data)
 
-for(i in duplicated_clin_data){
-  writeLines(sprintf('This patient %s is duplicated with different screening IDs: %s', 
-                     i,
-                     paste(clin_data$scrid[clin_data$Label == i], collapse = " ")))
-}
+# Deprecated because clin_data contains all patients who passed screening, no need to check screening failure
+# clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
+# clin_data <- check_screen_failure(clin_data, query_file_name, query_file_name_orig, data_name, data_name2)
 
-#Manual correction
-ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
+clin_data <- check_randomisation_info(clin_data, query_file_name, data_name)
+clin_data <- check_sex(clin_data, IDs_pending, rand_app_data, query_file_name, data_name)
 
-if(length(ind>0)){clin_data <- clin_data[-ind,]}
-##########  Extract screening failure data
-table(clin_data$scrpassed, useNA = 'ifany')
-ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
-screen_failure =
-  clin_data[ind,
-            c("Trial","Site","scrid","scrdat",
-              "scrpassed","reason_failure","scrnote")]
-
-screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
-write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
-
-if(length(ind > 0)){ clin_data <- clin_data[!ind,]}
-
-##########  Preparing data for checking
-### Check which screening status are missing
-ind <- is.na(clin_data$scrpassed) & clin_data$Label %in% check_data$ID
-writeLines(sprintf('This patient %s does not have the information about screening status', 
-                   clin_data$scrid[ind]))
-check_data$screen_status_missing <- (check_data$ID %in% clin_data$Label[ind])
-
-
-##### removing patients that not randomised
-ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
-ind[is.na(ind)] <- T
-writeLines(sprintf('This patient %s passed the screening but never randomised', 
-                   clin_data$scrid[ind]))
-          
-ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
-writeLines(sprintf('This patient %s does not have the information on screening status and not randomised', 
-                   clin_data$scrid[ind]))
-clin_data <- clin_data[!ind,]
-
-clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
-                from = c(1,2),
-                to = c('Male','Female'))
-### Check which patients has the data entered to the clinical database
-check_data$on_macro_yn <- (check_data$ID %in% clin_data$Label)
-writeLines(sprintf('Patient %s has no data on MACRO', 
-                   check_data$ID[!check_data$on_macro_yn]))
-### Check if sex information matched between randomisation database and clinical database
-check_data <- merge(check_data, clin_data[,c("Label", "Sex")], by.x = "ID",  by.y = "Label", all.x = T)
-check_data$sex_agree_yn <- check_data$sex == check_data$Sex
-writeLines(sprintf('Patient %s has mismatched sex data: MACRO = %s and Randomisation = %s', 
-                   check_data$ID[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
-                   check_data$Sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
-                   check_data$sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)]))
-writeLines(sprintf('Patient %s has missing sex data on MACRO', 
-                   check_data$ID[is.na(check_data$sex_agree_yn)]))
-sex_problem_ID <- check_data$ID[check_data$on_macro_yn & (!check_data$sex_agree_yn | is.na(check_data$sex_agree_yn))]
-
-# Using sex information from randomisation database in further analyses
-for(i in 1:length(sex_problem_ID)){
-  clin_data$Sex[which(clin_data$Label == sex_problem_ID[i])] <- rand_app_data$sex[rand_app_data$ID == sex_problem_ID[i]]
-}
-writeLines("Frequency of sex in all clinical data after corrections:")
-print(table(clin_data$Sex, useNA = "always"))
-check_data <- check_data[,-which(names(check_data) %in% c("sex", "Sex"))]
-### Check if age information matched between randomisation database and clinical database
+# Contain special case in site TH57 (manual data input)
 clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
+clin_data <- check_age(clin_data, IDs_pending, rand_app_data, query_file_name, data_name)
+clin_data <- check_symptom_onset(clin_data, IDs_pending, rand_app_data, query_file_name, data_name)
+clin_data <- check_weight_height(clin_data, IDs_pending, query_file_name, data_name)
+clin_data <- check_rand_date_time(clin_data, IDs_pending, rand_app_data, query_file_name, data_name)
+clin_data <- check_rand_arms(clin_data, IDs_pending, rand_app_data, query_file_name, data_name)
 
-ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
-# calculate age at randomisation 
-for(i in which(ind)){
-  clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
-}
+write.csv(clin_data, "../Analysis_Data/cleaned_clinical_data.csv", row.names = F)
+# clin_data = haven::read_dta(paste0(prefix_dropbox, "/Data/PLATCOV_22Sep2025/InterimEnrolment.dta"))
+# clin_data$scrpassed[clin_data$Label=='PLT-TH1-557']=1
+# 
+# duplicated_clin_data <- names(which(table(clin_data$Label) > 1))
+# duplicated_clin_data <- duplicated_clin_data[duplicated_clin_data != ""]
+# 
+# if (length(duplicated_clin_data) > 0) {
+#   for (i in duplicated_clin_data) {
+#     writeLines(sprintf('This patient %s is duplicated with different screening IDs: %s', 
+#                        i,
+#                        paste(clin_data$scrid[clin_data$Label == i], collapse = " ")))
+#   }
+# }
+# 
+# #Manual correction
+# ind <- which(clin_data$Label %in% duplicated_clin_data & is.na(clin_data$scrdat))
+# 
+# if(length(ind>0)){clin_data <- clin_data[-ind,]}
 
-check_data <- merge(check_data, clin_data[,c("Label", "dob_my", "age_yr")], by.x = "ID",  by.y = "Label", all.x = T)
-check_data$age <- floor(as.numeric(check_data$age))
-check_data$age_dob_missing <- is.na(check_data$age_yr)
-check_data$age_agree_yn <- check_data$age == check_data$age_yr
+# ##########  Extract screening failure data
+# table(clin_data$scrpassed, useNA = 'ifany')
+# ind = !is.na(clin_data$scrpassed) & clin_data$scrpassed==0
+# screen_failure =
+#   clin_data[ind,
+#             c("Trial","Site","scrid","scrdat",
+#               "scrpassed","reason_failure","scrnote")]
+# 
+# screen_failure$reason_failure = sjlabelled::as_character(screen_failure$reason_failure)
+# write.csv(x = screen_failure, file = '../Analysis_Data/screening_failure.csv')
+# 
+# if(length(ind > 0)){ clin_data <- clin_data[!ind,]}
 
-writeLines(sprintf('Patient %s has no age or birth date information on MACRO', 
-                   check_data$ID[check_data$age_dob_missing]))
-writeLines(sprintf('Patient %s has mismatched age data: MACRO = %s and Randomisation = %s', 
-                   check_data$ID[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
-                   check_data$age_yr[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
-                   check_data$age[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)]
-                   ))
-# Using age information from randomisation database in further analyses
-age_yr_missing <- clin_data$Label[is.na(clin_data$age_yr)]
-if(length(age_yr_missing)>0){
-for(i in 1:length(age_yr_missing)){
-    clin_data$age_yr[clin_data$Label == age_yr_missing[i]] <- check_data$age[check_data$ID == age_yr_missing[i]]
-}
-}
-check_data <- check_data[,-which(names(check_data) %in% c("dob_my", "age_yr", "age"))]
+# ##########  Preparing data for checking
+# ### Check which screening status are missing
+# ind <- is.na(clin_data$scrpassed) & clin_data$Label %in% check_data$ID
+# writeLines(sprintf('This patient %s does not have the information about screening status', 
+#                    clin_data$scrid[ind]))
+# check_data$screen_status_missing <- (check_data$ID %in% clin_data$Label[ind])
+# 
+# 
+# ##### removing patients that not randomised
+# ind <- clin_data$scrpassed == 1 & is.na(clin_data$rangrp) & clin_data$Label == ""
+# ind[is.na(ind)] <- T
+# writeLines(sprintf('This patient %s passed the screening but never randomised', 
+#                    clin_data$scrid[ind]))
+#           
+# ind <- (is.na(clin_data$scrpassed) | clin_data$scrpassed == 1) & is.na(clin_data$rangrp) & clin_data$Label == ""
+# writeLines(sprintf('This patient %s does not have the information on screening status and not randomised', 
+#                    clin_data$scrid[ind]))
+# clin_data <- clin_data[!ind,]
 
-### Check if symptom onset data is missing
-ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
-if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 #If day is missing >>> divide hours by 24
+# clin_data$Sex <- plyr::mapvalues(x = as.numeric(clin_data$sex),
+#                 from = c(1,2),
+#                 to = c('Male','Female'))
+# ### Check which patients has the data entered to the clinical database
+# check_data$on_macro_yn <- (check_data$ID %in% clin_data$Label)
+# writeLines(sprintf('Patient %s has no data on MACRO', 
+#                    check_data$ID[!check_data$on_macro_yn]))
+# ### Check if sex information matched between randomisation database and clinical database
+# check_data <- merge(check_data, clin_data[,c("Label", "Sex")], by.x = "ID",  by.y = "Label", all.x = T)
+# check_data$sex_agree_yn <- check_data$sex == check_data$Sex
+# writeLines(sprintf('Patient %s has mismatched sex data: MACRO = %s and Randomisation = %s', 
+#                    check_data$ID[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
+#                    check_data$Sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)],
+#                    check_data$sex[!check_data$sex_agree_yn & !is.na(check_data$sex_agree_yn)]))
+# writeLines(sprintf('Patient %s has missing sex data on MACRO', 
+#                    check_data$ID[is.na(check_data$sex_agree_yn)]))
+# sex_problem_ID <- check_data$ID[check_data$on_macro_yn & (!check_data$sex_agree_yn | is.na(check_data$sex_agree_yn))]
+# 
+# # Using sex information from randomisation database in further analyses
+# for(i in 1:length(sex_problem_ID)){
+#   clin_data$Sex[which(clin_data$Label == sex_problem_ID[i])] <- rand_app_data$sex[rand_app_data$ID == sex_problem_ID[i]]
+# }
+# writeLines("Frequency of sex in all clinical data after corrections:")
+# print(table(clin_data$Sex, useNA = "always"))
+# check_data <- check_data[,-which(names(check_data) %in% c("sex", "Sex"))]
+### Check if age information matched between randomisation database and clinical database
+# clin_data$age_yr[clin_data$Label=='PLT-TH57-002'] = 21 # A special case
+# 
+# ind = is.na(clin_data$age_yr) & !is.na(clin_data$dob_my)
+# # calculate age at randomisation 
+# for(i in which(ind)){
+#   clin_data$age_yr[i] = trunc((parse_date_time(clin_data$dob_my[i], c('%d/%m/%Y', '%m/%Y')) %--% parse_date_time(clin_data$randat[i],  c('%Y-%m-%d')))/years(1))
+# }
+# 
+# check_data <- merge(check_data, clin_data[,c("Label", "dob_my", "age_yr")], by.x = "ID",  by.y = "Label", all.x = T)
+# check_data$age <- floor(as.numeric(check_data$age))
+# check_data$age_dob_missing <- is.na(check_data$age_yr)
+# check_data$age_agree_yn <- check_data$age == check_data$age_yr
+# 
+# writeLines(sprintf('Patient %s has no age or birth date information on MACRO', 
+#                    check_data$ID[check_data$age_dob_missing]))
+# writeLines(sprintf('Patient %s has mismatched age data: MACRO = %s and Randomisation = %s', 
+#                    check_data$ID[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
+#                    check_data$age_yr[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)],
+#                    check_data$age[!check_data$age_agree_yn & !is.na(check_data$age_agree_yn)]
+#                    ))
+# # Using age information from randomisation database in further analyses
+# age_yr_missing <- clin_data$Label[is.na(clin_data$age_yr)]
+# if(length(age_yr_missing)>0){
+# for(i in 1:length(age_yr_missing)){
+#     clin_data$age_yr[clin_data$Label == age_yr_missing[i]] <- check_data$age[check_data$ID == age_yr_missing[i]]
+# }
+# }
+# check_data <- check_data[,-which(names(check_data) %in% c("dob_my", "age_yr", "age"))]
 
-ind = is.na(clin_data$cov_sympday)
+# ### Check if symptom onset data is missing
+# ind = !is.na(clin_data$cov_symphr) & is.na(clin_data$cov_sympday)
+# if(sum(ind)>0) clin_data$cov_sympday[ind] = clin_data$cov_symphr[ind]/24 #If day is missing >>> divide hours by 24
+# 
+# ind = is.na(clin_data$cov_sympday)
+# 
+# check_data <- merge(check_data, clin_data[,c("Label", "cov_sympday")], by.x = "ID",  by.y = "Label", all.x = T)
+# check_data$sympday_missing <- is.na(check_data$cov_sympday)
+# writeLines(sprintf('Patient %s has no information on symptom onset (in hours or days) on MACRO', 
+#                    check_data$ID[check_data$sympday_missing]))
+# 
+# # Assign Symptomatic day = 2 for missing data 
+# clin_data$cov_sympday[is.na(clin_data$cov_sympday)]=2
+# 
+# check_data$sympday_exceed_yn <- check_data$cov_sympday > 4
+# writeLines(sprintf('Patient %s has symptom onset greater than 4 days, which is %s days', 
+#                    check_data$ID[check_data$sympday_exceed_yn & !is.na(check_data$sympday_exceed_yn)],
+#                    check_data$cov_sympday[check_data$sympday_exceed_yn & !is.na(check_data$sympday_exceed_yn)]
+#                    ))
+# 
+# check_data <- check_data[,-which(names(check_data) %in% c("cov_sympday"))]
+# clin_data$cov_sympday[clin_data$cov_sympday > 4] <- 4
 
-check_data <- merge(check_data, clin_data[,c("Label", "cov_sympday")], by.x = "ID",  by.y = "Label", all.x = T)
-check_data$sympday_missing <- is.na(check_data$cov_sympday)
-writeLines(sprintf('Patient %s has no information on symptom onset (in hours or days) on MACRO', 
-                   check_data$ID[check_data$sympday_missing]))
+# ### Check if weight and height data are missing
+# clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
+# clin_data$Weight = clin_data$weight
+# 
+# check_data <- merge(check_data, clin_data[,c("Label", "BMI", "weight", "height")], by.x = "ID",  by.y = "Label", all.x = T)
+# check_data$weight_height_missing <- is.na(check_data$BMI)
+# writeLines(sprintf('Patient %s has no information on weights and heights on MACRO', 
+#                    check_data$ID[check_data$weight_height_missing]))
+# 
+# check_data$weight_height_outlier <- abs(check_data$BMI - mean(check_data$BMI, na.rm = T)) > 3*sd(check_data$BMI, na.rm = T)
+# writeLines(sprintf('Weights/heights of patient %s is outlier: Weight = %s kg; Height = %s cm', 
+#                    check_data$ID[check_data$weight_height_outlier & !(check_data$weight_height_missing)],
+#                    check_data$weight[check_data$weight_height_outlier & !(check_data$weight_height_missing)],
+#                    check_data$height[check_data$weight_height_outlier & !(check_data$weight_height_missing)]
+#                    ))
+# 
+# # Manual correction 
+# clin_data$Weight[clin_data$Label == "PLT-TH1-1341"] <- clin_data$height[clin_data$Label == "PLT-TH1-1341"]
+# clin_data$height[clin_data$Label == "PLT-TH1-1341"] <- clin_data$weight[clin_data$Label == "PLT-TH1-1341"]
+# clin_data$BMI[clin_data$Label == "PLT-TH1-1341"] <- clin_data$Weight[clin_data$Label == "PLT-TH1-1341"]/(clin_data$height[clin_data$Label == "PLT-TH1-1341"]/100)^2
+# 
+# check_data <- check_data[,-which(names(check_data) %in% c("BMI", "weight", "height"))]
 
-# Assign Symptomatic day = 2 for missing data 
-clin_data$cov_sympday[is.na(clin_data$cov_sympday)]=2
+# ### Check if randomisation date and time is correct
+# clin_data$Rand_date_time = NA
+# for(i in 1:nrow(clin_data)){
+#   if(!is.na(clin_data$randat[i]) & !is.na(clin_data$rantim[i])){
+#     clin_data$Rand_date_time[i] = as.character(as.POSIXct(paste(clin_data$randat[i],
+#                                                                 clin_data$rantim[i], sep=' ')))
+#   }
+# }
+# 
+# check_data <- merge(check_data, clin_data[,c("Label", "Rand_date_time")], by.x = "ID",  by.y = "Label", all.x = T)
+# check_data$Rand_diffs = apply(check_data[,c('Rand_date_time','Rand_Time_TZ')],1, function(x) difftime(x[1], x[2], units='mins'))
+# 
+# # Check missing data
+# check_data$rand_date_missing <- is.na(check_data$Rand_date_time)
+# writeLines(sprintf('Patient %s has no information on randomisation date and time on MACRO', 
+#                    check_data$ID[check_data$rand_date_missing]))
+# 
+# # Check if the differences is more than 5 mins between both databases
+# check_data$randtime_diff_exceed <- check_data$Rand_diffs > 5
+# writeLines(sprintf('More than 5 min difference in rand time for %s, MACRO = %s and Randomisation = %s: (%s mins)', 
+#                    check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
+#                    check_data$Rand_date_time[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
+#                    check_data$Rand_Time_TZ[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
+#                    round(check_data$Rand_diffs[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],1)
+# ))
+# ID_exceed_5mins <- check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)]
+# 
+# # Using randomisation date and time from randomisation database in further analyses
+# for(i in 1:length(ID_exceed_5mins)){
+#   clin_data$Rand_date_time[which(clin_data$Label == ID_exceed_5mins[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_exceed_5mins[i]]
+# }
+# 
+# ID_missing_date <- check_data$ID[is.na(check_data$Rand_date_time)]
+# for(i in 1:length(ID_missing_date)){
+#   clin_data$Rand_date_time[which(clin_data$Label == ID_missing_date[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_missing_date[i]]
+# }
+# 
+# check_data <- check_data[,-which(names(check_data) %in% c("Rand_date_time", "Rand_Time_TZ", "Rand_diffs"))]
 
-check_data$sympday_exceed_yn <- check_data$cov_sympday > 4
-writeLines(sprintf('Patient %s has symptom onset greater than 4 days, which is %s days', 
-                   check_data$ID[check_data$sympday_exceed_yn & !is.na(check_data$sympday_exceed_yn)],
-                   check_data$cov_sympday[check_data$sympday_exceed_yn & !is.na(check_data$sympday_exceed_yn)]
-                   ))
+# ### Check if randomisation arms matched 
+# clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
+# clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
+# clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
+# 
+# check_data <- merge(check_data, clin_data[,c("Label", "rangrp")], by.x = "ID",  by.y = "Label", all.x = T)
+# check_data$rangrp_missing <- is.na(check_data$rangrp)
+# writeLines(sprintf('Patient %s has no information on treatment arms on MACRO', 
+#                    check_data$ID[check_data$rangrp_missing]))
+# 
+# check_data$rangrp_agree <- check_data$Treatment == check_data$rangrp
+# writeLines(sprintf('Randomisation data mismatched for %s, MACRO = %s and Randomisation = %s', 
+#                    check_data$ID[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)],
+#                    check_data$Rand_date_time[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)],
+#                    check_data$Rand_Time_TZ[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)]
+# ))
+# 
+# colnames(clin_data)
+# 
+# ID_missing_trt <- check_data$ID[is.na(check_data$rangrp)]
+# for(i in 1:length(ID_missing_date)){
+#   clin_data$rangrp[which(clin_data$Label == ID_missing_trt[i])] <- rand_app_data$Treatment[rand_app_data$ID == ID_missing_trt[i]]
+# }
+# 
+# check_data <- check_data[,-which(names(check_data) %in% c("rangrp"))]
 
-check_data <- check_data[,-which(names(check_data) %in% c("cov_sympday"))]
-clin_data$cov_sympday[clin_data$cov_sympday > 4] <- 4
+#############################################################################################
+##*********************************************************
+##******************* Vaccine database *******************
+##*********************************************************
+# # 002 Vaccine database
+# query_file_name <- 'Queries/02_PLATCOV_queries_vaccination_database.csv'
+# 
+# # vacc_data <- load_vaccine_data(rand_app_data, query_file_name)
+# 
+# ##########  --- Vaccine data --- ########## 
+# vacc_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVaccine.dta"))
+# 
+# writeLines(sprintf('No vaccine data for %s',
+#                    clin_data$Label[!clin_data$Label %in% vacc_data$Label]))
+# check_data$vacc_data_missing <- !check_data$ID %in% vacc_data$Label
+# 
+# ## Some cleaning
+# # vacc_data$vc_name = tolower(vacc_data$vc_name)
+# writeLines('\nVaccine names before cleaning:')
+# print(table(vacc_data$vc_name))
+# 
+# clin_data$Any_dose = NA
+# clin_data$N_dose = NA
+# clin_data$Time_since_last_dose = NA
+# clin_data$N_dose_mRNA = NA
+# clin_data$Any_dose_mRNA = NA
+# clin_data$Any_dose_mRNA = NA
+# 
+# vacc_date_cols = grep('dos', colnames(vacc_data))
+# ## find any bad dates
+# all_dates = unlist(unique(vacc_data[, vacc_date_cols]))
+# all_dates = all_dates[all_dates!='']
+# bad_dates = all_dates[which(is.na(parse_date_time(all_dates, orders = 'dmy')))]
+# vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(intersect(x ,bad_dates))>0))]
+# 
+# vac_error_ID <- NULL
+# time_vac_negative_ID <- NULL
+# clin_data$Label[!clin_data$Label %in% vacc_data$Label]
+# for(i in 1:nrow(clin_data)){
+#   id = clin_data$Label[i]
+#   ind = which(vacc_data$Label==id)
+#   vacc_data[vacc_data$Label == id, ]
+#   
+#   ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer','Chula-Cov19'))
+#   
+#   vac_dates = unlist(unique(vacc_data[ind, vacc_date_cols]))
+#   vac_dates = vac_dates[vac_dates!='']
+#   
+#   vac_dates_mRNA = unlist(unique(vacc_data[ind_mRNA, vacc_date_cols]))
+#   vac_dates_mRNA = vac_dates_mRNA[vac_dates_mRNA != '']
+#   clin_data$N_dose[i] = length(vac_dates)
+#   clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
+#   
+#   clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
+#   clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
+#   
+#   if(clin_data$Any_dose[i]=='Yes'){
+#     most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
+#     clin_data$Time_since_last_dose[i] =  
+#       difftime(clin_data$Rand_date_time[i],
+#                most_recent_vac,units = 'days')
+#     if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
+#       time_vac_negative_ID <- c(time_vac_negative_ID, id)}
+#   }
+#   if(!is.na(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) ) & any(vacc_data$vc_statyn[vacc_data$Label == id] == 1)  & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
+# }
+# # No vaccine date details
+# writeLines(sprintf('Patient %s flagged to have vaccinated but no details',
+#                    vac_error_ID))
+# check_data$vacc_detail_missing <- check_data$ID %in% vac_error_ID
+# # Negative time since last vaccination
+# writeLines(sprintf('Patient %s has a negative time since last vaccination',
+#                    time_vac_negative_ID))
+# check_data$vacc_time_negative <- check_data$ID %in% time_vac_negative_ID
 
-### Check if weight and height data are missing
-clin_data$BMI = clin_data$weight/(clin_data$height/100)^2
-clin_data$Weight = clin_data$weight
+#############################################################################################
+##*********************************************************
+##******************* Temperature database *******************
+##*********************************************************
+# 002 Temperature database
+query_file_name <- 'Queries/02_PLATCOV_queries_temperature_database.csv'
+data_name <- 'InterimFUTemp.dta'
 
-check_data <- merge(check_data, clin_data[,c("Label", "BMI", "weight", "height")], by.x = "ID",  by.y = "Label", all.x = T)
-check_data$weight_height_missing <- is.na(check_data$BMI)
-writeLines(sprintf('Patient %s has no information on weights and heights on MACRO', 
-                   check_data$ID[check_data$weight_height_missing]))
+# # NOTE TO SELF: CHANGE file_name inside this helper function in the other module later
+# vacc_data <- load_vaccine_data(rand_app_data, query_file_name, data_name)
 
-check_data$weight_height_outlier <- abs(check_data$BMI - mean(check_data$BMI, na.rm = T)) > 3*sd(check_data$BMI, na.rm = T)
-writeLines(sprintf('Weights/heights of patient %s is outlier: Weight = %s kg; Height = %s cm', 
-                   check_data$ID[check_data$weight_height_outlier & !(check_data$weight_height_missing)],
-                   check_data$weight[check_data$weight_height_outlier & !(check_data$weight_height_missing)],
-                   check_data$height[check_data$weight_height_outlier & !(check_data$weight_height_missing)]
-                   ))
 
-# Manual correction 
-clin_data$Weight[clin_data$Label == "PLT-TH1-1341"] <- clin_data$height[clin_data$Label == "PLT-TH1-1341"]
-clin_data$height[clin_data$Label == "PLT-TH1-1341"] <- clin_data$weight[clin_data$Label == "PLT-TH1-1341"]
-clin_data$BMI[clin_data$Label == "PLT-TH1-1341"] <- clin_data$Weight[clin_data$Label == "PLT-TH1-1341"]/(clin_data$height[clin_data$Label == "PLT-TH1-1341"]/100)^2
 
-check_data <- check_data[,-which(names(check_data) %in% c("BMI", "weight", "height"))]
-
-### Check if randomisation date and time is correct
-clin_data$Rand_date_time = NA
-for(i in 1:nrow(clin_data)){
-  if(!is.na(clin_data$randat[i]) & !is.na(clin_data$rantim[i])){
-    clin_data$Rand_date_time[i] = as.character(as.POSIXct(paste(clin_data$randat[i],
-                                                                clin_data$rantim[i], sep=' ')))
-  }
-}
-
-check_data <- merge(check_data, clin_data[,c("Label", "Rand_date_time")], by.x = "ID",  by.y = "Label", all.x = T)
-check_data$Rand_diffs = apply(check_data[,c('Rand_date_time','Rand_Time_TZ')],1, function(x) difftime(x[1], x[2], units='mins'))
-
-# Check missing data
-check_data$rand_date_missing <- is.na(check_data$Rand_date_time)
-writeLines(sprintf('Patient %s has no information on randomisation date and time on MACRO', 
-                   check_data$ID[check_data$rand_date_missing]))
-
-# Check if the differences is more than 5 mins between both databases
-check_data$randtime_diff_exceed <- check_data$Rand_diffs > 5
-writeLines(sprintf('More than 5 min difference in rand time for %s, MACRO = %s and Randomisation = %s: (%s mins)', 
-                   check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
-                   check_data$Rand_date_time[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
-                   check_data$Rand_Time_TZ[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],
-                   round(check_data$Rand_diffs[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)],1)
-))
-ID_exceed_5mins <- check_data$ID[check_data$randtime_diff_exceed & !is.na(check_data$randtime_diff_exceed)]
-
-# Using randomisation date and time from randomisation database in further analyses
-for(i in 1:length(ID_exceed_5mins)){
-  clin_data$Rand_date_time[which(clin_data$Label == ID_exceed_5mins[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_exceed_5mins[i]]
-}
-
-ID_missing_date <- check_data$ID[is.na(check_data$Rand_date_time)]
-for(i in 1:length(ID_missing_date)){
-  clin_data$Rand_date_time[which(clin_data$Label == ID_missing_date[i])] <- rand_app_data$Rand_Time_TZ[rand_app_data$ID == ID_missing_date[i]]
-}
-
-check_data <- check_data[,-which(names(check_data) %in% c("Rand_date_time", "Rand_Time_TZ", "Rand_diffs"))]
-
-### Check if randomisation arms matched 
-clin_data$rangrp = sjlabelled::as_character(clin_data$rangrp)
-clin_data$rangrp[clin_data$rangrp=='Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir'
-clin_data$rangrp[clin_data$rangrp=='Molnupiravir and Nirmatrelvir/ritonavir']='Nirmatrelvir + Ritonavir + Molnupiravir'
-
-check_data <- merge(check_data, clin_data[,c("Label", "rangrp")], by.x = "ID",  by.y = "Label", all.x = T)
-check_data$rangrp_missing <- is.na(check_data$rangrp)
-writeLines(sprintf('Patient %s has no information on treatment arms on MACRO', 
-                   check_data$ID[check_data$rangrp_missing]))
-
-check_data$rangrp_agree <- check_data$Treatment == check_data$rangrp
-writeLines(sprintf('Randomisation data mismatched for %s, MACRO = %s and Randomisation = %s', 
-                   check_data$ID[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)],
-                   check_data$Rand_date_time[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)],
-                   check_data$Rand_Time_TZ[!check_data$rangrp_agree & !is.na(check_data$rangrp_missing)]
-))
-
-colnames(clin_data)
-
-ID_missing_trt <- check_data$ID[is.na(check_data$rangrp)]
-for(i in 1:length(ID_missing_date)){
-  clin_data$rangrp[which(clin_data$Label == ID_missing_trt[i])] <- rand_app_data$Treatment[rand_app_data$ID == ID_missing_trt[i]]
-}
-
-check_data <- check_data[,-which(names(check_data) %in% c("rangrp"))]
-
-##########  --- Temperature data --- ########## 
 temp_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimFUTemp.dta"))
 # Check if there is any patients without follow-up temperature data
 check_data$fu_temp_yn <- check_data$ID %in% temp_data$Label
-writeLines(sprintf('Patient %s has no information on follow-up tempearature dataset', 
+writeLines(sprintf('Patient %s has no information on follow-up temperature dataset', 
                    check_data$ID[!check_data$fu_temp_yn]))
 
 x1 = temp_data[, c('Site', 'Label', 'visit', 'fut_amdat', "fut_amtim", "fut_amtemp")] #Morning
@@ -455,18 +569,12 @@ Sample_ID_map <- extract_FASTA() # This function compiled all FASTA files and sa
 # Input: Combined Fasta file "all_fasta.fasta"; SARS-CoV-2 data (downloaded from Nextclade: https://docs.nextstrain.org/projects/nextclade/en/stable/user/nextclade-cli/usage.html)
 # Output: Interested only .tsv file
 # Need Nextclade installed
+
+# This script is to temporarily add the directory which stores Nextclade.exe to R's PATH
+Sys.setenv(PATH = paste("C:/Users/ASUS/Tools/Nextclade", Sys.getenv("PATH"), sep = ";"))
 ##------------------------------------------------------------------------------------
-# re_download = F
-# system_used = "mac"
-
-re_download = T
-system_used = "windows"
-
-# Add NextClade to PATH temporarily for this R session
-Sys.setenv(PATH = paste("C:\\Users\\Kantapong\\Tools\\NextClade", Sys.getenv("PATH"), sep = ";"))
-
-# Check if nextclade is now recognized
-system("nextclade --version")  # should output "nextclade 3.15.3"
+re_download = F
+system_used = "windows" # i.e "windows", "mac"
 
 if(re_download){
   arg_download <- "nextclade dataset get --name nextstrain/sars-cov-2/wuhan-hu-1/orfs --output-dir ../Analysis_Data/Nextclade/sars-cov-2"
@@ -525,7 +633,7 @@ check_data <- check_data[,-which(names(check_data) %in% c('Variant'))]
 
 table(check_data$Variant_missing)
 #######################################################################################################################
-##########  --- Vaccine data --- ########## 
+##########  --- Vaccine data --- ##########
 vacc_data = haven::read_dta(paste0(prefix_dropbox, "/Data/InterimVaccine.dta"))
 
 writeLines(sprintf('No vaccine data for %s',
@@ -554,67 +662,34 @@ vacc_data$Label[which(apply(vacc_data[, vacc_date_cols], 1, function(x) length(i
 vac_error_ID <- NULL
 time_vac_negative_ID <- NULL
 clin_data$Label[!clin_data$Label %in% vacc_data$Label]
-
 for(i in 1:nrow(clin_data)){
   id = clin_data$Label[i]
   ind = which(vacc_data$Label==id)
-  
-  # Check if patient has no vaccine records
-  if(length(ind) == 0) {
-    clin_data$N_dose[i] = NA
-    clin_data$Any_dose[i] = NA
-    clin_data$N_dose_mRNA[i] = NA
-    clin_data$Any_dose_mRNA[i] = NA
-    clin_data$Time_since_last_dose[i] = NA
-    next
-  }
-  
   vacc_data[vacc_data$Label == id, ]
-  
+
   ind_mRNA = which(vacc_data$Label==id & vacc_data$vc_name %in% c('Moderna','Pfizer','Chula-Cov19'))
-  
+
   vac_dates = unlist(unique(vacc_data[ind, vacc_date_cols]))
   vac_dates = vac_dates[vac_dates!='']
-  
+
   vac_dates_mRNA = unlist(unique(vacc_data[ind_mRNA, vacc_date_cols]))
   vac_dates_mRNA = vac_dates_mRNA[vac_dates_mRNA != '']
-  
-  # Check vc_statyn status
-  has_vaccination_status = any(vacc_data$vc_statyn[vacc_data$Label == id] == 1, na.rm = TRUE)
-  
-  if(has_vaccination_status && length(vac_dates) == 0) {
-    # Patient marked as vaccinated but no date details
-    clin_data$Any_dose[i] = 'Yes'
-    clin_data$N_dose[i] = NA
-    clin_data$Time_since_last_dose[i] = NA
-  } else {
-    clin_data$N_dose[i] = length(vac_dates)
-    clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
-    
-    if(clin_data$Any_dose[i]=='Yes'){
-      most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
-      clin_data$Time_since_last_dose[i] =  
-        difftime(clin_data$Rand_date_time[i],
-                 most_recent_vac,units = 'days')
-      if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
-        time_vac_negative_ID <- c(time_vac_negative_ID, id)}
-    }
+  clin_data$N_dose[i] = length(vac_dates)
+  clin_data$Any_dose[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose[i]>0)]
+
+  clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
+  clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
+
+  if(clin_data$Any_dose[i]=='Yes'){
+    most_recent_vac = max(parse_date_time(vac_dates, orders = 'dmy'))
+    clin_data$Time_since_last_dose[i] =
+      difftime(clin_data$Rand_date_time[i],
+               most_recent_vac,units = 'days')
+    if(clin_data$Time_since_last_dose[i] < 0 & !is.na(clin_data$Time_since_last_dose[i])){
+      time_vac_negative_ID <- c(time_vac_negative_ID, id)}
   }
-  
-  # Handle mRNA vaccines similarly
-  has_mRNA_vaccination_status = any(vacc_data$vc_statyn[ind_mRNA] == 1, na.rm = TRUE)
-  
-  if(has_mRNA_vaccination_status && length(vac_dates_mRNA) == 0) {
-    clin_data$Any_dose_mRNA[i] = 'Yes'
-    clin_data$N_dose_mRNA[i] = NA
-  } else {
-    clin_data$N_dose_mRNA[i] = length(vac_dates_mRNA)
-    clin_data$Any_dose_mRNA[i] = c('No','Yes')[1+as.numeric(clin_data$N_dose_mRNA[i]>0)]
-  }
-  
   if(!is.na(any(vacc_data$vc_statyn[vacc_data$Label == id] == 1) ) & any(vacc_data$vc_statyn[vacc_data$Label == id] == 1)  & (length(vac_dates) == 0)){vac_error_ID <- c(vac_error_ID, id)}
 }
-
 # No vaccine date details
 writeLines(sprintf('Patient %s flagged to have vaccinated but no details',
                    vac_error_ID))
@@ -668,9 +743,15 @@ for(i in 1:length(fnames)){
   # read in file
   temp = readr::read_csv(fnames[i],col_types = my_specs)
   
-  # Normalize column names if necessary
-  if('Lab Lot no.' %in% names(temp)){
-    names(temp)[names(temp) == 'Lab Lot no.'] <- 'Lot no.'
+  # Normalize column name if necessary
+  if("Lab Lot no." %in% names(temp)){
+    print(fnames[i])
+    names(temp)[names(temp) == "Lab Lot no."] <- "Lot no."
+  }
+  
+  if("N/S gene." %in% names(temp)){
+    print(fnames[i])
+    names(temp)[names(temp) == "N/S gene"] <- "N/S Gene"
   }
   
   # check for duplicates
@@ -714,7 +795,10 @@ sum(ind_rm)
 Res = Res[!ind_rm, ]
 
 # take out rows with no samples
-ind_rm = is.na(Res$BARCODE) &   Res$`Sample ID` == "Don't received sample"
+ind_rm = is.na(Res$BARCODE) & (Res$`Sample ID` == "Don't received sample" | 
+                               Res$`Sample ID` == "Didn't received sample" |
+                               Res$`Sample ID` == "Don't receive sample")
+
 sum(ind_rm)
 Res = Res[!ind_rm, ]
 
@@ -893,6 +977,8 @@ Res$`COLLECTION DATE`=gsub(pattern = '/', replacement = '-',x = Res$`COLLECTION 
 Res$`COLLECTION DATE`=gsub(pattern = 'Sept', replacement = 'Sep',x = Res$`COLLECTION DATE`,
                            fixed = T,ignore.case = F)
 
+# NEED TO FIGURE OUT WHERE Rand_date_time goes
+# OK I figure it out Nov 11 2025 while prepping for Tim, vaccination database must be read last (per current workflow)
 for(i in 1:nrow(Res)){
   
   id = Res$ID[i]
@@ -1122,6 +1208,27 @@ for(bb in levels(control_dat$batch)){
   ind = control_dat$batch==bb
   lines(control_dat$CT[ind], preds[ind], col = as.numeric(control_dat$Lab[ind]=='Thailand')+1)
 }
+#Another Plot standard curve (overlay) ##########################################################################
+# Base scatter + lines
+plot(control_dat$CT, 
+     jitter(control_dat$log10_true_density), 
+     xlim = c(18, 40),
+     col = as.numeric(control_dat$Lab),  # convert factor to numeric for color index
+     pch = 16,
+     xlab = "CT",
+     ylab = "log10 True Density")
+
+for(bb in levels(control_dat$batch)) {
+  ind <- control_dat$batch == bb
+  lines(control_dat$CT[ind], preds[ind], col = as.numeric(control_dat$Lab[ind])[1])
+}
+
+# Add legend
+legend("topright",
+       legend = levels(control_dat$Lab),   # factor levels
+       col    = seq_along(levels(control_dat$Lab)), # color mapping
+       pch    = 16,
+       title  = "Lab")
 #Plot standard curve (ggplot) ############################################################################
 control_dat2 <- control_dat[1:length(preds),]
 control_dat2$preds <- preds
@@ -1187,23 +1294,93 @@ G2
 #   , rel_widths = c(9,1)
 # )
 # dev.off()
+
+G3 <- ggplot(control_dat2, aes(x = CT, y = log10_true_density, col = Lab)) +
+  theme_bw() +
+  geom_line(aes(x = CT, y = preds, group = batch), alpha = 0.5, linewidth = 0.5) +
+  scale_color_manual(values = (c("red", "black", "blue", "#CF4DCE")), name = "") +
+  geom_point(width  = 0, height = 0.05, shape = 1, alpha = 1, size = 3.5) +
+  xlab("CT values") +
+  ylab("Viral densities (log10 genomes/mL)") +
+  theme(axis.title = element_text(size = 12, face = "bold"),
+        plot.title = element_text(size = 14, face = "bold")
+  ) +
+  facet_wrap(Lab~., ncol = 4) +
+  scale_y_continuous(breaks = seq(2,10,1)) +
+  theme(plot.title = element_text(face = "bold", size = 12),
+        axis.text = element_text(size = 10),
+        strip.text = element_text(size = 10, face = "bold"))  +
+  ggtitle("Standard curves")
+G3
+
+G4 <- control_dat2 %>% ggplot(aes(x = log10_true_density, y = resid, color = Lab,
+                        group = interaction(Lab, Plate))) +
+  geom_jitter(size = 2, alpha = 0.5, width = 0.025) +
+  theme_bw() +
+  xlab("Viral densities in controls (log10 genomes/mL)") + 
+  ylab("Residuals") +
+  theme(axis.title = element_text(size = 12, face = "bold"),
+        axis.text = element_text(size = 10),
+        plot.title = element_text(size = 14, face = "bold")) +
+  scale_color_manual(values = c("red", "black", "blue", "#CF4DCE"), name = "Site") +
+  geom_hline(yintercept = 0, col = "red", linewidth = 0.75, linetype = "dashed") +
+  ylim(-1.8, 1.8) +
+  ggtitle("Residuals") +
+  facet_wrap(~Lab)
+G4
+
+# Brazil SC
+control_brazil <- control_dat2 %>% filter(Lab == "Brazil")
+
+G3_brazil <- ggplot(control_brazil, aes(x = CT, y = log10_true_density, col = Plate)) +
+  theme_bw() +
+  geom_line(aes(y = preds, group = batch), alpha = 0.5, linewidth = 0.5) +
+  geom_point(shape = 1, alpha = 1, size = 3.5) +
+  xlab("CT values") +
+  ylab("Viral densities (log10 genomes/mL)") +
+  theme(axis.title = element_text(size = 12, face = "bold"),
+        axis.text  = element_text(size = 10),
+        plot.title = element_text(size = 14, face = "bold"),
+        legend.position = "none") +   # <-- remove legend
+  scale_y_continuous(breaks = seq(2, 10, 1)) +
+  ggtitle("Standard curves (Brazil)")
+G3_brazil
+
+write.csv(control_dat2, file = paste0(prefix_analysis_data, "/Analysis_Data/SC_Platcov.csv"), row.names = F)
 ############################################################################
+setdiff(unique(Res$Plate), levels(conv_mod@frame$batch))
+setdiff(levels(conv_mod@frame$batch), unique(Res$Plate))
+sort(unique(Res$Plate))
+
+## allow.new.levels = T but was originally F need to reinvestigate
 preds_all =
   predict(conv_mod,
           newdata = data.frame(CT=Res$CT_NS, Lab=Res$Lab,
                                batch=as.factor(Res$Plate)),
-          allow.new.levels = F)
+          allow.new.levels = T)
 preds_cens =
   predict(conv_mod,
           newdata = data.frame(CT=rep(40,nrow(Res)), Lab=Res$Lab,
                                batch=as.factor(Res$Plate)),
-          allow.new.levels = F)
+          allow.new.levels = T)
+
+# preds_all =
+#   predict(conv_mod,
+#           newdata = data.frame(CT=Res$CT_NS, Lab=Res$Lab,
+#                                batch=as.factor(Res$Plate)),
+#           allow.new.levels = F)
+# preds_cens =
+#   predict(conv_mod,
+#           newdata = data.frame(CT=rep(40,nrow(Res)), Lab=Res$Lab,
+#                                batch=as.factor(Res$Plate)),
+#           allow.new.levels = F)
 
 Res$log10_viral_load = preds_all
 Res$log10_cens_vl = preds_cens
 
-Res$log10_viral_load[Res$CT_NS==40]=
-  Res$log10_cens_vl[Res$CT_NS==40]
+# idx <- which(!is.na(Res$CT_NS) & Res$CT_NS == 40)
+# Res$log10_viral_load[idx] <- Res$log10_cens_vl[idx]
+Res$log10_viral_load[Res$CT_NS==40]=Res$log10_cens_vl[Res$CT_NS==40]
 writeLines(sprintf('out of a total of %s samples, %s are below LLOQ (%s%%)',
                    nrow(Res),
                    sum(Res$CT_NS==40),
@@ -1233,6 +1410,21 @@ Res =
                             Site == 'la008' ~ 'Laos',
                             Site == 'pk001' ~ 'Pakistan'))
 
+Res_unblind <- Res %>%
+  filter(!Trt %in% c("Nirmatrelvir + Ritonavirm",
+                    "Metformin",
+                    "Atilotrelvir/ritonavir"))
+min_rand_date <- min(Res_unblind$Rand_date[Res_unblind$Trt != "no study drug"], na.rm = TRUE)
+max_rand_date <- max(Res_unblind$Rand_date[Res_unblind$Trt != "no study drug"], na.rm = TRUE)
+
+Res_within_range <- Res_unblind %>%
+  filter(Rand_date >= min_rand_date,
+         Rand_date <= max_rand_date)
+
+# Number of unique IDs
+n_unique_ids <- n_distinct(Res_within_range$ID)
+cat(sprintf("Number of patients in unblinded analysis is %s\n", n_unique_ids))
+
 ###### Write csv files
 # Overall data files
 write.table(x = control_dat, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_control_dat.csv"), row.names = F, sep=',')
@@ -1241,6 +1433,12 @@ Res = dplyr::arrange(Res, Rand_date, ID, Time)
 write.table(x = Res, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_all_analysis.csv"), row.names = F, sep=',')
 
 write.table(x = screen_failure, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_screening_dat.csv"), row.names = F, sep=',')
+
+Res_within_range = dplyr::arrange(Res_within_range, Rand_date, ID, Time)
+write.table(x = Res_within_range, file = paste0(prefix_analysis_data, "/Analysis_Data/interim_unblinded_analysis.csv"), row.names = F, sep=',')
+
+# Read file again
+# Res <- read.csv(file = paste0(prefix_analysis_data, "/Analysis_Data/interim_all_analysis.csv"))
 
 #Summarise patient number per arm
 Res %>%
@@ -1356,11 +1554,7 @@ Res_REGN = merge(Res_REGN, regeneron_mutations, by = 'ID', all.x = T)
 Res_REGN = merge(Res_REGN, evusheld_mutations, by = 'ID', all.x = T)
 Res_REGN <- merge(Res_REGN, baseline_serology_data, by = "ID", all.x = T)
 
-Res_REGN %>%
-  distinct(ID, .keep_all = T) %>%
-  group_by(Variant) %>%
-  summarise(n = n()) %>%
-  mutate(N = sum(n))
+
 
 
 #impute variants
@@ -1500,25 +1694,14 @@ write.table(x = symptom_REGN, file = '../Analysis_Data/REGN_symptom_analysis.csv
 
 #************************* Paxlovid v No study drug - recent data only *************************#
 #* Thailand only - this is used for internal analyses
-Res_Paxlovid_recent =
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
-                 Rand_date > "2023-02-24 00:00:00" & Rand_date < "2024-01-01 00:00:00",
-                 Country %in% c('Thailand')) %>%
-  arrange(Rand_date, ID, Time) %>% ungroup()
-
-write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
-
-
-# For JID letter
-Res_Paxlovid_recent2 =
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
-                 Rand_date >= "2024-01-01 00:00:00" & Rand_date < "2025-01-01 00:00:00",
-                 Country %in% c('Thailand')) %>%
-  arrange(Rand_date, ID, Time) %>% ungroup()
-
-write.table(x = Res_Paxlovid_recent2, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent2_analysis.csv"), row.names = F, sep=',', quote = F)
-
-
+# Res_Paxlovid_recent = 
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',"No study drug"),
+#                  Rand_date > "2023-02-24 00:00:00",
+#                  Country %in% c('Thailand')) %>%
+#   arrange(Rand_date, ID, Time) %>% ungroup() 
+# 
+# write.table(x = Res_Paxlovid_recent, file = paste0(prefix_analysis_data, "/Analysis_Data/Paxlovid_recent_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
 
 ## vaccine data
 # vacc_data_molnupiravir = vacc_data %>% filter(Label %in% Res_Paxlovid_Molnupiravir$ID) %>%
@@ -1635,30 +1818,30 @@ write.table(x = Res_REGN_Evusheld, file = '../Analysis_Data/REGN_Evusheld_plot.c
 #************************* Ensitrelvir Analysis *************************#
 #* Thailand and Laos added 2023-03-17
 
-Res_Ensitrelvir =
-  Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
-                 (Country=='Thailand' &
-                    Rand_date >= "2023-03-17 00:00:00" &
-                    Rand_date < "2024-04-22") |
-                   (Country=='Laos' &
-                      Rand_date >= "2023-03-17 00:00:00"&
-                      Rand_date < "2024-04-22")) %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
-
-
+# Res_Ensitrelvir = 
+#   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
+#                  (Country=='Thailand' &
+#                     Rand_date >= "2023-03-17 00:00:00" &
+#                     Rand_date < "2024-04-22") |
+#                    (Country=='Laos' & 
+#                       Rand_date >= "2023-03-17 00:00:00"&
+#                       Rand_date < "2024-04-22")) %>%
+#   arrange(Rand_date, ID, Time)
+# write.table(x = Res_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
+# 
+# 
 # symptom_data_Ensitrelvir <- symptom_data %>%
 #   filter(Label %in% Res_Ensitrelvir$ID)
-#
+# 
 # write.table(x = symptom_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_symptom_data.csv"), row.names = F, sep=',', quote = F)
-#
+# 
 # fever_data_Ensitrelvir <- fever_data %>%
 #   filter(Label %in% Res_Ensitrelvir$ID)
-#
+# 
 # write.table(x = fever_data_Ensitrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Ensitrelvir_fever_data.csv"), row.names = F, sep=',', quote = F)
 
 
-# Res_Ensitrelvir_allpax =
+# Res_Ensitrelvir_allpax = 
 #   Res %>% filter(Trt %in% c('Ensitrelvir',"No study drug",'Nirmatrelvir + Ritonavir'),
 #                  (Country=='Thailand') |
 #                    (Country=='Laos')) %>%
@@ -1695,7 +1878,10 @@ write.table(x = Res_MolPax, file = paste0(prefix_analysis_data, "/Analysis_Data/
 #* Thailand added 2024-12-13
 Res_Metformin = 
   Res %>% filter(Trt %in% c('Metformin',"No study drug") &
-                   (Country=='Thailand' & Rand_date >= "2024-12-12 00:00:00" )) %>%
+                   #(Country=='Thailand' & Rand_date >= "2024-12-12 00:00:00" )) %>%
+                   ((Country=='Thailand' & Rand_date >= "2024-12-12 00:00:00")|
+                    (Country=='Laos' & Rand_date >= "2025-06-16 00:00:00")|
+                    (Country=='Nepal' & Rand_date >= "2025-07-14 00:00:00"))) %>%
   arrange(Rand_date, ID, Time)
 write.table(x = Res_Metformin, file = paste0(prefix_analysis_data, "/Analysis_Data/Metformin_analysis.csv"), row.names = F, sep=',', quote = F)
 
@@ -1705,11 +1891,19 @@ Res_Metformin %>%
   summarise(n = n())
 
 #************************* Atilotrelvir/ritonavir Analysis *************************#
-#* Thailand added 2024-12-13
+#* Thailand added 2025-04-01
+#* Laos added 2025-06-30
+# Res_Atilotrelvir = 
+#   Res %>% filter(Trt %in% c('Atilotrelvir/ritonavir',"No study drug", "Nirmatrelvir + Ritonavir") &
+#                    (Country=='Thailand' & Rand_date >= "2025-04-01 00:00:00" )) %>%
+#   arrange(Rand_date, ID, Time)
+
 Res_Atilotrelvir = 
-  Res %>% filter(Trt %in% c('Atilotrelvir/ritonavir',"No study drug", "Nirmatrelvir + Ritonavir") &
-                   (Country=='Thailand' & Rand_date >= "2025-04-01 00:00:00" )) %>%
+  Res %>% filter(Trt %in% c('Atilotrelvir/ritonavir',"No study drug") &
+                   ((Country=='Thailand' & Rand_date >= "2025-04-01 00:00:00")|
+                      (Country=='Laos' & Rand_date >= "2025-06-30 00:00:00"))) %>%
   arrange(Rand_date, ID, Time)
+
 write.table(x = Res_Atilotrelvir, file = paste0(prefix_analysis_data, "/Analysis_Data/Atilotrelvir_analysis.csv"), row.names = F, sep=',', quote = F)
 
 Res_Atilotrelvir %>%
@@ -1732,14 +1926,6 @@ Res_Atilotrelvir %>%
 #   arrange(Rand_date, ID, Time)
 # write.table(x = Res_noStudyDrugs, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs.csv"), row.names = F, sep=',', quote = F)
 
-Res_noStudyDrugs2024 =
-  Res %>% filter(Trt %in% c("No study drug"),
-                 Site == 'th001',
-                 Rand_date >= "2024-01-01 00:00:00" & Rand_date < "2025-01-01 00:00:00") %>%
-  arrange(Rand_date, ID, Time)
-write.table(x = Res_noStudyDrugs2024, file = paste0(prefix_analysis_data, "/Analysis_Data/Res_noStudyDrugs2024.csv"), row.names = F, sep=',', quote = F)
-
-
 #************************* Site TH01 only *************************#
 # Res_TH1 <-  Res %>% filter(Site %in% c("th001")) %>%
 #   arrange(Rand_date, ID, Time)
@@ -1748,28 +1934,23 @@ write.table(x = Res_noStudyDrugs2024, file = paste0(prefix_analysis_data, "/Anal
 
 
 #************************* Unblinded arm meta-analysis *************************#
-Res_Unblinded_meta =
-  Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
-                            'Molnupiravir',
-                            "No study drug",
-                            'Ivermectin',
-                            'Remdesivir',
-                            'Favipiravir',
-                            'Ensitrelvir',
-                            'Regeneron'),
-                 Country %in% c('Thailand')#,'Brazil','Laos','Pakistan'),
-               #  Rand_date <= "2023-10-20 00:00:00"
-  ) %>%
-  arrange(Rand_date, ID, Time)
+# Res_Unblinded_meta =
+#   Res %>% filter(Trt %in% c('Nirmatrelvir + Ritonavir',
+#                             'Molnupiravir',
+#                             "No study drug",
+#                             'Ivermectin',
+#                             'Remdesivir',
+#                             'Favipiravir',
+#                             'Regeneron'),
+#                  Country %in% c('Thailand','Brazil','Laos','Pakistan'),
+#                  Rand_date <= "2023-10-20 00:00:00"
+#   ) %>%
+#   arrange(Rand_date, ID, Time)
+# 
+# write.table(x = Res_Unblinded_meta,
+#             file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
+#             row.names = F, sep=',', quote = F)
 
-write.table(x = Res_Unblinded_meta,
-            file = paste0(prefix_analysis_data, "/Analysis_Data/Unblinded_meta_analysis.csv"),
-            row.names = F, sep=',', quote = F)
-
-Res_Unblinded_meta %>%
-  distinct(ID, .keep_all = T) %>%
-  group_by(Trt, Country) %>%
-  summarise(n = n())
 
 
 #************************* Unblinded all *************************#

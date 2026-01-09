@@ -938,12 +938,28 @@ plot_hl <- function(Half_life, trt_colors){
 plot_randomisation <- function(Baseline_data){
   Baseline_data$Rand_date <- as.Date(Baseline_data$Rand_date)
   
+  # Calculate recruitment span in months
+  recruitment_span_days <- as.numeric(max(Baseline_data$Rand_date, na.rm = TRUE) - 
+                                        min(Baseline_data$Rand_date, na.rm = TRUE))
+  
+  # Set date_breaks and date_minor_breaks based on span
+  if (recruitment_span_days > 60) {
+    # More than 2 months
+    date_breaks_val <- "3 months"
+    date_minor_breaks_val <- "1 month"
+  } else {
+    # Short span, make more granular
+    date_breaks_val <- "1 month"
+    date_minor_breaks_val <- "1 week"
+  }
+  
   ggplot(Baseline_data, aes(x = Rand_date, y = Trt, col = Country)) +
     geom_jitter(size = 3, alpha = 0.5, height = 0.1) +
     theme_bw() +
     xlab("Randomisation date") +
     ylab("") +
-    scale_x_date(date_breaks = "3 months", date_minor_breaks = "1 months",
+    scale_x_date(date_breaks = date_breaks_val, 
+                 date_minor_breaks = date_minor_breaks_val,
                  date_labels = "%b %y") +
     theme(axis.title = element_text(size = 14, face = "bold"),
           axis.text = element_text(size = 11))
