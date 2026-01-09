@@ -129,6 +129,21 @@ cbc_data_ast$fb_lymp <- cbc_data_ast$fb_wbc * cbc_data_ast$fb_lympper / 100
 cbc_data_ast$fb_eos  <- cbc_data_ast$fb_wbc * cbc_data_ast$fb_eosper / 100
 cbc_data_ast$fb_mono <- cbc_data_ast$fb_wbc * cbc_data_ast$fb_monoper / 100
 cbc_data_ast$fb_baso <- cbc_data_ast$fb_wbc * cbc_data_ast$fb_basoper / 100
+
+# Fever and Symptom (PLATCOV TBD)
+# TBD PLATCOV
+
+# Fever and Symptom (Now, only AD ASTRA)
+ast_fever <- read_csv("D:/Data-Work/ADASTRA-SAP/Analysis_Data/interim_all_fever_analysis.csv")
+ast_fever <- ast_fever %>%
+  mutate(
+    Timepoint_ID = as.integer(str_extract(visit, "\\d+"))
+  )
+ast_symp <- read_csv("D:/Data-Work/ADASTRA-SAP/Analysis_Data/interim_all_symptom_analysis.csv")
+
+ast_fever <- ast_fever %>% select(Label, Timepoint_ID, fut_dat, fut_tim, fut_temp, temp_time)
+ast_symp <- ast_symp %>% select(-Trial, -Site)
+
 ################################################################################
 # 2. Write PDF of Cytokine's Calculated Concentration Distribution
 ################################################################################
@@ -396,7 +411,25 @@ pcr_cytokine_dat_plt <- pcr_dat_plt %>%
     relationship = "many-to-many"
   )
 
+plt_col_drop <- c(
+  "Site.x",
+  "BARCODE",          # you wrote "Barcode" but your column is "BARCODE"
+  "Protocol",         # only drops if it exists
+  "CT_NS", "CT_RNaseP",
+  "Per_protocol_sample", "Lab",
+  "extra_swabs",
+  "Country",
+  "Trial", "Site.y", "visit"
+)
 
+pcr_cytokine_dat_plt <- pcr_cytokine_dat_plt %>%
+  dplyr::select(-dplyr::any_of(plt_col_drop))
+
+write.csv(
+  pcr_cytokine_dat_plt,
+  file = "D:/Data-Work/PLATCOV-SAP/Analysis_Data/pcr_cytokine_dat_plt.csv",
+  row.names = FALSE
+)
 
 # inner join; will only contain D0, D3
 # pcr_cytokine_dat_plt <- pcr_dat_plt %>%
@@ -485,11 +518,64 @@ pcr_cytokine_dat_ast <- pcr_dat_ast %>%
     relationship = "many-to-many"
   )
 
-ast_fever <- read_csv("D:/Data-Work/ADASTRA-SAP/Analysis_Data/interim_all_fever_analysis.csv")
-ast_symp <- read_csv("D:/Data-Work/ADASTRA-SAP/Analysis_Data/interim_all_symptom_analysis.csv")
+cols_drop <- c(
+  "Site.x",
+  "inf_diagyn",
+  "BARCODE",
+  "Protocol",
+  "CT_NS", "CT_RNaseP",
+  "Per_protocol_sample",
+  "Lab",
+  "extra_swabs",
+  "Country",
+  "Trial",
+  "Site.y",
+  "visit"
+)
 
-ast_fever <- ast_fever %>% select(Label, visit, fut_dat, fut_tim, fut_temp, temp_time)
-ast_symp <- ast_symp %>% select(-Trial, -Site)
+pcr_cytokine_dat_ast <- pcr_cytokine_dat_ast %>%
+  dplyr::select(-dplyr::any_of(cols_drop))
+
+ast_fever_wide <- ast_fever %>%
+  group_by(Label, Timepoint_ID) %>%
+  arrange(temp_time, .by_group = TRUE) %>%
+  mutate(
+    n_tp = n(),
+    ampm = case_when(
+      n_tp == 2 & row_number() == 1 ~ "am",
+      n_tp == 2 & row_number() == 2 ~ "pm",
+      n_tp == 1 & hour(temp_time) < 12 ~ "am",
+      n_tp == 1 ~ "pm",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(ampm)) %>%
+  select(Label, Timepoint_ID, ampm, fut_dat, fut_temp, temp_time) %>%
+  pivot_wider(
+    id_cols = c(Label, Timepoint_ID),
+    names_from = ampm,
+    values_from = c(fut_temp, temp_time),
+    names_glue = "{.value}_{ampm}",
+    values_fill = list(
+      fut_temp = NA_real_,
+      temp_time = as.POSIXct(NA)
+    )
+  )
+
+pcr_cytokine_dat_ast <- pcr_cytokine_dat_ast %>%
+  left_join(
+    ast_symp, by = c("ID" = "Label", "Timepoint_ID" = "Timepoint_ID")
+  ) %>% 
+  left_join(
+    ast_fever_wide, by = c("ID" = "Label", "Timepoint_ID" = "Timepoint_ID")
+  )
+
+write.csv(
+  pcr_cytokine_dat_ast,
+  file = "D:/Data-Work/PLATCOV-SAP/Analysis_Data/pcr_cytokine_dat_ast.csv",
+  row.names = FALSE
+)
 
 # Join dat_all_ast with pcr_dat_ast and cbc_data_ast by ID and Label
 # will only contain D0, D3
